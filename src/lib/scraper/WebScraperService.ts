@@ -16,6 +16,10 @@ const ScraperResultSchema = z.object({
 	content: z.string(),
 	contentType: z.string(),
 	extractedText: z.array(z.string()).optional(),
+	extractedLinks: z.array(z.object({
+		selector: z.string(),
+		href: z.string()
+	})).optional(),
 	metadata: z.record(z.string(), z.unknown()).optional()
 });
 
@@ -49,101 +53,53 @@ export class WebScraperService {
 			}
 
 			const contentType = response.headers.get('content-type') || 'text/html';
-			const rawContent = await response.text();
+			const content = await response.text();
 
-			// Parse content based on type
-			switch (validatedConfig.contentType) {
-				case 'html':
-					return this.parseHtmlContent(rawContent, validatedConfig.selector);
-				case 'json':
-					return this.parseJsonContent(rawContent);
-				case 'rss':
-					return this.parseRssContent(rawContent);
-				default:
-					throw new Error('Unsupported content type');
+			// Use Cheerio for HTML parsing
+			const $ = cheerio.load(content);
+
+			// Extract text based on selector
+			const extractedText: string[] = [];
+			const extractedLinks: { selector: string; href: string }[] = [];
+
+			if (validatedConfig.selector) {
+				$(validatedConfig.selector).each((index, element) => {
+					const text = $(element).text().trim();
+					if (text) {
+						extractedText.push(text);
+
+						// Try to find a link within or near the selected element
+						const link = $(element).find('a').first().attr('href');
+						if (link) {
+							extractedLinks.push({
+								selector: `${validatedConfig.selector}:nth-child(${index + 1})`,
+								href: this.normalizeUrl(link, validatedConfig.url)
+							});
+						}
+					}
+				});
 			}
-		} catch (error) {
-			console.error('Web scraping error:', error);
-			throw new Error(
-				`Scraping failed for ${validatedConfig.url}: ${error instanceof Error ? error.message : 'Unknown error'}`
-			);
-		}
-	}
 
-	/**
-	 * Parse HTML content using Cheerio
-	 * @param htmlContent Raw HTML content
-	 * @param selector Optional CSS selector to extract specific elements
-	 */
-	private static parseHtmlContent(htmlContent: string, selector?: string) {
-		const $ = cheerio.load(htmlContent);
-
-		// If selector is provided, extract specific elements
-		const extractedText = selector
-			? $(selector)
-					.map((_, el) => $(el).text().trim())
-					.get()
-			: [];
-
-		return ScraperResultSchema.parse({
-			url: '', // URL should be passed from original config
-			content: htmlContent,
-			contentType: 'text/html',
-			extractedText: extractedText,
-			metadata: {
-				textLength: htmlContent.length,
-				extractedElementCount: extractedText.length
-			}
-		});
-	}
-
-	/**
-	 * Parse JSON content
-	 * @param jsonContent Raw JSON content
-	 */
-	private static parseJsonContent(jsonContent: string) {
-		try {
-			const parsedJson = JSON.parse(jsonContent);
 			return ScraperResultSchema.parse({
-				url: '', // URL should be passed from original config
-				content: jsonContent,
-				contentType: 'application/json',
-				metadata: {
-					jsonKeys: Object.keys(parsedJson)
-				}
+				url: validatedConfig.url,
+				content,
+				contentType,
+				extractedText,
+				extractedLinks
 			});
 		} catch (error) {
-			throw new Error('Invalid JSON content');
+			console.error('Scraping error:', error);
+			throw error;
 		}
 	}
 
-	/**
-	 * Parse RSS content (basic implementation)
-	 * @param rssContent Raw RSS XML content
-	 */
-	private static parseRssContent(rssContent: string) {
-		// Basic RSS parsing - can be expanded with a dedicated RSS parser
-		const $ = cheerio.load(rssContent, { xmlMode: true });
-
-		const items = $('item')
-			.map((_, el) => ({
-				title: $(el).find('title').text(),
-				link: $(el).find('link').text(),
-				description: $(el).find('description').text(),
-				pubDate: $(el).find('pubDate').text()
-			}))
-			.get();
-
-		return ScraperResultSchema.parse({
-			url: '', // URL should be passed from original config
-			content: rssContent,
-			contentType: 'application/rss+xml',
-			extractedText: items.map((item) => item.title),
-			metadata: {
-				itemCount: items.length,
-				items: items
-			}
-		});
+	// Helper method to normalize relative URLs
+	private static normalizeUrl(url: string, baseUrl: string): string {
+		try {
+			return new URL(url, baseUrl).toString();
+		} catch {
+			return url;
+		}
 	}
 
 	/**

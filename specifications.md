@@ -14,13 +14,6 @@ This specification outlines the development of a local-first application built w
 - User owns and controls all their data
 - Privacy-focused design
 
-### Profile-Based System
-
-- Multiple profiles per installation
-- Profile-specific settings and data
-- Profile import/export capabilities
-- Separate work/personal/research spaces
-
 ## Features
 
 ### 1. RSS Feed Management
@@ -31,6 +24,16 @@ This specification outlines the development of a local-first application built w
 - Folder organization
 - Local storage of feeds
 - Offline reading capability
+- **Web Scraping and HTML/JSON Parsing**
+  - Support for custom web scraping rules
+  - HTML content extraction and parsing
+  - JSON data retrieval from web sources
+  - Configurable scraping strategies
+  - Respect for website robots.txt and scraping ethics
+  - Intelligent content detection and filtering
+  - Fallback mechanisms for different content formats
+  - Automatic source type detection (RSS, HTML, JSON)
+  - Caching and rate-limiting to prevent overloading sources
 
 ### 2. AI-Powered Analysis
 
@@ -65,12 +68,28 @@ This specification outlines the development of a local-first application built w
 ### 5. Data Management
 
 - SQLite database
-- Profile-based organization
 - Import/export capabilities
 - Automatic backups
 - Data integrity checks
 - Search and filtering
 - Background syncing
+
+## Use Cases
+
+### 1. Content Monitoring
+- Track industry trends
+- Gather competitive intelligence
+- Stay updated with latest news
+
+### 2. Personal Knowledge Management
+- Curate learning resources
+- Track specific topics
+- Build personal knowledge base
+
+### 3. Professional Development
+- Follow thought leaders
+- Track emerging technologies
+- Stay informed about industry developments
 
 ## Technical Architecture
 
@@ -160,7 +179,6 @@ This specification outlines the development of a local-first application built w
 
 3. Core Features
    - RSS feed management
-   - Profile system
    - Content organization
    - Search functionality
    - Data import/export
@@ -178,61 +196,6 @@ This specification outlines the development of a local-first application built w
    - Auto-update system
    - Documentation
    - Testing suite
-
-## Pilot Implementation
-
-### Diabetes Research Focus
-
-- Pre-configured research profile
-- Curated RSS feeds
-- Medical content analysis
-- Specialized categories
-- Terminology handling
-
-### Data Sources
-
-- Medical journals
-- Clinical trials
-- Healthcare organizations
-- Patient resources
-- Research updates
-
-## Use Cases
-
-### 1. Research Profile
-
-- Academic literature management
-- Paper categorization
-- Finding extraction
-- Citation tracking
-
-### 2. Tech Watch Profile
-
-- Technology monitoring
-- Trend analysis
-- Development updates
-- Team sharing
-
-### 3. Learning Profile
-
-- Educational content
-- Progress tracking
-- Study summaries
-- Related materials
-
-### 4. Content Creation
-
-- Trend monitoring
-- Inspiration gathering
-- Content planning
-- Audience analysis
-
-### 5. News Curation
-
-- Multi-source aggregation
-- Fact-checking
-- Bias analysis
-- Custom digests
 
 ## Future Enhancements
 

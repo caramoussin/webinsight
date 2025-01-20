@@ -7,6 +7,10 @@ Flux RSS Fabric AI is an advanced, AI-powered RSS aggregator designed to help yo
 ## Key Features
 
 - 🔄 Automated RSS Feed Fetching
+- 🌐 Advanced Web Content Retrieval
+  - Web Scraping for Non-RSS Sources
+  - HTML and JSON Content Parsing
+  - Configurable Scraping Rules
 - 🧠 AI-Powered Content Analysis
   - Automatic Summarization
   - Sentiment Analysis
@@ -78,6 +82,7 @@ bun dev
 ## Roadmap
 
 ### Phase 1: Core RSS Feed Management [CURRENT FOCUS]
+
 - [x] Basic RSS Feed Fetching and Parsing
 - [x] SQLite Database Integration
 - [x] Background Periodic Feed Updates
@@ -95,6 +100,7 @@ bun dev
   - Monitor feed update frequency
 
 ### Phase 2: Enhanced Feed Organization
+
 - [ ] Advanced Feed Filtering
   - Filter feeds by collection
   - Search across feed titles and descriptions
@@ -109,6 +115,7 @@ bun dev
   - Backup and restore feed configurations
 
 ### Phase 3: User Experience Improvements
+
 - [ ] Responsive Feed Management Interface
   - Drag-and-drop feed organization
   - Bulk feed operations
@@ -123,6 +130,7 @@ bun dev
   - Feed update summary
 
 ### Phase 4: Initial AI Integration
+
 - [ ] Basic Content Analysis
   - Extract basic metadata from feed items
   - Simple content length and type detection
@@ -137,6 +145,7 @@ bun dev
   - Simple user interaction tracking
 
 ### Phase 5: Advanced AI Features
+
 - [ ] Enhanced Content Analysis
   - Advanced summarization
   - Sentiment analysis
@@ -151,26 +160,25 @@ bun dev
   - Adaptive recommendation algorithm
 
 ### Phase 6: Scalability and Integration
+
 - [ ] Performance Optimization
   - Efficient database querying
   - Caching mechanisms
   - Background processing improvements
-- [ ] Multi-Profile Support
-  - Create multiple user profiles
-  - Profile-specific feed collections
-  - Separate settings and preferences
 - [ ] External Integrations
   - Browser extension
   - Sharing capabilities
   - API for external access
 
 ## Long-Term Vision
+
 - Cross-platform desktop application
 - Advanced machine learning models
 - Community-driven content analysis
 - Seamless user experience across devices
 
 ## Specialized Use Cases
+
 - Research-focused feed aggregation
 - Professional content monitoring
 - Personal knowledge management

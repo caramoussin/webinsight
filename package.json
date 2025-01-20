@@ -23,6 +23,7 @@
 		"@sveltejs/kit": "^2.0.0",
 		"@sveltejs/vite-plugin-svelte": "^4.0.0",
 		"@types/better-sqlite3": "^7.6.12",
+		"@types/cheerio": "^0.22.33",
 		"autoprefixer": "^10.4.20",
 		"bits-ui": "^0.22.0",
 		"class-variance-authority": "^0.7.1",
@@ -47,9 +48,11 @@
 	"dependencies": {
 		"@libsql/client": "^0.14.0",
 		"better-sqlite3": "^11.8.1",
+		"cheerio": "^1.0.0-rc.12",
 		"drizzle-kit": "^0.30.2",
 		"drizzle-orm": "^0.38.4",
 		"lucide-svelte": "^0.473.0",
-		"rss-parser": "^3.13.0"
+		"rss-parser": "^3.13.0",
+		"zod": "^3.22.4"
 	}
 }

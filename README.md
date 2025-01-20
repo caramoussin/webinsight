@@ -4,6 +4,24 @@
 
 Flux RSS Fabric AI is an advanced, AI-powered RSS aggregator designed to help you efficiently collect, analyze, and manage RSS feeds. Built with cutting-edge web technologies, this application provides intelligent content processing and personalized feed management.
 
+## Current Implementation Highlights
+
+### Web Scraping Capabilities
+- 🌐 Multi-content type support
+  - HTML content extraction
+  - JSON data parsing
+  - RSS feed scraping
+- 🤖 Intelligent Scraping
+  - Configurable selectors
+  - Robots.txt compliance
+  - Server-side and client-side rendering
+
+### Frontend Architecture
+- SvelteKit-based application
+- Svelte 5 compatibility
+- shadcn-svelte UI components
+- Interactive web scraping demo
+
 ## Key Features
 
 - 🔄 Automated RSS Feed Fetching
@@ -25,6 +43,7 @@ Flux RSS Fabric AI is an advanced, AI-powered RSS aggregator designed to help yo
 - **Styling**: TailwindCSS
 - **Database**: SQLite with Drizzle ORM
 - **Type Safety**: TypeScript, Zod
+- **Scraping**: Cheerio
 - **Background Jobs**: Custom Scheduler
 
 ## Prerequisites
@@ -63,6 +82,13 @@ Start the development server:
 bun dev
 ```
 
+## Web Scraping Demo
+
+Navigate to `/rss-demo` to explore the web scraping functionality:
+- Enter a website URL
+- Specify a CSS selector
+- View scraped content in a card layout
+
 ## Available Scripts
 
 - `bun dev`: Start development server
@@ -86,6 +112,7 @@ bun dev
 - [x] Basic RSS Feed Fetching and Parsing
 - [x] SQLite Database Integration
 - [x] Background Periodic Feed Updates
+- [x] Web Scraping Service
 - [ ] Comprehensive Feed Management
   - Add new RSS feeds manually
   - Validate and verify feed URLs
@@ -196,7 +223,3 @@ bun dev
 Distributed under the MIT License. See `LICENSE` for more information.
 
 ## Contact
-
-Your Name - [Your Email]
-
-Project Link: [https://github.com/yourusername/flux-rss-fabric-ai](https://github.com/yourusername/flux-rss-fabric-ai)

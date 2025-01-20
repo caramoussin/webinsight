@@ -1,6 +1,6 @@
-import type { PageServerLoad } from '../rss-demo/$types';
 import { WebScraperService } from '$lib/scraper/WebScraperService';
 import { error } from '@sveltejs/kit';
+import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async () => {
 	try {
@@ -38,43 +38,42 @@ export const load: PageServerLoad = async () => {
 	}
 };
 
-export const actions = {
+export const actions: Actions = {
 	scrape: async ({ request }) => {
 		const data = await request.formData();
 		const url = data.get('url')?.toString();
-		const selector = data.get('selector')?.toString() || 'tr.athing';
+		const contentType = (data.get('contentType')?.toString() as 'html' | 'json' | 'rss') || 'html';
+		const selector = data.get('selector')?.toString();
 
 		if (!url) {
 			throw error(400, 'URL is required');
 		}
 
 		try {
-			const result = await WebScraperService.scrape({
+			// Determine the appropriate scraping configuration
+			const scrapingConfig = {
 				url,
-				contentType: 'html',
+				contentType,
 				selector,
 				timeout: 15000
-			});
+			};
 
-			// Extract titles and links more robustly
-			const scrapedItems = (result.extractedText || []).map((title, index) => {
-				const linkItem = result.extractedLinks?.find(
-					(l) => l.selector === `${selector}:nth-child(${index + 1})`
-				);
-
-				return {
-					title,
-					link: linkItem?.href || ''
-				};
-			});
+			// Use WebScraperService to fetch and parse content
+			const result = await WebScraperService.scrape(scrapingConfig);
 
 			return {
-				scrapedItems,
-				url
+				success: true,
+				data: {
+					...result,
+					// Ensure consistent response structure
+					content: result.content,
+					extractedText: result.extractedText || [],
+					extractedLinks: result.extractedLinks || []
+				}
 			};
 		} catch (e) {
-			console.error('Server-side scraping error:', e);
-			throw error(500, e instanceof Error ? e.message : 'Unknown error');
+			console.error('Scraping error:', e);
+			throw error(500, e instanceof Error ? e.message : 'Failed to scrape content');
 		}
 	}
 };

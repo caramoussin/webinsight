@@ -25,7 +25,20 @@ const ScraperResultSchema = z.object({
 
 export class WebScraperService {
 	private static DEFAULT_USER_AGENT =
-		'FluxRSSFabricAI/1.0 (+https://github.com/caramoussin/flux-rss-fabric-ai)';
+		'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
+
+	private static getAdditionalHeaders(url: URL): Record<string, string> {
+		return {
+			'Accept-Language': 'en-US,en;q=0.9',
+			'Accept-Encoding': 'gzip, deflate, br',
+			'Sec-Fetch-Dest': 'document',
+			'Sec-Fetch-Mode': 'navigate',
+			'Sec-Fetch-Site': 'none',
+			'Sec-Fetch-User': '?1',
+			'Referer': url.origin,
+			'DNT': '1'
+		};
+	}
 
 	/**
 	 * Fetch and scrape web content with intelligent handling
@@ -35,6 +48,7 @@ export class WebScraperService {
 	static async scrape(config: z.infer<typeof ScraperConfigSchema>) {
 		// Validate input configuration
 		const validatedConfig = ScraperConfigSchema.parse(config);
+		const url = new URL(validatedConfig.url);
 
 		try {
 			// Fetch the content with intelligent defaults
@@ -42,14 +56,21 @@ export class WebScraperService {
 				method: 'GET',
 				headers: {
 					'User-Agent': validatedConfig.userAgent || this.DEFAULT_USER_AGENT,
-					Accept: this.getAcceptHeader(validatedConfig.contentType)
+					'Accept': this.getAcceptHeader(validatedConfig.contentType),
+					...this.getAdditionalHeaders(url)
 				},
 				signal: AbortSignal.timeout(validatedConfig.timeout)
 			});
 
-			// Check for successful response
+			// More detailed error handling for different HTTP status codes
+			if (response.status === 403) {
+				throw new Error(`Access Forbidden (403): Unable to scrape ${validatedConfig.url}. The website may be blocking scraping attempts.`);
+			}
+			if (response.status === 429) {
+				throw new Error(`Too Many Requests (429): Rate limit exceeded for ${validatedConfig.url}. Consider adding delays between requests.`);
+			}
 			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
+				throw new Error(`HTTP error! status: ${response.status}, url: ${validatedConfig.url}`);
 			}
 
 			const contentType = response.headers.get('content-type') || 'text/html';
@@ -89,7 +110,16 @@ export class WebScraperService {
 			});
 		} catch (error) {
 			console.error('Scraping error:', error);
-			throw error;
+			
+			// More informative error logging
+			if (error instanceof Error) {
+				if (error.name === 'AbortError') {
+					throw new Error(`Scraping timeout for ${validatedConfig.url}. The request took too long.`);
+				}
+				throw error;
+			}
+			
+			throw new Error(`Unexpected scraping error for ${validatedConfig.url}`);
 		}
 	}
 

@@ -18,7 +18,6 @@
 				<nav class="flex items-center space-x-6 text-sm font-medium">
 					<a href="/feeds" class="transition-colors hover:text-foreground/80">Feeds</a>
 					<a href="/collections" class="transition-colors hover:text-foreground/80">Collections</a>
-					<a href="/profiles" class="transition-colors hover:text-foreground/80">Profiles</a>
 				</nav>
 			</div>
 			<ThemeToggle />

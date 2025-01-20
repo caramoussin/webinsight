@@ -1,5 +1,6 @@
 <script lang="ts">
 	import '../app.css';
+	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	let { children } = $props();
 
 	let isMenuOpen = $state(false);
@@ -9,8 +10,8 @@
 	<header
 		class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
 	>
-		<div class="container flex h-14 items-center">
-			<div class="mr-4 flex">
+		<div class="container flex h-14 items-center justify-between">
+			<div class="mr-4 flex items-center">
 				<a href="/" class="mr-6 flex items-center space-x-2">
 					<span class="font-bold">RSS AI</span>
 				</a>
@@ -20,6 +21,7 @@
 					<a href="/profiles" class="transition-colors hover:text-foreground/80">Profiles</a>
 				</nav>
 			</div>
+			<ThemeToggle />
 		</div>
 	</header>
 

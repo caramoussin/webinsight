@@ -16,16 +16,41 @@ const ScraperResultSchema = z.object({
 	content: z.string(),
 	contentType: z.string(),
 	extractedText: z.array(z.string()).optional(),
-	extractedLinks: z.array(z.object({
-		selector: z.string(),
-		href: z.string()
-	})).optional(),
+	extractedLinks: z
+		.array(
+			z.object({
+				selector: z.string(),
+				href: z.string()
+			})
+		)
+		.optional(),
 	metadata: z.record(z.string(), z.unknown()).optional()
 });
 
 export class WebScraperService {
-	private static DEFAULT_USER_AGENT =
-		'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
+	private static USER_AGENTS = [
+		'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+		'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+		'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+		'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0'
+	];
+
+	private static PROXY_LIST: string[] = [
+		// Example proxy list - replace with actual proxies
+		'http://proxy1.example.com:8080',
+		'http://proxy2.example.com:8080',
+		'http://proxy3.example.com:8080'
+	];
+
+	private static getRandomUserAgent(): string {
+		return this.USER_AGENTS[Math.floor(Math.random() * this.USER_AGENTS.length)];
+	}
+
+	private static getRandomProxy(): string | null {
+		return this.PROXY_LIST.length > 0
+			? this.PROXY_LIST[Math.floor(Math.random() * this.PROXY_LIST.length)]
+			: null;
+	}
 
 	private static getAdditionalHeaders(url: URL): Record<string, string> {
 		return {
@@ -35,9 +60,26 @@ export class WebScraperService {
 			'Sec-Fetch-Mode': 'navigate',
 			'Sec-Fetch-Site': 'none',
 			'Sec-Fetch-User': '?1',
-			'Referer': url.origin,
-			'DNT': '1'
+			Referer: url.origin,
+			DNT: '1',
+			Accept:
+				'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+			Connection: 'keep-alive',
+			'Upgrade-Insecure-Requests': '1'
 		};
+	}
+
+	private static async fetchWithProxy(url: string, options: RequestInit): Promise<Response> {
+		const proxy = this.getRandomProxy();
+
+		if (!proxy) {
+			return fetch(url, options);
+		}
+
+		// Note: This is a placeholder. Actual proxy implementation requires
+		// additional libraries or more complex fetch configuration
+		console.warn('Proxy usage is a placeholder and not fully implemented');
+		return fetch(url, options);
 	}
 
 	/**
@@ -46,28 +88,38 @@ export class WebScraperService {
 	 * @returns Parsed and extracted content
 	 */
 	static async scrape(config: z.infer<typeof ScraperConfigSchema>) {
-		// Validate input configuration
 		const validatedConfig = ScraperConfigSchema.parse(config);
 		const url = new URL(validatedConfig.url);
 
+		// Optional delay to mimic human-like behavior
+		await new Promise((resolve) => setTimeout(resolve, Math.random() * 1000));
+
 		try {
-			// Fetch the content with intelligent defaults
-			const response = await fetch(validatedConfig.url, {
+			const response = await this.fetchWithProxy(validatedConfig.url, {
 				method: 'GET',
 				headers: {
-					'User-Agent': validatedConfig.userAgent || this.DEFAULT_USER_AGENT,
-					'Accept': this.getAcceptHeader(validatedConfig.contentType),
-					...this.getAdditionalHeaders(url)
+					'User-Agent': validatedConfig.userAgent || this.getRandomUserAgent(),
+					Accept: this.getAcceptHeader(validatedConfig.contentType),
+					...this.getAdditionalHeaders(url),
+					// Add more headers to appear more like a real browser
+					'Cache-Control': 'max-age=0',
+					Pragma: 'no-cache'
 				},
 				signal: AbortSignal.timeout(validatedConfig.timeout)
 			});
 
-			// More detailed error handling for different HTTP status codes
+			// More detailed error handling
 			if (response.status === 403) {
-				throw new Error(`Access Forbidden (403): Unable to scrape ${validatedConfig.url}. The website may be blocking scraping attempts.`);
+				throw new Error(`Access Forbidden (403): Unable to scrape ${validatedConfig.url}. 
+					Consider using a different proxy, VPN, or checking website's scraping policies.`);
 			}
 			if (response.status === 429) {
-				throw new Error(`Too Many Requests (429): Rate limit exceeded for ${validatedConfig.url}. Consider adding delays between requests.`);
+				throw new Error(`Rate Limited (429): Slow down requests to ${validatedConfig.url}. 
+					Implement exponential backoff or use a proxy service.`);
+			}
+			if (response.status === 401 || response.status === 407) {
+				throw new Error(`Authentication Required (${response.status}): 
+					This website might require login or proxy authentication.`);
 			}
 			if (!response.ok) {
 				throw new Error(`HTTP error! status: ${response.status}, url: ${validatedConfig.url}`);
@@ -110,15 +162,17 @@ export class WebScraperService {
 			});
 		} catch (error) {
 			console.error('Scraping error:', error);
-			
+
 			// More informative error logging
 			if (error instanceof Error) {
 				if (error.name === 'AbortError') {
-					throw new Error(`Scraping timeout for ${validatedConfig.url}. The request took too long.`);
+					throw new Error(
+						`Scraping timeout for ${validatedConfig.url}. The request took too long.`
+					);
 				}
 				throw error;
 			}
-			
+
 			throw new Error(`Unexpected scraping error for ${validatedConfig.url}`);
 		}
 	}
@@ -180,11 +234,11 @@ export async function exampleScrape() {
 			contentType: 'rss',
 			timeout: 10000
 		});
-		
+
 		console.log('RSS Feed Metadata:');
 		console.log('Total Items:', result.metadata?.itemCount);
 		console.log('Feed Items:', result.metadata?.items);
-		
+
 		return result;
 	} catch (error) {
 		console.error('RSS Scraping failed:', error);

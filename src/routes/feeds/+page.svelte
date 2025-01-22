@@ -5,6 +5,7 @@
 	import * as Select from '$lib/components/ui/select';
 	import type { PageData, ActionData } from './$types';
 	import { onMount } from 'svelte';
+	import { TwitterRSSService } from '$lib/services/rss/TwitterRSSService';
 
 	type ScraperPageData = PageData & {
 		contentTypes?: string[];
@@ -57,9 +58,24 @@
 	let error: string | null = null;
 
 	// Automatically scrape on component mount
-	onMount(() => {
+	onMount(async () => {
 		if (data && 'scrapedContent' in data) {
 			scrapedContent = data.scrapedContent as string;
+		}
+
+		try {
+			const rssFeed = await TwitterRSSService.fetchRSSFeed('soushi888');
+			console.log('RSS Feed Retrieved:', rssFeed);
+
+			// Optional: Process and display RSS items
+			if (rssFeed.items.length > 0) {
+				scrapedContent = rssFeed.items
+					.map((item) => `Title: ${item.title}\nLink: ${item.link}`)
+					.join('\n\n');
+			}
+		} catch (error) {
+			console.error('RSS Fetch Failed:', error);
+			error = 'Failed to retrieve RSS feed';
 		}
 	});
 

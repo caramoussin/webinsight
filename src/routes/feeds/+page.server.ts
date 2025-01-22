@@ -1,4 +1,4 @@
-import { WebScraperService } from '$lib/scraper/WebScraperService';
+import { WebScraperService } from '$lib/services/scraper/WebScraperService';
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 

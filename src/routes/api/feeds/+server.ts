@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { FeedService } from '$lib/server/feed-service';
+import { FeedService } from '$lib/core/server/feed-service';
 import { z } from 'zod';
 
 const feedService = new FeedService();

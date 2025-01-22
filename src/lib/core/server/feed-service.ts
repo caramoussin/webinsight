@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
-import { db, feeds, collections, feedItems } from '$lib/db';
-import { generateId } from '$lib/utils';
+import { db, feeds, collections, feedItems } from '$lib/services/db';
+import { generateId } from '$lib/utils/utils';
 import { fetchAndParseRSSFeed } from './rss-parser';
 import type { RSSFeedItem } from './rss-parser';
 

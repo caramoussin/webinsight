@@ -1,4 +1,4 @@
-import { backgroundJobScheduler } from '$lib/server/background-jobs';
+import { backgroundJobScheduler } from '$lib/core/server/background-jobs';
 import type { Handle } from '@sveltejs/kit';
 
 // Server-side initialization hook

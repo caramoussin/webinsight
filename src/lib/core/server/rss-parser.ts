@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { db, feedItems, aiAnalysisLogs } from '$lib/db';
+import { db, feedItems, aiAnalysisLogs } from '$lib/services/db';
 
 // RSS Feed Item Schema
 const RSSItemSchema = z.object({

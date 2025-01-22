@@ -94,7 +94,7 @@
 			name="url"
 			bind:value={websiteUrl}
 			placeholder="Enter URL to scrape (e.g., https://example.com)"
-			class="flex-1 rounded border p-2"
+			class="flex-1 rounded border p-2 text-black"
 			required
 		/>
 
@@ -127,7 +127,7 @@
 			name="selector"
 			bind:value={contentSelector}
 			placeholder="Optional CSS Selector"
-			class="w-[180px] rounded border p-2"
+			class="w-[180px] rounded border p-2 text-black"
 		/>
 
 		<Button type="submit" disabled={isLoading}>

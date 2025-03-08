@@ -52,6 +52,7 @@
 		"cheerio": "^1.0.0-rc.12",
 		"drizzle-kit": "^0.30.2",
 		"drizzle-orm": "^0.38.4",
+		"fp-ts": "^2.16.9",
 		"lucide-svelte": "^0.473.0",
 		"rss-parser": "^3.13.0",
 		"zod": "^3.22.4"

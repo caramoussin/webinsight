@@ -153,11 +153,25 @@ export class TwitterRSSService {
 	 */
 	static async validateNitterInstance(instanceUrl: string): Promise<boolean> {
 		try {
-			const response = await fetch(instanceUrl, {
-				method: 'HEAD',
-				timeout: 5000
-			});
-			return response.ok;
+			// Using AbortController to implement timeout since fetch doesn't support timeout option
+			const controller = new AbortController();
+			const timeoutId = setTimeout(() => controller.abort(), 5000);
+			
+			try {
+				const response = await fetch(instanceUrl, {
+					method: 'HEAD',
+					signal: controller.signal
+				});
+				clearTimeout(timeoutId);
+				return response.ok;
+			} catch (error: unknown) {
+				clearTimeout(timeoutId);
+				if (error instanceof Error && error.name === 'AbortError') {
+					// Request timed out
+					return false;
+				}
+				throw error;
+			}
 		} catch {
 			return false;
 		}

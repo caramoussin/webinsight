@@ -14,6 +14,16 @@ The **Smart RSS Aggregator App** is a local-first application designed to enhanc
 - User owns and controls all their data
 - Privacy-focused design
 
+### Functional Programming Paradigm
+
+- Pure functions with minimal side effects
+- Immutable data structures
+- Function composition over imperative procedures
+- Declarative code style
+- Higher-order functions and transformations
+- Separation of data and behavior
+- Predictable state management
+
 ### AI-Driven Intelligence
 
 - Three specialized AI agents working in harmony
@@ -41,14 +51,27 @@ The **Smart RSS Aggregator App** is a local-first application designed to enhanc
 - Local storage of feeds
 - Offline reading capability
 
+#### Nitter Integration for X Content
+
+- Fetch X account RSS feeds via Nitter instances (e.g., `https://nitter.net/{username}/rss`)
+- Maintain and manage a list of Nitter instances
+- Implement fallback mechanism to cycle through instances when one fails
+- Handle instance-specific quirks (e.g., lowercase username requirements)
+- Automatic retry and error recovery
+- Local caching of feed content to maintain offline-first approach
+
 #### Web Scraping (Powered by Crawl4AI)
 
 - HTML content extraction
 - JSON data parsing
-- Configurable scraping strategies
-- Robots.txt compliance
-- Rate limiting and caching
-- Fallback mechanisms
+- User-configurable scraping strategies and rules
+- Strict robots.txt compliance and ethical scraping practices
+- Intelligent rate limiting and throttling
+- Local caching of scraped content
+- Fallback mechanisms for content extraction
+- Error handling and recovery strategies
+- Resource-efficient operation with adjustable settings
+- Privacy-preserving local processing
 
 ### 2. AI-Powered Analysis
 
@@ -98,6 +121,19 @@ The **Smart RSS Aggregator App** is a local-first application designed to enhanc
 - Privacy-preserving design
 - User data control
 - Secure configuration
+- Encrypted storage for API credentials
+- No reliance on external services for content processing
+
+### 5. API Integration
+
+- Configurable API source management
+- Support for various API services (X, GitHub, Reddit, etc.)
+- X API integration via JSON endpoints (e.g., `user_timeline.json`)
+- Secure credential storage and encryption
+- Rate limit management and scheduling
+- User-friendly API configuration interface
+- Response parsing and normalization
+- Local caching of API responses
 
 ## Technical Architecture
 
@@ -107,9 +143,12 @@ The **Smart RSS Aggregator App** is a local-first application designed to enhanc
 - **Application Server**: SvelteKit for frontend and backend logic
 - **Database**: SQLite with Drizzle ORM for type-safe data management
 - **Web Scraping**: Crawl4AI for content extraction
-- **AI Integration**: Fabric AI for analysis and processing
+- **RSS & Nitter**: Feed Service with Nitter instance management
+- **API Integration**: Configurable API client service
+- **AI Integration**: Fabric AI for analysis and processing (with adjustable processing depth)
 - **Real-Time Updates**: WebSocket for live notifications
-- **Background Jobs**: Custom scheduler for periodic tasks
+- **Background Jobs**: Custom scheduler for periodic tasks and API rate limit management
+- **Programming Paradigm**: Functional programming with pure functions and immutable data structures
 
 ### Frontend Stack
 
@@ -128,6 +167,8 @@ The **Smart RSS Aggregator App** is a local-first application designed to enhanc
 - Data migrations
 - Backup system
 - Query optimization
+- Immutable data structures
+- Pure data transformations
 
 ### AI Integration
 
@@ -155,7 +196,9 @@ graph TB
         
         subgraph Core["Core Services"]
             RSS[RSS Service]
+            NIT[Nitter Service]
             WS[Web Scraper]
+            APIC[API Client]
             DB[(SQLite DB)]
         end
         
@@ -181,19 +224,24 @@ graph TB
 flowchart LR
     subgraph Sources["Content Sources"]
         RSS[RSS Feeds]
+        NIT[Nitter Feeds]
         HTML[HTML Pages]
         JSON[JSON APIs]
+        XAPI[X API]
     end
 
     subgraph Processing["Processing Layer"]
         P1[RSS Parser]
         P2[Crawl4AI]
         P3[JSON Parser]
+        P4[API Client]
+        P5[Nitter Service]
     end
 
     subgraph Storage["Storage Layer"]
         DB[(SQLite DB)]
         Cache[Local Cache]
+        SecStore[Encrypted Storage]
     end
 
     subgraph AI["AI Processing"]

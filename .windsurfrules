@@ -1,1 +1,2 @@
-- Keep in mind to never modify shadcn components without explicit approval
+- Never modify shadcn components without explicit approval
+- Use functional programming paradigms the most possible

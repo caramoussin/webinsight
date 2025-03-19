@@ -2,31 +2,33 @@
 
 ## Overview
 
-This document outlines the detailed architecture of the Smart RSS Aggregator App, a local-first application built with Bun and SvelteKit that leverages AI for intelligent content processing and organization. The application follows functional programming principles throughout its implementation, emphasizing pure functions, immutable data structures, and declarative code patterns.
+The Smart RSS Aggregator App leverages Fabric AI with the Model Context Protocol (MCP) for intelligent content processing, integrating Fabric's pattern library and LLM sequencing. Built with Bun and SvelteKit, this local-first application follows functional programming principles, emphasizing pure functions, immutable data structures, and declarative code patterns, enhanced by MCP for modular AI interactions.
 
 ## Programming Paradigm
 
 ### Functional Programming Approach
 
 ```typescript
-// Example of pure function for content transformation
-const transformContent = (content: Content): TransformedContent => ({
-  ...content,
-  title: formatTitle(content.title),
-  summary: generateSummary(content.body),
-  tags: extractTags(content.body)
-});
+// Example of pure function for content transformation with MCP
+const transformContent = (content: Content): TransformedContent => {
+  const mcpResult = await mcp.executePattern('summarize', content.body, 'mcp://localhost:11434/llama2');
+  return {
+    ...content,
+    title: formatTitle(content.title),
+    summary: mcpResult,
+    tags: extractTags(content.body)
+  };
+};
 
-// Example of function composition
+// Example of function composition with MCP sequencing
 const processArticle = pipe(
   fetchContent,
   parseContent,
-  transformContent,
+  transformContentWithMCP(['extract_wisdom', 'summarize']),
   storeContent
 );
 
-// Example of immutable data handling
-const addArticleToCollection = (collection: Collection, article: Article): Collection => ({
+const addArticleToCollection = (collection, article) => ({
   ...collection,
   articles: [...collection.articles, article.id]
 });
@@ -34,11 +36,11 @@ const addArticleToCollection = (collection: Collection, article: Article): Colle
 
 ### Core Principles
 
-- **Pure Functions**: Functions with no side effects that return the same output for the same input
-- **Immutability**: Data structures are not modified after creation; new copies with changes are created instead
-- **Function Composition**: Building complex operations by combining simpler functions
-- **Higher-Order Functions**: Functions that take functions as arguments or return functions
-- **Declarative Style**: Expressing what should be done rather than how to do it
+- **Pure Functions**: Functions with no side effects, now leveraging MCP for consistent LLM outputs
+- **Immutability**: Data structures remain unchanged, with MCP configurations immutable
+- **Function Composition**: Complex operations built with MCP pipelines
+- **Higher-Order Functions**: Enhanced by MCP for dynamic pattern execution
+- **Declarative Style**: Expressing intent with Fabric patterns via MCP
 
 ## Core Architecture Layers
 
@@ -46,65 +48,73 @@ const addArticleToCollection = (collection: Collection, article: Article): Colle
 
 #### Components Structure
 
-``` text
+```
 src/
 ├── lib/
 │   ├── components/
-│   │   ├── ui/           # shadcn-svelte components
+│   │   ├── ui/              # shadcn-svelte components
 │   │   │   ├── button/
 │   │   │   ├── card/
-│   │   │   ├── dialog/
 │   │   │   └── ...
 │   │   ├── feed/
 │   │   │   ├── FeedList.svelte
-│   │   │   ├── FeedCard.svelte
+│   │   │   ├── FeedItem.svelte
 │   │   │   ├── FeedReader.svelte
-│   │   │   └── FeedManager.svelte
+│   │   │   └── FeedCollection.svelte
 │   │   ├── content/
 │   │   │   ├── ArticleView.svelte
-│   │   │   ├── ContentSummary.svelte
-│   │   │   └── RelatedContent.svelte
+│   │   │   ├── ContentCard.svelte
+│   │   │   ├── TagList.svelte
+│   │   │   └── ContentFilter.svelte
 │   │   └── ai/
 │   │       ├── AIInsights.svelte
 │   │       ├── SummaryView.svelte
-│   │       └── RecommendationList.svelte
+│   │       ├── RecommendationList.svelte
+│   │       └── LLMManager.svelte  # New component for MCP LLM configuration
 │   ├── server/
 │   │   ├── db/
 │   │   │   ├── schema/
-│   │   │   ├── migrations/
-│   │   │   └── queries/
+│   │   │   └── migrations/
 │   │   ├── ai/
 │   │   │   ├── archivist.ts
 │   │   │   ├── scribe.ts
-│   │   │   └── librarian.ts
+│   │   │   ├── librarian.ts
+│   │   │   └── mcp.ts         # MCP integration logic
 │   │   ├── rss/
 │   │   │   ├── parser.ts
 │   │   │   └── fetcher.ts
-│   │   └── scraper/
-│   │       ├── crawler.ts
-│   │       └── extractor.ts
+│   │   ├── scraper/
+│   │   │   ├── crawler.ts
+│   │   │   └── parser.ts
+│   │   ├── api/
+│   │   │   ├── client.ts
+│   │   │   └── sources/
+│   │   └── nitter/
+│   │       ├── service.ts
+│   │       └── instances.ts
 │   ├── stores/
 │   │   ├── feeds.ts
 │   │   ├── articles.ts
 │   │   ├── collections.ts
+│   │   ├── ui.ts
 │   │   └── preferences.ts
-│   └── utils/
-│       ├── ai.ts
-│       ├── date.ts
-│       └── validation.ts
+│   ├── utils/
+│   │   ├── date.ts
+│   │   ├── text.ts
+│   │   ├── url.ts
+│   │   └── functional.ts
+│   └── types/
+│       ├── feed.ts
+│       ├── article.ts
+│       ├── collection.ts
+│       └── api.ts
 ├── routes/
-│   ├── +layout.svelte
 │   ├── +page.svelte
 │   ├── feeds/
-│   │   ├── +page.svelte
-│   │   └── [id]/
+│   ├── articles/
 │   ├── collections/
-│   │   ├── +page.svelte
-│   │   └── [id]/
+│   ├── settings/
 │   └── api/
-│       ├── feeds/
-│       ├── articles/
-│       └── ai/
 └── static/
     ├── icons/
     └── images/
@@ -116,23 +126,23 @@ src/
 - Reactive state management using Svelte stores
 - Functional reactive programming patterns
 - Immutable state transformations
-- WebSocket integration for real-time updates
+- WebSocket integration for real-time updates including MCP status
 - Service Workers for offline functionality
 - Dark mode support via Tailwind CSS
 - Responsive design using shadcn-svelte components
-- Declarative UI components
+- Declarative UI components with MCP LLM management
 
 ### 2. Backend Layer (Bun + SvelteKit)
 
 #### Server Structure
 
-``` text
+```
 src/
 ├── routes/
 │   ├── api/              # API endpoints
-│   │   ├── feeds/        # RSS feed management
+│   │   ├── feeds/        # Feed operations
 │   │   ├── content/      # Content operations
-│   │   └── ai/           # AI agent endpoints
+│   │   └── ai/           # AI agent endpoints with MCP
 │   └── +layout.svelte    # Root layout
 ├── lib/
 │   └── server/           # Server-side logic
@@ -144,24 +154,21 @@ src/
    - RSS feed fetching and parsing
    - Feed validation and sanitization
    - Update scheduling
-   - Error handling and retry logic
+   - Feed categorization
 
-2. **Web Scraping Service (Crawl4AI)**
+2. **Web Scraping Service (Crawl4AI + MCP)**
    - HTML content extraction
-   - Metadata parsing
+   - Metadata parsing with Fabric patterns via MCP
    - Rate limiting and throttling
-   - Local caching mechanism
+   - Local caching mechanism for MCP outputs
    - Robots.txt compliance
    - Configurable scraping rules
    - Ethical scraping practices
-   - Fallback mechanisms
 
    ```typescript
    interface WebScrapingService {
      extractContent(url: string, selectors: SelectorConfig): Promise<ScrapedContent>;
-     parseMetadata(content: string): Promise<Metadata>;
-     checkRobotsTxt(url: string): Promise<ScrapingPermission>;
-     cacheResults(url: string, content: ScrapedContent): Promise<void>;
+     processWithMCP(content: ScrapedContent, pattern: string): Promise<ProcessedContent>;
    }
    ```
 
@@ -169,53 +176,41 @@ src/
    - RSS feed fetching and parsing
    - Nitter instance management for X content
      - Instance cycling and fallback mechanism
-     - Error handling and retries
-     - Support for instance-specific quirks (e.g., lowercase usernames)
+     - Instance health monitoring
    - Local caching of feed content
    - Feed validation and error recovery
 
-   ```typescript
-   interface NitterService {
-     fetchXRssFeed(username: string): Promise<RssFeed>;
-     getAvailableInstances(): Promise<NitterInstance[]>;
-     cycleToNextInstance(): Promise<NitterInstance>;
-     validateFeedContent(feed: RssFeed): Promise<ValidationResult>;
-   }
-   ```
-
-4. **API Client Service**
-   - Configurable API source management
+4. **API Client Service with MCP**
+   - Configurable API source management via MCP
    - Support for various API services (X, GitHub, Reddit, etc.)
    - Secure credential storage
    - Rate limit management
-   - Response parsing and normalization
+   - Response parsing and normalization with MCP patterns
 
    ```typescript
    interface ApiClientService {
-     configureApiSource(config: ApiSourceConfig): Promise<ApiSource>;
+     configureMCPConnection(config: MCPConfig): Promise<MCPConnection>;
      fetchFromEndpoint(source: ApiSource, endpoint: string, params: object): Promise<ApiResponse>;
      handleRateLimits(source: ApiSource): Promise<RateLimitInfo>;
      parseResponse(response: ApiResponse): Promise<ParsedContent>;
    }
-
-   interface ApiSourceConfig {
-     name: string;           // e.g., "X API", "GitHub API"
-     baseUrl: string;        // Base URL for the API
-     authType: AuthType;     // OAuth, API Key, Basic, etc.
-     credentials: Credentials; // Encrypted credentials
-     endpoints: ApiEndpoint[]; // Available endpoints
-     rateLimits: RateLimit[];  // Rate limit configurations
+   
+   interface MCPConfig {
+     vendor: string;       // e.g., ollama, openai
+     model: string;
+     url: string;          // e.g., mcp://localhost:11434/llama2
+     credentials?: Credentials;
    }
    ```
 
 5. **Background Job Service**
    - Feed update scheduling
    - API request scheduling (respecting rate limits)
-   - Content processing queue
-   - AI task management
+   - Content processing queue with MCP pipelines
+   - AI task management via MCP
    - System maintenance tasks
 
-### 3. AI Layer (Fabric AI)
+### 3. AI Layer (Fabric AI + MCP)
 
 #### Agent Architecture
 
@@ -225,10 +220,13 @@ src/
    interface ArchivistAgent {
      collectContent(source: ContentSource): Promise<Content>;
      extractMetadata(content: Content): Promise<Metadata>;
-     organizeContent(content: Content, metadata: Metadata): Promise<void>;
+     organizeContent(content: Content, metadata: Metadata): Promise<OrganizedContent>;
      mapRelationships(content: Content[]): Promise<ContentMap>;
+     processContent(source: ContentSource, patternSequence: string[]): Promise<Content>;
    }
    ```
+
+   - Uses MCP to sequence Fabric patterns (e.g., `extract_metadata` → `organize`)
 
 2. **The Scribe**
 
@@ -241,6 +239,8 @@ src/
    }
    ```
 
+   - Executes Fabric patterns (e.g., `summarize`) via MCP
+
 3. **The Librarian**
 
    ```typescript
@@ -250,6 +250,8 @@ src/
      suggestOrganization(collections: Collection[]): Promise<OrganizationSuggestion>;
    }
    ```
+
+   - Leverages MCP pipelines for recommendation workflows
 
 ### 4. Data Layer
 
@@ -261,11 +263,12 @@ interface Feed {
   id: string;
   url: string;
   title: string;
+  description: string;
   lastUpdated: Date;
   updateFrequency: number;
   status: FeedStatus;
-  type: FeedType;         // RSS, Nitter, API, etc.
-  sourceConfig: SourceConfig; // Configuration specific to the feed type
+  type: FeedType;
+  sourceConfig: SourceConfig;
 }
 
 // Article Table
@@ -277,7 +280,7 @@ interface Article {
   publishDate: Date;
   metadata: ArticleMetadata;
   aiAnalysis: AIAnalysis;
-  originalSource: string;  // Original source URL
+  originalSource: string;
 }
 
 // Collection Table
@@ -287,48 +290,63 @@ interface Collection {
   description: string;
   articles: string[];
   tags: string[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-// UserPreferences Table
+// User Preferences Table
 interface UserPreferences {
   id: string;
-  readingPreferences: ReadingPrefs;
+  theme: Theme;
+  readingSettings: ReadingSettings;
+  feedSettings: FeedSettings;
   aiSettings: AISettings;
   uiSettings: UISettings;
   scrapingSettings: ScrapingSettings;
+  mcpSettings: MCPSettings;  // Added for LLM configuration
 }
 
 // API Source Table
 interface ApiSource {
   id: string;
-  name: string;           // e.g., "X API", "GitHub API"
-  baseUrl: string;        // Base URL for the API
-  authType: AuthType;     // OAuth, API Key, Basic, etc.
-  encryptedCredentials: string; // Securely stored credentials
-  endpoints: ApiEndpoint[]; // Available endpoints
-  rateLimits: RateLimit[];  // Rate limit configurations
-  lastUsed: Date;         // Last time this API source was used
+  name: string;
+  baseUrl: string;
+  authType: AuthType;
+  encryptedCredentials: string;
+  endpoints: ApiEndpoint[];
+  rateLimits: RateLimit[];
+  lastUsed: Date;
 }
 
 // Nitter Instance Table
 interface NitterInstance {
   id: string;
-  url: string;            // Base URL of the Nitter instance
-  status: InstanceStatus; // Active, Down, Throttled, etc.
-  lastChecked: Date;      // Last time this instance was checked
-  successRate: number;    // Success rate percentage
-  quirks: InstanceQuirk[]; // Special handling requirements
+  url: string;
+  status: InstanceStatus;
+  lastChecked: Date;
+  successRate: number;
+  quirks: InstanceQuirk[];
+}
+
+// MCP Connection Table
+interface MCPConnection {
+  id: string;
+  url: string;          // e.g., mcp://localhost:11434/llama2
+  vendor: string;       // e.g., ollama, openai
+  model: string;
+  status: ConnectionStatus;
 }
 ```
 
 #### Storage Strategy
 
-- SQLite for structured data
+- SQLite for structured data including MCP connections
 - File system for content cache
 - In-memory cache for frequent access
 - Automatic backups
-- Encrypted storage for API credentials
-- Local caching of API responses and scraped content
+- Data migrations
+- Query optimization
+- Local caching of API responses and MCP outputs
 
 ### 5. Integration Layer
 
@@ -338,7 +356,9 @@ interface NitterInstance {
 interface WebSocketEvents {
   'feed:update': (feedId: string) => void;
   'content:new': (articleId: string) => void;
-  'ai:analysis-complete': (analysisId: string) => void;
+  'collection:update': (collectionId: string) => void;
+  'ai:insight': (insightId: string) => void;
+  'mcp:update': (connectionId: string) => void;
 }
 ```
 
@@ -348,8 +368,9 @@ interface WebSocketEvents {
 interface JobScheduler {
   scheduleFeedUpdates(): void;
   scheduleContentProcessing(): void;
-  scheduleAITasks(): void;
+  scheduleApiRequests(): void;
   scheduleMaintenanceTasks(): void;
+  scheduleMCPTasks(): void;  // Added for MCP server management
 }
 ```
 
@@ -357,73 +378,73 @@ interface JobScheduler {
 
 ### Data Protection
 
-1. Local Storage Security
-   - Encrypted sensitive data
+1. **Local Storage Security**
+   - Encrypted sensitive data including MCP credentials
    - Secure configuration storage
-   - Access control mechanisms
+   - Access control mechanisms for MCP servers
 
-2. Privacy Measures
-   - No external data sharing
-   - Local-only processing
-   - User data control
+2. **Privacy Measures**
+   - No external data sharing by default
+   - Local-only processing with MCP
+   - User data control over MCP configurations
 
 ## Performance Optimization
 
 ### Functional Approach to Performance
 
-1. Memoization for Expensive Operations
+1. **Memoization for Expensive Operations**
 
    ```typescript
-   // Memoized function example
+   // Memoized function example with MCP
    const memoizedAnalyze = memoize(
-     (content: Content): Analysis => analyzeContent(content),
+     (content: Content): Analysis => mcp.executePattern('analyze', content, 'mcp://localhost:11434/llama2'),
      (content) => content.id
    );
    ```
 
-2. Lazy Evaluation
+2. **Lazy Evaluation**
 
    ```typescript
-   // Lazy sequence processing
+   // Lazy sequence processing with MCP
    const processArticles = pipe(
      lazyMap(fetchMetadata),
      lazyFilter(isRelevant),
-     lazyMap(transformContent),
+     lazyMap(transformContentWithMCP(['extract_wisdom', 'summarize'])),
      take(10)
    );
    ```
 
 ### Caching Strategy
 
-1. Multi-level Cache with Immutable Data
+1. **Multi-level Cache with Immutable Data**
 
    ```typescript
    interface CacheManager {
      memory: MemoryCache;
      disk: DiskCache;
-     database: DatabaseCache;
+     feed: FeedCache;
      apiResponse: ApiResponseCache;
      scrapedContent: ScrapedContentCache;
-     // Returns new cache instance rather than modifying existing one
+     mcpCache: MCPCache;  // Added for MCP LLM outputs
      set: <T>(key: string, value: T) => CacheManager;
      get: <T>(key: string) => Option<T>;
    }
    ```
 
-2. Resource Management
+2. **Resource Management**
    - Memory usage monitoring
    - Disk space management
-   - Background task scheduling
-   - Adjustable AI processing depth
+   - Background task scheduling with MCP
+   - Adjustable AI processing depth via MCP UI
    - Resource-aware operation modes
    - Performance profiles for different hardware capabilities
    - Efficient immutable data structures
 
 ### Query Optimization
 
-- Indexed database fields
+- Indexed database fields including MCP connections
 - Query result caching
-- Batch processing
+- Batch processing with MCP pipelines
 
 ## Error Handling
 
@@ -434,6 +455,7 @@ interface ErrorHandler {
   handleNetworkError(error: NetworkError): Promise<void>;
   handleDatabaseError(error: DatabaseError): Promise<void>;
   handleAIError(error: AIError): Promise<void>;
+  handleMCPError(error: MCPError): Promise<void>;  // Added for MCP-specific errors
 }
 ```
 
@@ -443,6 +465,7 @@ interface ErrorHandler {
 interface Logger {
   info(message: string, context?: object): void;
   error(error: Error, context?: object): void;
+  warn(message: string, context?: object): void;
   debug(message: string, context?: object): void;
 }
 ```
@@ -453,11 +476,11 @@ interface Logger {
 
 - Prefer pure functions over methods with side effects
 - Use immutable data structures (arrays, objects) with spread operators
-- Leverage function composition for complex operations
+- Leverage function composition for complex operations with MCP
 - Utilize higher-order functions (map, filter, reduce) over imperative loops
 - Separate data from behavior
 - Handle side effects explicitly and at the edges of the system
-- Use option/maybe types for nullable values
+- Implement error handling with functional patterns (Option, Either, etc.)
 
 ### Project Setup
 
@@ -477,18 +500,19 @@ bun run test
 
 ### Testing Strategy
 
-1. Unit Tests
-   - Component testing
-   - Service testing
-   - AI agent testing
+1. **Unit Tests**
+   - Component testing including MCP UI
+   - Service testing with MCP integration
+   - AI agent testing with Fabric patterns
+   - MCP connection testing
 
-2. Integration Tests
-   - API endpoint testing
-   - Data flow testing
-   - UI interaction testing
+2. **Integration Tests**
+   - API endpoint testing with MCP
+   - Data flow testing through MCP pipelines
+   - UI interaction testing with MCP configuration
 
-3. E2E Tests
-   - User workflow testing
+3. **E2E Tests**
+   - User workflow testing with MCP-enabled features
    - Performance testing
    - Offline functionality testing
 
@@ -496,14 +520,14 @@ bun run test
 
 ### Local Deployment
 
-1. Installation Process
+1. **Installation Process**
    - Dependencies check
-   - Database initialization
-   - Configuration setup
+   - Database initialization with MCP schema
+   - Configuration setup including MCP servers
 
-2. Update Mechanism
+2. **Update Mechanism**
    - Version checking
-   - Automatic updates
+   - Incremental updates
    - Rollback capability
 
 ## Monitoring and Maintenance
@@ -514,7 +538,9 @@ bun run test
 interface HealthCheck {
   checkDatabase(): Promise<HealthStatus>;
   checkAIServices(): Promise<HealthStatus>;
-  checkBackgroundJobs(): Promise<HealthStatus>;
+  checkNetworkServices(): Promise<HealthStatus>;
+  checkFileSystem(): Promise<HealthStatus>;
+  checkMCPServers(): Promise<HealthStatus>;  // Added for MCP monitoring
 }
 ```
 
@@ -524,7 +550,9 @@ interface HealthCheck {
 interface Metrics {
   collectPerformanceMetrics(): Promise<PerformanceData>;
   monitorResourceUsage(): Promise<ResourceUsage>;
-  trackAIOperations(): Promise<AIMetrics>;
+  trackUserInteractions(): Promise<UserMetrics>;
+  measureResponseTimes(): Promise<ResponseTimeMetrics>;
+  trackMCPPerformance(): Promise<MCPMetrics>;  // Added for MCP-specific metrics
 }
 ```
 
@@ -532,19 +560,18 @@ interface Metrics {
 
 ### Scalability
 
-- Modular AI agent system
+- Modular AI agent system with MCP
 - Pluggable service architecture
-- Extensible data models
+- Extensible data models with MCP support
 
 ### Planned Features
 
 - Enhanced offline support
-- Advanced API integration capabilities
+- Advanced API integration capabilities with MCP
 - Configurable scraping rules UI
-- Performance optimization for low-end hardware
-- Adjustable AI processing depth
+- Performance optimization for low-end hardware with MCP adjustments
+- Adjustable AI processing depth via MCP UI
 - Multi-service API integration framework
-- Advanced AI capabilities
+- Advanced AI capabilities with Fabric pattern updates
 - Improved content discovery
-- Extended customization options
-**
+- Extended customization options with MCP

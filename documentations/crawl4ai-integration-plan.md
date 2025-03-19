@@ -2,443 +2,281 @@
 
 ## 1. Overview
 
-Crawl4AI is an open-source LLM-friendly web crawler and scraper that provides optimized content extraction for AI applications. Key advantages include:
+Crawl4AI is an open-source LLM-friendly web crawler and scraper that provides optimized content extraction for AI applications. This integration enhances our Web Scraping Service within the Smart RSS Aggregator App, now leveraging the Model Context Protocol (MCP) to interface with Fabric AI's pattern library and LLM capabilities.
 
-1. **LLM-Optimized Output**
-   - Clean, structured Markdown generation
-   - Heuristic-based content filtering
-   - BM25-based relevance filtering
-   - Automatic citations and references
+### Key Advantages with MCP
 
-1. **Performance Features**
-   - 6x faster than traditional crawlers
-   - Efficient caching mechanisms
-   - Resource-optimized processing
-   - Local-first operation aligning with our architecture
-
-1. **Advanced Capabilities**
-   - Dynamic content handling
-   - Multi-browser support (Chromium, Firefox, WebKit)
-   - Session management and authentication
-   - Proxy support and stealth mode
-
-This integration will enhance our Web Scraping Service while maintaining our functional programming paradigm and local-first approach.
+1. **LLM-Optimized Output**: Enhanced by Fabric's pattern library (e.g., `summarize`, `extract_wisdom`) via MCP.
+2. **Performance Features**: MCP servers streamline data access, supporting local-first operation.
+3. **Advanced Capabilities**: Dynamic pattern sequencing (e.g., extract then summarize) via MCP pipelines.
 
 ## 2. Architecture Integration
 
 ### 2.1 Core Components
 
-1. **WebScrapingService with Crawl4AI**
-   - Implemented pure functional wrappers for web scraping
-   - Key improvements:
-     1. Robust error handling using `Either` type from `fp-ts`
-     2. Immutable configuration management
-     3. Comprehensive type safety with Zod schemas
-     4. Intelligent default value handling
-     5. Consistent error and success path management
+1. **WebScrapingService with Crawl4AI and MCP**
+   - Pure functional wrappers now integrate MCP clients for LLM interactions.
+   - Key Improvements:
+     - MCP endpoints for pattern execution (e.g., `mcp://patterns/summarize`).
+     - Type-safe configuration with Zod schemas extended for MCP settings.
 
-2. **Functional Error Handling**
-
-    ```typescript
-    // Example of functional error handling pattern
-    static async scrape(
-    config: z.infer<typeof ScraperConfigSchema>
-    ): Promise<Either<ScrapingError, z.infer<typeof ScraperResultSchema>>> {
-    try {
-        const validatedConfig = ScraperConfigSchema.parse(config);
-        
-        // Functional composition of scraping methods
-        return validatedConfig.useCrawl4AI
-        ? this.scrapWithCrawl4AI(validatedConfig)
-        : this.scrapeWithDefault(validatedConfig);
-    } catch (error) {
-        // Consistent error transformation
-        return left(this.transformError(error));
-    }
-    }
-    ```
-
-3. **Crawl4AI Client Improvements**
-   - Enhanced type safety for extraction options
-   - Simplified error handling
-   - Consistent configuration management
+2. **Functional Error Handling with MCP**
 
 ```typescript
-static async extractContent(
-  options: z.infer<typeof ExtractionOptionsSchema>
-): Promise<Either<Crawl4AIError, ExtractionResponse>> {
+static async scrape(
+  config: z.infer<typeof ScraperConfigSchema>
+): Promise<Either<ScrapingError, z.infer<typeof ScraperResultSchema>>> {
   try {
-    const validatedOptions = ExtractionOptionsSchema.parse(options);
-    
-    // Functional approach to API interaction
-    const response = await this.performExtraction(validatedOptions);
-    
-    return response.ok 
-      ? right(await response.json())
-      : left(this.createErrorFromResponse(response));
+    const validatedConfig = ScraperConfigSchema.parse(config);
+    const result = validatedConfig.useCrawl4AI
+      ? await this.scrapWithCrawl4AI(validatedConfig)
+      : await this.scrapeWithDefault(validatedConfig);
+
+    // Pipe through MCP for Fabric pattern processing
+    const mcpResult = await mcp.executePattern('summarize', result.content, validatedConfig.llmUrl);
+    return right({ ...result, processedContent: mcpResult });
   } catch (error) {
     return left(this.transformError(error));
   }
 }
 ```
 
+3. **Crawl4AI Client with MCP**
+   - MCP clients connect to local or external LLMs for content extraction.
+
 ### 2.2 Key Functional Programming Principles Applied
 
-1. **Immutability**
-   - All configuration objects are immutable
-   - Use of `z.infer` for strict type inference
-   - Avoid direct mutations of state
-
-2. **Pure Functions**
-   - Methods like `extractContent` and `scrape` are pure functions
-   - No side effects in core logic
-   - Predictable input-output relationships
-
-3. **Error Handling**
-   - Comprehensive use of `Either` type
-   - Explicit error paths
-   - No silent failures
-   - Consistent error transformation
-
-4. **Composition**
-   - Methods composed using functional patterns
-   - Easy to combine and extend scraping strategies
-   - Flexible configuration management
+- **Immutability**: Extended to MCP configuration objects.
+- **Composition**: MCP pipelines compose scraping and pattern execution.
 
 ### 2.3 Performance and Reliability Enhancements
 
-1. **Robust Configuration**
-   - Default values for all critical options
-   - Nullish coalescing for flexible configuration
-   - Comprehensive schema validation
-
-2. **Intelligent Fallback Mechanisms**
-   - Automatic fallback to basic scraping methods
-   - Respect for robots.txt
-   - Multiple extraction strategy support
+- **MCP Integration**: Local MCP servers cache LLM outputs, enhancing efficiency.
 
 ## 3. Implementation Steps
 
 ### Phase 1: Core Integration (2 weeks)
 
 1. **Setup and Configuration**
-   - Install Crawl4AI via pip: `pip install -U crawl4ai`
-   - Run post-installation setup: `crawl4ai-setup`
-   - Create Python microservice structure:
-     1. FastAPI endpoints for AsyncWebCrawler
-     2. Configuration models for browser and crawler settings
-     3. Serialization/deserialization utilities
+   - Install Crawl4AI and Fabric CLI: `pip install -U crawl4ai` and `go install github.com/danielmiessler/fabric@latest`.
+   - Configure MCP servers for Fabric patterns and LLMs.
 
-2. **Basic Extraction Implementation**
-   - Implement Python-based extraction service with:
-     1. PruningContentFilter for noise reduction
-     2. BM25ContentFilter for relevance-based filtering
-     3. Automatic citation handling
-   - Create TypeScript client for the Python service
-   - Develop data transformation utilities
-
-3. **Caching and Performance**
-   - Implement filesystem-based caching in Python service
-   - Create resource monitoring utilities
-   - Develop browser session management
-   - Configure proxy support and authentication
-
-4. **Testing and Validation**
-   - Create unit tests for Python functions
-   - Test browser profile management
-   - Validate dynamic content extraction
-   - Verify TypeScript-Python integration
+2. **Basic Extraction with MCP**
+   - Use MCP to pipe Crawl4AI output through Fabric patterns (e.g., `extract_wisdom`).
 
 ## 4. Technical Implementation Details
 
 ### 4.1 Extraction Strategies
 
-1. **Content Filtering and Markdown Generation**
+1. **Content Filtering and Markdown Generation with MCP**
 
 ```python
-# Pure function to create content filter configuration
 def create_content_filter(options):
-    """Create appropriate content filter based on options"""
-    if options.get('type') == 'pruning':
-        return PruningContentFilter(
-            threshold=options.get('threshold', 0.48),
-            threshold_type='fixed',
-            min_word_threshold=0
-        )
-    
-    return BM25ContentFilter(
-        user_query=options.get('query', ''),
-        bm25_threshold=options.get('threshold', 1.0)
-    )
-
-# Function to create markdown generator
-def create_markdown_generator(content_filter):
-    """Create markdown generator with specified filter"""
-    return DefaultMarkdownGenerator(content_filter=content_filter)
+  filter = BM25ContentFilter(user_query=options.get('query', ''))
+  return mcp.registerPattern('filter_content', filter)  # Expose via MCP
 ```
 
-1. **CSS-based Extraction**
+2. **LLM-based Extraction with Fabric**
 
 ```python
-# Function to create a CSS extraction strategy
-from crawl4ai.extraction_strategy import JsonCssExtractionStrategy
-
-def create_css_extraction_strategy(schema):
-    """Create CSS-based extraction strategy"""
-    return JsonCssExtractionStrategy(schema, verbose=True)
-
-# Example schema definition
-schema = {
-    "name": "Article Content",
-    "baseSelector": "article.content",
-    "fields": [
-        {
-            "name": "title",
-            "selector": "h1.title",
-            "type": "text",
-        },
-        {
-            "name": "content",
-            "selector": ".article-body",
-            "type": "text",
-        },
-        {
-            "name": "author",
-            "selector": ".author-name",
-            "type": "text",
-        },
-        {
-            "name": "published_date",
-            "selector": "time.published",
-            "type": "attribute",
-            "attribute": "datetime"
-        }
-    ]
-}
-```
-
-1. **LLM-based Extraction (for complex pages)**
-
-```python
-# This would require integration with an LLM service
-# Crawl4AI supports this but would need additional configuration
-
 from crawl4ai.extraction_strategy import LlmExtractionStrategy
 
 def create_llm_extraction_strategy(prompt, options=None):
-    """Create LLM-based extraction strategy"""
-    options = options or {}
-    # Configure LLM options based on our project's AI layer
-    return LlmExtractionStrategy(
-        prompt=prompt,
-        model=options.get('model', 'default'),
-        temperature=options.get('temperature', 0.7)
-    )
-```
-
-### 4.2 Robots.txt and Rate Limiting
-
-```python
-import urllib.robotparser
-from urllib.parse import urlparse
-import time
-
-# Function to check robots.txt compliance
-async def check_robots_txt(url, user_agent="Flux-RSS-Fabric-AI"):
-    """Check if scraping is allowed by robots.txt"""
-    parsed_url = urlparse(url)
-    robots_url = f"{parsed_url.scheme}://{parsed_url.netloc}/robots.txt"
-    
-    rp = urllib.robotparser.RobotFileParser()
-    rp.set_url(robots_url)
-    
-    try:
-        rp.read()
-        can_fetch = rp.can_fetch(user_agent, url)
-        
-        return {
-            "allowed": can_fetch,
-            "url": url,
-            "robots_url": robots_url,
-            "user_agent": user_agent
-        }
-    except Exception as e:
-        # If robots.txt doesn't exist or can't be parsed, default to allowing
-        return {
-            "allowed": True,
-            "url": url,
-            "robots_url": robots_url,
-            "user_agent": user_agent,
-            "error": str(e)
-        }
-
-# Class for rate limiting with functional approach
-class RateLimiter:
-    def __init__(self, domain, requests_per_minute=10):
-        self.domain = domain
-        self.interval = 60.0 / requests_per_minute
-        self.last_access_time = 0
-    
-    def can_proceed(self):
-        """Check if domain can be accessed based on rate limit"""
-        current_time = time.time()
-        time_since_last = current_time - self.last_access_time
-        return time_since_last >= self.interval
-    
-    def record_access(self):
-        """Return new rate limiter with updated access time"""
-        new_limiter = RateLimiter(self.domain, 60.0 / self.interval)
-        new_limiter.last_access_time = time.time()
-        return new_limiter
-```
-
-### 4.3 Error Handling with Functional Patterns
-
-```python
-from typing import Dict, Any, Union, TypeVar, Generic, Callable
-from dataclasses import dataclass
-
-T = TypeVar('T')
-E = TypeVar('E')
-
-@dataclass
-class Either(Generic[E, T]):
-    """Functional error handling type"""
-    value: Union[E, T]
-    is_right: bool
-    
-    @classmethod
-    def right(cls, value: T) -> 'Either[E, T]':
-        return cls(value, True)
-    
-    @classmethod
-    def left(cls, error: E) -> 'Either[E, T]':
-        return cls(error, False)
-    
-    def map(self, f: Callable[[T], Any]) -> 'Either[E, Any]':
-        if self.is_right:
-            return Either.right(f(self.value))
-        return self
-
-# Safe extraction with error handling
-async def safe_extract(url, options):
-    """Extract content with functional error handling"""
-    try:
-        content = await extract_content(url, options.get('selectors', {}), options)
-        return Either.right(content)
-    except Exception as error:
-        return Either.left({
-            'message': str(error),
-            'url': url,
-            'timestamp': time.time()
-        })
-```
-
-## 5. Functional Programming Patterns
-
-### 5.1 Configuration Management
-
-```typescript
-// Functional configuration creation
-const createScraperConfig = (
-  baseConfig: Partial<ScraperConfig> = {}
-): ScraperConfig => ({
-  // Default values with functional composition
-  url: baseConfig.url ?? '',
-  contentType: baseConfig.contentType ?? 'html',
-  timeout: baseConfig.timeout ?? 10000,
-  useCrawl4AI: baseConfig.useCrawl4AI ?? false,
-  crawl4AIOptions: {
-    ...defaultCrawl4AIOptions,
-    ...baseConfig.crawl4AIOptions
-  }
-});
-```
-
-### 5.2 Error Transformation Utility
-
-```typescript
-// Pure function for error transformation
-const transformScrapingError = (
-  error: unknown
-): ScrapingError => {
-  if (error instanceof z.ZodError) {
-    return {
-      code: 'VALIDATION_ERROR',
-      message: 'Invalid configuration',
-      details: error.format()
-    };
-  }
-  
-  if (error instanceof Error) {
-    return {
-      code: 'SCRAPING_ERROR',
-      message: error.message,
-      details: error
-    };
-  }
-  
-  return {
-    code: 'UNKNOWN_ERROR',
-    message: 'An unexpected error occurred',
-    details: error
-  };
-};
+  return LlmExtractionStrategy(
+    prompt=prompt,
+    mcp_url=f"mcp://localhost:11434/{options.get('model', 'default')}"  # MCP endpoint
+  )
 ```
 
 ## 6. Integration with AI Agents
 
-1. **The Archivist Agent**
-   - Use Crawl4AI to extract metadata from content
-   - Transform extracted content into structured data for organization
-
-2. **The Scribe Agent**
-   - Process Crawl4AI's Markdown output for summarization
-   - Extract key points from structured data
-
-3. **The Librarian Agent**
-   - Use extracted metadata for content recommendations
-   - Create cross-references based on content relationships
+- **The Scribe Agent**: Uses MCP to sequence patterns (e.g., `extract_wisdom` → `summarize`).
+- **UI**: Configures MCP connections for LLMs via SvelteKit interface.
 
 ## 7. User Configuration Interface
 
-1. **Content Extraction Settings**
-   - Python microservice configuration:
-     1. Pruning threshold adjustment
-     2. BM25 relevance filtering
-     3. Citation style preferences
-   - TypeScript UI for defining extraction schemas
-   - Browser profile management interface
+- **MCP Settings**: UI to install LLMs (e.g., Ollama) and configure pattern sequences.
 
-2. **Performance Settings**
-   - Configure Python service caching behavior
-   - Adjust viewport settings
-   - Control media loading
-   - Manage browser resources
-   - Set proxy configurations
+---
 
-3. **Browser Management**
-   - Select browser type (Chromium, Firefox, WebKit)
-   - Configure stealth mode settings
-   - Manage authentication profiles
-   - Set custom headers and user agents
+# Smart RSS Aggregator App - Detailed Architecture
 
-4. **Monitoring and Debug Tools**
-   - View extraction logs from Python service
-   - Access debug screenshots
-   - Monitor resource usage
-   - Track extraction success rates
+## Overview
 
-## 8. Monitoring and Maintenance
+The Smart RSS Aggregator App leverages Fabric AI with the Model Context Protocol (MCP) for intelligent content processing, integrating Fabric's pattern library and LLM sequencing.
 
-1. **Logging and Telemetry**
-   - Implement functional logging patterns
-   - Create performance monitoring utilities
+## Core Architecture Layers
 
-2. **Update Strategy**
-   - Plan for Crawl4AI version updates
-   - Design backward compatibility handling
+### 2. Backend Layer (Bun + SvelteKit)
 
-## 9. Conclusion
+#### Core Services
 
-This integration plan leverages Crawl4AI's Python-based capabilities while adhering to the functional programming paradigm of the Flux RSS Fabric AI project. By creating a well-designed Python microservice with clear interfaces to our TypeScript codebase, we can create a robust and maintainable web scraping service that respects ethical guidelines and provides powerful content extraction capabilities.
+2. **Web Scraping Service (Crawl4AI + MCP)**
+
+- Extracts content and pipes it through MCP for Fabric pattern processing.
+
+```typescript
+interface WebScrapingService {
+  extractContent(url: string, selectors: SelectorConfig): Promise<ScrapedContent>;
+  processWithMCP(content: ScrapedContent, pattern: string): Promise<ProcessedContent>;
+}
+```
+
+4. **API Client Service with MCP**
+   - Configures MCP connections to external LLMs.
+
+```typescript
+interface ApiClientService {
+  configureMCPConnection(config: MCPConfig): Promise<MCPConnection>;
+}
+```
+
+### 3. AI Layer (Fabric AI + MCP)
+
+#### Agent Architecture
+
+1. **The Archivist**
+
+```typescript
+interface ArchivistAgent {
+  processContent(source: ContentSource, patternSequence: string[]): Promise<Content>;
+}
+```
+
+- Uses MCP to sequence patterns (e.g., `extract_metadata` → `organize`).
+
+2. **The Scribe**
+   - Executes Fabric patterns via MCP for summarization and analysis.
+
+3. **The Librarian**
+   - Leverages MCP pipelines for recommendation generation.
+
+### 4. Data Layer
+
+#### Database Schema (SQLite + Drizzle ORM)
+
+```typescript
+interface MCPConnection {
+  id: string;
+  url: string;          // e.g., mcp://localhost:11434/llama2
+  vendor: string;       // e.g., ollama, openai
+  model: string;
+  status: ConnectionStatus;
+}
+```
+
+### 5. Integration Layer
+
+#### WebSocket Communication
+
+```typescript
+interface WebSocketEvents {
+  'mcp:update': (connectionId: string) => void;
+}
+```
+
+#### Performance Optimization
+
+##### Caching Strategy
+
+1. **Multi-level Cache with MCP**
+
+```typescript
+interface CacheManager {
+  mcpCache: MCPCache;  // Cache for MCP LLM outputs
+}
+```
+
+---
+
+# Smart RSS Aggregator App Specification
+
+## Overview
+
+The Smart RSS Aggregator App integrates Fabric AI with MCP to enhance content processing using Fabric's pattern library, dynamic LLM sequencing, and a UI for LLM management.
+
+## Features
+
+### 1. Content Collection and Processing
+
+#### Web Scraping (Powered by Crawl4AI + MCP)
+
+- Processes scraped content with Fabric patterns via MCP (e.g., `summarize`).
+- Configurable LLM connections through MCP UI.
+
+### 2. AI-Powered Analysis
+
+#### The Archivist Agent
+
+- Uses MCP to pipe content through pattern sequences (e.g., `extract_wisdom` → `organize`).
+
+#### The Scribe Agent
+
+- Executes Fabric patterns via MCP for summarization and key point extraction.
+
+#### The Librarian Agent
+
+- Leverages MCP for dynamic recommendation workflows.
+
+### 3. User Interface and Experience
+
+- **MCP UI**: SvelteKit component to install and configure LLMs (local like Ollama, external like OpenAI).
+  - Example: Select "Ollama/llama2," configure temperature, assign to Scribe.
+
+## Technical Architecture
+
+### Unified Local Server
+
+- **AI Integration**: Fabric AI with MCP for pattern execution and LLM management.
+- **UI Stack**: Extended with `LLMManager.svelte` for MCP configuration.
+
+## System Architecture Diagrams
+
+### High-Level System Architecture
+
+```mermaid
+graph TB
+    subgraph Server["Local Server"]
+        subgraph Core["Core Services"]
+            WS[Web Scraper]
+            MCP[MCP Servers]
+        end
+        subgraph AI["AI Layer"]
+            FA[Fabric AI]
+            MCP_C[MCP Clients]
+        end
+    end
+    WS --> MCP
+    MCP --> FA
+    FA --> MCP_C
+```
+
+### AI Agents Interaction
+
+```mermaid
+sequenceDiagram
+    participant C as Content Source
+    participant MCP as MCP Server
+    participant A as Archivist
+    participant S as Scribe
+    C->>A: New content
+    A->>MCP: extract_wisdom
+    MCP-->>A: Wisdom extracted
+    A->>S: Processed content
+    S->>MCP: summarize
+    MCP-->>S: Summary
+```
+
+## Project Roadmap
+
+### Phase 2: Feed Management & Web Scraping (In Progress)
+
+- [ ] Implement Crawl4AI with MCP
+  - [ ] MCP pattern integration
+  - [ ] LLM sequencing support
+
+### Phase 3: AI Agents Implementation (Next)
+
+- [ ] Integrate MCP with Fabric AI
+  - [ ] Pattern library access
+  - [ ] UI for LLM configuration

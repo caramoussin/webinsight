@@ -2,7 +2,7 @@
 
 ## Overview
 
-The **Smart RSS Aggregator App** is a local-first application designed to enhance content consumption through intelligent RSS feed aggregation and AI-powered analysis. Built with **Bun** and **SvelteKit**, it operates via a unified local server, ensuring user privacy, data ownership, and full offline functionality. The app extends beyond traditional RSS aggregation by incorporating **web scraping and HTML/JSON parsing**, leveraging **Crawl4AI** for robust content extraction. Powered by **Fabric AI**, it features three specialized AI agents—**the Archivist**, **the Scribe**, and **the Librarian**—to collect, summarize, and organize content into a personalized knowledge hub.
+The **Smart RSS Aggregator App** is a local-first application designed to enhance content consumption through intelligent RSS feed aggregation and AI-powered analysis. Built with **Bun** and **SvelteKit**, it operates via a unified local server, ensuring user privacy, data ownership, and full offline functionality. The app extends beyond traditional RSS aggregation by incorporating **web scraping and HTML/JSON parsing**, leveraging **Crawl4AI** for robust content extraction. Powered by **Fabric AI** with **Model Context Protocol (MCP)**, it features three specialized AI agents—**the Archivist**, **the Scribe**, and **the Librarian**—to collect, summarize, and organize content into a personalized knowledge hub.
 
 ## Current Implementation Highlights
 
@@ -16,6 +16,14 @@ The **Smart RSS Aggregator App** is a local-first application designed to enhanc
   - Configurable selectors
   - Robots.txt compliance
   - Server-side and client-side rendering
+  - LLM-optimized output via Fabric patterns and MCP
+
+### AI Integration with MCP
+
+- 🧠 Fabric AI pattern library integration
+  - Dynamic pattern execution via MCP
+  - Configurable LLM connections (local and external)
+  - Pattern sequencing for complex content processing
 
 ### Frontend Architecture
 
@@ -23,6 +31,7 @@ The **Smart RSS Aggregator App** is a local-first application designed to enhanc
 - Svelte 5 compatibility
 - shadcn-svelte UI components
 - Interactive web scraping demo
+- MCP UI for LLM management
 
 ## Key Features
 
@@ -31,13 +40,17 @@ The **Smart RSS Aggregator App** is a local-first application designed to enhanc
   - Web Scraping for Non-RSS Sources
   - HTML and JSON Content Parsing
   - Configurable Scraping Rules
+  - Crawl4AI integration with MCP
 - 🧠 AI-Powered Content Analysis
-  - Automatic Summarization
+  - Automatic Summarization via Fabric patterns
   - Sentiment Analysis
   - Content Categorization
   - Personalized recommendations by AI agents
+  - Dynamic LLM sequencing through MCP
 - 📁 Feed Collection Management
 - 🔒 Local-First Architecture
+  - Privacy-preserving MCP servers
+  - Local data storage and processing
 - 🚀 High Performance with SvelteKit
 
 ## Technology Stack
@@ -46,8 +59,10 @@ The **Smart RSS Aggregator App** is a local-first application designed to enhanc
 - **Styling**: TailwindCSS
 - **Database**: SQLite with Drizzle ORM
 - **Type Safety**: TypeScript, Zod
-- **Scraping**: Cheerio
+- **Scraping**: Crawl4AI, Cheerio
 - **Background Jobs**: Custom Scheduler
+- **AI Framework**: Fabric AI with MCP
+- **LLM Support**: Local (Ollama) and external (OpenAI, Anthropic) via MCP
 
 ## Prerequisites
 
@@ -92,6 +107,7 @@ Navigate to `/rss-demo` to explore the web scraping functionality:
 - Enter a website URL
 - Specify a CSS selector
 - View scraped content in a card layout
+- Process content with Fabric patterns via MCP
 
 ## Available Scripts
 
@@ -108,6 +124,38 @@ Navigate to `/rss-demo` to explore the web scraping functionality:
 
 - `DATABASE_URL`: Path to SQLite database
 - `AI_API_KEY`: API key for AI services (optional)
+- `MCP_SERVER_URL`: URL for MCP server (default: localhost)
+
+## Architecture
+
+The Smart RSS Aggregator App follows a layered architecture with a strong emphasis on functional programming:
+
+1. **Frontend Layer** (SvelteKit):
+   - Components structure with UI (shadcn-svelte), feed, content, and AI components
+   - Server-side rendering with SvelteKit
+   - Reactive state management using Svelte stores
+   - Functional reactive programming patterns
+   - MCP UI for LLM management
+
+2. **Backend Layer** (Bun + SvelteKit):
+   - API endpoints in routes/api/
+   - Core services including Feed Service, Web Scraping Service with Crawl4AI, and API Client Service
+   - Pure functions with minimal side effects
+   - Function composition for complex operations
+   - MCP integration for AI pattern execution
+
+3. **AI Layer** (Fabric AI with MCP):
+   - Three specialized agents:
+     - **The Archivist**: Collects content, extracts metadata using MCP pattern sequences
+     - **The Scribe**: Summarizes content, extracts key points via Fabric patterns
+     - **The Librarian**: Generates recommendations using MCP pipelines
+
+4. **Data Layer**:
+   - SQLite database with Drizzle ORM
+   - MCP connection management
+   - Immutable data structures
+   - Pure data transformations
+   - Encrypted storage for API credentials
 
 ## Roadmap
 
@@ -117,6 +165,7 @@ Navigate to `/rss-demo` to explore the web scraping functionality:
 - [x] SQLite Database Integration
 - [x] Background Periodic Feed Updates
 - [x] Web Scraping Service
+- [x] Initial MCP Integration
 - [ ] Comprehensive Feed Management
   - Add new RSS feeds manually
   - Validate and verify feed URLs
@@ -162,12 +211,13 @@ Navigate to `/rss-demo` to explore the web scraping functionality:
 
 ### Phase 4: Initial AI Integration
 
+- [x] MCP Integration for Fabric AI
 - [ ] Basic Content Analysis
   - Extract basic metadata from feed items
   - Simple content length and type detection
   - Preliminary categorization
 - [ ] Lightweight Summarization
-  - Generate short summaries
+  - Generate short summaries via Fabric patterns
   - Extract key points from articles
   - Provide reading time estimates
 - [ ] Prototype Recommendation System
@@ -178,7 +228,7 @@ Navigate to `/rss-demo` to explore the web scraping functionality:
 ### Phase 5: Advanced AI Features
 
 - [ ] Enhanced Content Analysis
-  - Advanced summarization
+  - Advanced summarization with pattern sequences
   - Sentiment analysis
   - Detailed topic extraction
 - [ ] Intelligent Categorization
@@ -199,22 +249,12 @@ Navigate to `/rss-demo` to explore the web scraping functionality:
 - [ ] External Integrations
   - Browser extension
   - Sharing capabilities
-  - API for external access
-
-## Long-Term Vision
-
-Flux RSS Fabric AI aims to revolutionize content aggregation and analysis through intelligent, user-centric design and advanced AI technologies.
+  - Additional MCP server support
 
 ## Contributing
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-Distributed under the MIT License. See `LICENSE` for more information.
-
-## Contact
+This project is licensed under the MIT License - see the LICENSE file for details.

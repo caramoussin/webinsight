@@ -575,3 +575,150 @@ interface Metrics {
 - Advanced AI capabilities with Fabric pattern updates
 - Improved content discovery
 - Extended customization options with MCP
+
+### High-Level System Architecture
+
+```mermaid
+graph TB
+    subgraph Client["Client Layer"]
+        UI[SvelteKit UI]
+        SW[Service Worker]
+    end
+    subgraph Server["Local Server"]
+        API[API Layer]
+        BG[Background Jobs]
+        subgraph Core["Core Services"]
+            RSS[RSS Service]
+            NIT[Nitter Service]
+            WS[Web Scraper]
+            APIC[API Client]
+            BSI[Brave Search Integration]
+            DB[(SQLite DB)]
+            MCP[MCP Servers]
+        end
+        subgraph AI["AI Layer"]
+            FA[Fabric AI]
+            MCP_C[MCP Clients]
+        end
+    end
+    UI --> API
+    SW --> API
+    API --> Core
+    Core --> MCP
+    MCP --> FA
+    FA --> MCP_C
+    BG --> Core
+    BG --> AI
+    BSI --> MCP
+    BSI --> DB
+```
+
+### Optional Brave Search Integration Flow
+
+```mermaid
+graph TB
+    subgraph BraveSearch["Brave Search Layer"]
+        API[API Client]
+        Cache[Local Cache]
+        Budget[Query Budget]
+    end
+    
+    subgraph Agents["AI Agents"]
+        A[Archivist]
+        S[Scribe]
+        L[Librarian]
+    end
+    
+    subgraph FallbackSystem["Fallback System"]
+        Local[Local Processing]
+        Hybrid[Hybrid Mode]
+    end
+    
+    API --> Cache
+    Cache --> A
+    Cache --> S
+    Cache --> L
+    Budget --> API
+    A --> Local
+    S --> Local
+    L --> Local
+    Local --> Hybrid
+```
+
+#### Integration Data Flow
+
+## Flow Process Description
+
+1. **Agent Request Phase**
+   - Each AI agent (Archivist, Scribe, Librarian) initiates requests based on their specific needs
+   - Requests are managed according to pre-allocated quota percentages
+   - Archivist: 40% (metadata enrichment, content discovery)
+   - Scribe: 35% (content analysis, summarization)
+   - Librarian: 25% (recommendations, trends)
+
+2. **Cache Check Phase**
+   - Query Manager first checks Local Cache
+   - Cache hits return immediately to agents
+   - Cache implements LRU (Least Recently Used) strategy
+   - Configurable TTL per content type
+
+3. **Budget Verification Phase**
+   - Monthly quota tracking (2000 queries for free tier)
+   - Per-agent allocation monitoring
+   - Budget status influences routing decision
+
+4. **API Interaction Phase**
+   - Conditional API calls based on budget availability
+   - Feature access based on tier (free/premium)
+   - Response processing and enrichment
+   - Schema data extraction and storage
+
+5. **Fallback Handling Phase**
+   - Activates on budget depletion or API unavailability
+   - Two operation modes:
+     - Local-only: Uses only cached/local data
+     - Hybrid: Combines local processing with limited API calls
+
+6. **Result Processing Phase**
+   - Schema enrichment when available
+   - Cache storage with TTL
+   - Result delivery to requesting agent
+
+7. **Cache Management Phase**
+   - Periodic cache cleanup
+   - Priority-based retention
+   - Storage optimization
+   - TTL management
+
+### Integration Configuration
+
+```typescript
+interface BraveSearchConfig {
+    enabled: boolean;
+    apiKey?: string;
+    tier: 'free' | 'premium';
+    queryBudget: {
+        monthly: number;
+        distribution: {
+            archivist: number;   // 0.4
+            scribe: number;      // 0.35
+            librarian: number;   // 0.25
+        };
+    };
+    cache: {
+        enabled: boolean;
+        ttl: number;            // in seconds
+        maxSize: number;        // in MB
+        strategy: 'lru' | 'fifo';
+    };
+    fallback: {
+        mode: 'automatic' | 'manual';
+        strategy: 'local' | 'hybrid';
+        thresholds: {
+            budgetWarning: number;    // percentage
+            errorRate: number;        // percentage
+            latency: number;          // milliseconds
+        };
+    };
+}
+```

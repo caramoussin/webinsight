@@ -41,16 +41,19 @@ The **Smart RSS Aggregator App** is a local-first application designed to enhanc
   - HTML and JSON Content Parsing
   - Configurable Scraping Rules
   - Crawl4AI integration with MCP
+  - Optional Brave Search API integration
 - 🧠 AI-Powered Content Analysis
   - Automatic Summarization via Fabric patterns
   - Sentiment Analysis
   - Content Categorization
   - Personalized recommendations by AI agents
   - Dynamic LLM sequencing through MCP
+  - Enhanced web context (via optional Brave Search)
 - 📁 Feed Collection Management
 - 🔒 Local-First Architecture
   - Privacy-preserving MCP servers
   - Local data storage and processing
+  - Optional external API integrations
 - 🚀 High Performance with SvelteKit
 
 ## Technology Stack
@@ -125,6 +128,34 @@ Navigate to `/rss-demo` to explore the web scraping functionality:
 - `DATABASE_URL`: Path to SQLite database
 - `AI_API_KEY`: API key for AI services (optional)
 - `MCP_SERVER_URL`: URL for MCP server (default: localhost)
+- `BRAVE_SEARCH_API_KEY`: Brave Search API key (optional)
+- `BRAVE_SEARCH_TIER`: API tier ('free' or 'premium')
+
+### Optional Brave Search Configuration
+
+```typescript
+// config/brave-search.ts
+export default {
+  enabled: false, // Set to true to enable Brave Search integration
+  queryBudget: {
+    monthly: 2000, // Free tier limit
+    distribution: {
+      archivist: 0.4,  // 40% allocation
+      scribe: 0.35,    // 35% allocation
+      librarian: 0.25  // 25% allocation
+    }
+  },
+  caching: {
+    enabled: true,
+    ttl: 86400, // 24 hours
+    strategy: 'memory' // or 'disk'
+  },
+  fallback: {
+    mode: 'automatic',
+    localOnly: true
+  }
+}
+```
 
 ## Architecture
 

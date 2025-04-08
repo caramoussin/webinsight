@@ -3,6 +3,7 @@
 	import { type VariantProps, cva } from 'class-variance-authority';
 	import type { HTMLAnchorAttributes, HTMLButtonAttributes } from 'svelte/elements';
 	import { cn } from '$lib/utils/utils';
+	import type { Snippet } from 'svelte';
 
 	const buttonVariants = cva(
 		'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background',
@@ -37,6 +38,7 @@
 		variant?: Variant;
 		size?: Size;
 		class?: string;
+		children: Snippet;
 	};
 
 	type ButtonProps = BaseProps & {
@@ -49,15 +51,21 @@
 
 	type Props = ButtonProps | AnchorProps;
 
-	let { variant = 'default', size = 'default', class: className, ...restProps }: Props = $props();
+	let {
+		variant = 'default',
+		size = 'default',
+		class: className,
+		children,
+		...restProps
+	}: Props = $props();
 </script>
 
 {#if 'href' in restProps}
 	<a {...restProps} href={restProps.href} class={cn(buttonVariants({ variant, size }), className)}>
-		<slot />
+		{@render children()}
 	</a>
 {:else}
 	<ButtonPrimitive.Root {...restProps} class={cn(buttonVariants({ variant, size }), className)}>
-		<slot />
+		{@render children()}
 	</ButtonPrimitive.Root>
 {/if}

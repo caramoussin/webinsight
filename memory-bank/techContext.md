@@ -2,26 +2,33 @@
 
 ## Technology Stack
 
+### Core Effect Stack
+- Effect library for functional programming
+- Effect Schema for validation
+- Effect Data for immutable data structures
+- Effect Context for dependency injection
+- Effect Layer for service composition
+
 ### Frontend
 - SvelteKit
 - TypeScript
 - Tailwind CSS
 - shadcn-svelte
-- Svelte stores
+- Effect-based stores
 
 ### Backend
 - Bun runtime
 - SvelteKit
 - SQLite
 - Drizzle ORM
-- Effect library
+- Effect services
 
 ### Development Tools
 - ESLint
 - Prettier
 - Vitest
 - TypeScript
-- Zod validation
+- Effect Schema validation
 
 ## Development Setup
 
@@ -30,11 +37,15 @@
 - Node.js
 - SQLite
 - Git
+- Effect library and its ecosystem
 
 ### Environment Variables
 ```env
 DATABASE_URL=
 BRAVE_API_KEY=
+LOG_LEVEL=
+CACHE_ENABLED=
+CACHE_TTL=
 ```
 
 ### Project Structure
@@ -42,9 +53,20 @@ BRAVE_API_KEY=
 /
 ├── src/
 │   ├── lib/
+│   │   ├── core/
+│   │   │   ├── effects/
+│   │   │   │   ├── errors.ts
+│   │   │   │   ├── runtime.ts
+│   │   │   │   ├── service.ts
+│   │   │   │   └── store.ts
+│   │   │   ├── schemas/
+│   │   │   └── types/
+│   │   ├── services/
+│   │   │   ├── mcp/
+│   │   │   └── scraper/
+│   │   ├── stores/
 │   │   ├── components/
-│   │   ├── server/
-│   │   └── stores/
+│   │   └── utils/
 │   ├── routes/
 │   └── app.d.ts
 ├── static/
@@ -55,6 +77,13 @@ BRAVE_API_KEY=
 ```
 
 ## Technical Dependencies
+
+### Effect Dependencies
+- @effect/io for core functionality
+- @effect/data for data structures
+- @effect/schema for validation
+- @effect/stream for streaming
+- @effect/cache for caching
 
 ### Core Dependencies
 - SvelteKit for full-stack framework
@@ -74,43 +103,65 @@ BRAVE_API_KEY=
 
 ## Technical Constraints
 
+### Effect Architecture
+- Pure functional programming
+- Type-safe dependency injection
+- Effect-based error handling
+- Composable services and stores
+- Runtime configuration
+- Caching strategies
+
 ### Local-First
-- All data stored locally
+- Effect-based local storage
 - Offline-first functionality
 - Optional external services
 - Privacy preservation
 
 ### Performance
-- Efficient data processing
+- Effect-based concurrency
 - Responsive UI
-- Optimized database queries
+- Optimized caching
 - Background processing
 
 ### Security
-- Local data encryption
+- Effect-based error boundaries
 - Secure API handling
 - No data leakage
 - Privacy by design
 
 ## Integration Points
 
+### Effect Service Layer
+- Type-safe service definitions
+- Dependency injection
+- Error handling
+- Resource management
+- Caching strategies
+
+### Effect Store Layer
+- State management
+- Cache invalidation
+- Reactive updates
+- Type-safe operations
+- Error boundaries
+
 ### Brave Search API
-- Optional integration
+- Effect-based API client
 - Privacy-respecting search
 - Query management
 - Rate limiting
-- Caching strategy
+- Effect-based caching
 
 ### RSS Feeds
-- Feed parsing
+- Effect-based feed parsing
 - Content extraction
 - Metadata handling
 - Update management
 - Error handling
 
 ### AI Integration
-- Local processing
-- Agent coordination
+- Effect-based agent system
 - Resource management
 - State persistence
-- Error recovery 
+- Error recovery
+- Type-safe messaging 

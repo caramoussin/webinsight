@@ -2,25 +2,68 @@
 
 ## Architecture Overview
 
+### Effect-Based Architecture
+```mermaid
+flowchart TD
+    Core[Core Layer] --> Services[Service Layer]
+    Core --> Stores[Store Layer]
+    Services --> UI[UI Layer]
+    Stores --> UI
+    
+    subgraph Core Layer
+        Effects[Effect Definitions]
+        Schemas[Effect Schemas]
+        Types[Core Types]
+        Runtime[Effect Runtime]
+    end
+    
+    subgraph Service Layer
+        SvcInt[Service Interfaces]
+        SvcImpl[Service Implementations]
+        Layers[Effect Layers]
+    end
+    
+    subgraph Store Layer
+        StoreInt[Store Interfaces]
+        StoreImpl[Store Implementations]
+        Cache[Cache Layer]
+    end
+    
+    subgraph UI Layer
+        Components[UI Components]
+        Pages[Pages/Routes]
+        Effects[Effect Hooks]
+    end
+```
+
 ### Frontend Architecture (SvelteKit)
 ```mermaid
 flowchart TD
-    UI[UI Components] --> Store[Svelte Stores]
-    Store --> Services[Frontend Services]
-    Services --> API[API Layer]
-    API --> Backend[Backend Services]
+    UI[UI Components] --> Effects[Effect Hooks]
+    Effects --> Services[Service Layer]
+    Services --> Stores[Store Layer]
+    Stores --> Cache[Cache Layer]
 ```
 
 ### Backend Architecture (Bun + SvelteKit)
 ```mermaid
 flowchart TD
-    API[API Endpoints] --> Services[Core Services]
+    API[API Endpoints] --> Effects[Effect Layer]
+    Effects --> Services[Core Services]
     Services --> Data[Data Layer]
     Services --> Agents[AI Agents]
     Data --> DB[(SQLite)]
 ```
 
 ## Design Patterns
+
+### Effect Patterns
+- Effect-based error handling
+- Dependency injection via Effect
+- Service Layer pattern with Effect
+- Store Layer with caching
+- Effect composition
+- Effect runtime configuration
 
 ### Functional Programming Patterns
 - Pure functions
@@ -34,12 +77,12 @@ flowchart TD
 - Atomic design
 - Smart/Dumb components
 - Component composition
-- State management via stores
+- Effect-based state management
 - Event-driven updates
 - Reactive patterns
 
 ### Data Patterns
-- Repository pattern
+- Repository pattern with Effect
 - Unit of work
 - Data mappers
 - Immutable entities
@@ -47,7 +90,7 @@ flowchart TD
 - CQRS principles
 
 ### AI Agent Patterns
-- Agent composition
+- Effect-based agent composition
 - Message passing
 - State machines
 - Observer pattern
@@ -56,13 +99,37 @@ flowchart TD
 
 ## System Components
 
+### Core Layer
+- Effect definitions
+- Error handling system
+- Runtime configuration
+- Schema validation
+- Type definitions
+- Utility functions
+
+### Service Layer
+- Service interfaces
+- Effect-based implementations
+- Dependency injection
+- Error handling
+- Resource management
+- API integrations
+
+### Store Layer
+- Store interfaces
+- Cache management
+- State persistence
+- Effect-based operations
+- Type-safe access
+- Reactive updates
+
 ### Frontend Components
 - UI Components (shadcn-svelte)
 - Feed Components
 - Content Components
 - AI Components
-- Store Management
-- Service Layer
+- Effect Hooks
+- Service Integration
 
 ### Backend Services
 - Feed Service

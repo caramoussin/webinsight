@@ -1,62 +1,63 @@
 # Active Context
 
 ## Current Focus
-- Project structure implementation
-- Core service architecture
-- Component library setup
-- Database schema design
-- Development environment configuration
+- Effect-based architecture implementation
+- Core service layer refactoring
+- Store layer with caching implementation
+- Error handling system development
+- Effect runtime configuration
 
 ## Recent Changes
-- Created Memory Bank structure
-- Initialized SvelteKit project structure
-- Set up basic directory organization
-- Established core file structure
-- Added TypeScript configuration
+- Created Effect-based error handling system
+- Implemented Effect runtime configuration
+- Established service layer patterns
+- Set up store layer with caching
+- Defined core Effect types and utilities
 
 ## Active Decisions
-- Using SvelteKit for full-stack development
-- Implementing local-first architecture
-- Adopting functional programming patterns
-- Integrating three-agent AI system
-- Using SQLite with Drizzle ORM
-- Organizing components with atomic design
+- Using Effect for functional programming
+- Implementing dependency injection via Effect
+- Adopting Effect-based error handling
+- Using Effect for state management
+- Implementing Effect-based caching
+- Organizing services with Effect layers
 
 ## Current Considerations
-- Database schema design patterns
-- Service layer architecture
-- Component library organization
-- State management implementation
-- AI agent communication protocols
-- Testing strategy implementation
+- Effect composition patterns
+- Service layer dependency management
+- Store caching strategies
+- Error handling granularity
+- Effect runtime optimization
+- Testing Effect-based code
 
 ## Next Steps
-1. Complete database schema design
-2. Implement core service layer
-3. Set up shadcn component library
-4. Create base UI components
-5. Develop RSS feed service
-6. Initialize AI agent framework
+1. Fix linter errors in core Effect files
+2. Complete service layer refactoring
+3. Implement store layer caching
+4. Create Effect-based UI hooks
+5. Refactor existing services to use Effect
+6. Set up Effect-based testing
 
 ## Open Questions
-- Database schema optimization for local-first approach
-- AI agent state persistence strategy
-- Component library customization approach
-- Service layer error handling patterns
-- Testing strategy implementation
-- Performance optimization techniques
+- Effect error handling best practices
+- Store caching optimization strategies
+- Effect composition patterns
+- Service layer dependency management
+- Testing Effect-based code
+- Performance implications
 
 ## Current Challenges
-- Complex state management requirements
-- AI agent coordination complexity
-- Local-first data synchronization
-- Component library integration
-- Testing infrastructure setup
+- Effect type system complexity
+- Dependency injection setup
+- Cache invalidation strategies
+- Error handling patterns
+- Testing Effect-based code
 
 ## Immediate Tasks
-- [ ] Design and implement database schema
-- [ ] Set up core service layer
-- [ ] Initialize shadcn components
-- [ ] Create feed management service
-- [ ] Implement basic UI layout
-- [ ] Set up testing infrastructure 
+- [ ] Fix linter errors in core Effect files
+- [ ] Complete service layer implementation
+- [ ] Set up store layer caching
+- [ ] Create Effect-based UI hooks
+- [ ] Refactor MCPClient to use new patterns
+- [ ] Refactor scraper service to use Effect
+- [ ] Document Effect-based architecture 

@@ -1,310 +1,220 @@
-import { z } from 'zod';
-import { type Either, left, right } from 'fp-ts/Either';
+import * as Effect from '@effect/io/Effect';
+import * as S from '@effect/schema/Schema';
+import { ServiceError, validateWithSchema, effectFetch } from '../../utils/effect';
 
 // Define schemas for MCP configuration and responses
-const MCPConnectionConfigSchema = z.object({
-	url: z.string().url('Invalid MCP server URL'),
-	vendor: z.enum(['ollama', 'openai', 'anthropic', 'local']),
-	model: z.string(),
-	apiKey: z.string().optional(),
-	timeout: z.number().min(1000).max(60000).default(30000)
+const MCPConnectionConfigSchema = S.Struct({
+	url: S.String.pipe(S.pattern(/^https?:\/\/.+/)),
+	vendor: S.Union(
+		S.Literal('ollama'),
+		S.Literal('openai'),
+		S.Literal('anthropic'),
+		S.Literal('local')
+	),
+	model: S.String,
+	apiKey: S.optional(S.String),
+	timeout: S.Number.pipe(S.between(1000, 60000))
 });
 
-const MCPPatternConfigSchema = z.object({
-	name: z.string(),
-	systemPrompt: z.string().optional(),
-	userPrompt: z.string().optional(),
-	temperature: z.number().min(0).max(2).default(0.7),
-	maxTokens: z.number().min(1).max(8192).default(2048)
+const MCPPatternConfigSchema = S.Struct({
+	name: S.String,
+	systemPrompt: S.optional(S.String),
+	userPrompt: S.optional(S.String),
+	temperature: S.Number.pipe(S.between(0, 2)),
+	maxTokens: S.Number.pipe(S.between(1, 8192))
 });
 
-const MCPResponseSchema = z.object({
-	content: z.string(),
-	metadata: z.record(z.string(), z.unknown()).optional(),
-	usage: z
-		.object({
-			promptTokens: z.number().optional(),
-			completionTokens: z.number().optional(),
-			totalTokens: z.number().optional()
+const MCPResponseSchema = S.Struct({
+	content: S.String,
+	metadata: S.optional(S.Record({ key: S.String, value: S.Unknown })),
+	usage: S.optional(
+		S.Struct({
+			promptTokens: S.optional(S.Number),
+			completionTokens: S.optional(S.Number),
+			totalTokens: S.optional(S.Number)
 		})
-		.optional()
+	)
 });
 
-// Error types
-export type MCPError = {
-	code: string;
-	message: string;
-	details?: unknown;
-};
+// Type inference from schemas
+type MCPConnectionConfig = S.Schema.Type<typeof MCPConnectionConfigSchema>;
+type MCPPatternConfig = S.Schema.Type<typeof MCPPatternConfigSchema>;
+type MCPResponse = S.Schema.Type<typeof MCPResponseSchema>;
 
 /**
  * MCP (Model Context Protocol) client for connecting to Fabric AI patterns and LLMs
- * Follows functional programming principles with pure functions and Either types for error handling
  */
 export class MCPClient {
+	private static constructMCPUrl(baseUrl: string, patternName: string, model: string): string {
+		const url = new URL(`${baseUrl}/pattern/${patternName}`);
+		url.searchParams.set('model', model);
+		return url.toString();
+	}
+
 	/**
 	 * Execute a Fabric pattern via MCP
-	 * @param patternName Name of the Fabric pattern to execute
-	 * @param input Input content to process with the pattern
-	 * @param connectionConfig MCP connection configuration
-	 * @param patternConfig Optional pattern-specific configuration
-	 * @returns Either an error or the MCP response
 	 */
-	static async executePattern(
+	static executePattern(
 		patternName: string,
 		input: string,
-		connectionConfig: z.infer<typeof MCPConnectionConfigSchema>,
-		patternConfig?: z.infer<typeof MCPPatternConfigSchema>
-	): Promise<Either<MCPError, z.infer<typeof MCPResponseSchema>>> {
-		try {
-			const validatedConnection = MCPConnectionConfigSchema.parse(connectionConfig);
+		connectionConfig: MCPConnectionConfig,
+		patternConfig?: MCPPatternConfig
+	): Effect.Effect<never, ServiceError, MCPResponse> {
+		return Effect.gen(function* ($) {
+			// Validate connection config
+			const validatedConnection = yield* $(
+				validateWithSchema(MCPConnectionConfigSchema, connectionConfig)
+			);
 
-			// Construct MCP URL for pattern execution
-			const mcpUrl = this.constructMCPUrl(
+			// Validate pattern config if provided
+			const validatedPatternConfig = patternConfig
+				? yield* $(validateWithSchema(MCPPatternConfigSchema, patternConfig))
+				: undefined;
+
+			// Construct URL and prepare request
+			const mcpUrl = MCPClient.constructMCPUrl(
 				validatedConnection.url,
 				patternName,
 				validatedConnection.model
 			);
 
-			// Prepare request payload
 			const payload = {
 				input,
 				model: validatedConnection.model,
 				vendor: validatedConnection.vendor,
-				temperature: patternConfig?.temperature || 0.7,
-				max_tokens: patternConfig?.maxTokens || 2048,
-				system_prompt: patternConfig?.systemPrompt,
-				user_prompt: patternConfig?.userPrompt
+				temperature: validatedPatternConfig?.temperature ?? 0.7,
+				max_tokens: validatedPatternConfig?.maxTokens ?? 2048,
+				system_prompt: validatedPatternConfig?.systemPrompt,
+				user_prompt: validatedPatternConfig?.userPrompt
 			};
 
-			// Execute MCP request
-			const response = await fetch(mcpUrl, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					...(validatedConnection.apiKey
-						? { Authorization: `Bearer ${validatedConnection.apiKey}` }
-						: {})
-				},
-				body: JSON.stringify(payload),
-				signal: AbortSignal.timeout(validatedConnection.timeout)
-			});
+			// Make request and validate response
+			const response = yield* $(
+				effectFetch<unknown>(mcpUrl, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						...(validatedConnection.apiKey
+							? { Authorization: `Bearer ${validatedConnection.apiKey}` }
+							: {})
+					},
+					body: JSON.stringify(payload),
+					signal: AbortSignal.timeout(validatedConnection.timeout)
+				})
+			);
 
-			if (!response.ok) {
-				const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
-				return left({
-					code: `HTTP_${response.status}`,
-					message: errorData.detail || `HTTP error ${response.status}`,
-					details: errorData
-				});
-			}
-
-			const data = await response.json();
-			const validatedData = MCPResponseSchema.parse(data);
-
-			return right(validatedData);
-		} catch (error) {
-			if (error instanceof z.ZodError) {
-				return left({
-					code: 'VALIDATION_ERROR',
-					message: 'Invalid MCP configuration',
-					details: error.format()
-				});
-			}
-
-			if (error instanceof Error) {
-				if (error.name === 'AbortError') {
-					return left({
-						code: 'TIMEOUT',
-						message: 'MCP request timed out',
-						details: error
-					});
-				}
-
-				return left({
-					code: 'REQUEST_ERROR',
-					message: error.message,
-					details: error
-				});
-			}
-
-			return left({
-				code: 'UNKNOWN_ERROR',
-				message: 'An unknown error occurred',
-				details: error
-			});
-		}
+			return yield* $(
+				validateWithSchema(MCPResponseSchema, response as S.Schema.Type<typeof MCPResponseSchema>)
+			);
+		});
 	}
 
 	/**
 	 * Execute a sequence of Fabric patterns via MCP
-	 * @param patterns Array of pattern names to execute in sequence
-	 * @param input Initial input content
-	 * @param connectionConfig MCP connection configuration
-	 * @param patternConfigs Optional pattern-specific configurations
-	 * @returns Either an error or the final MCP response
 	 */
-	static async executePatternSequence(
+	static executePatternSequence(
 		patterns: string[],
 		input: string,
-		connectionConfig: z.infer<typeof MCPConnectionConfigSchema>,
-		patternConfigs?: Record<string, z.infer<typeof MCPPatternConfigSchema>>
-	): Promise<Either<MCPError, z.infer<typeof MCPResponseSchema>>> {
-		try {
+		connectionConfig: MCPConnectionConfig,
+		patternConfigs?: Record<string, MCPPatternConfig>
+	): Effect.Effect<never, ServiceError, MCPResponse> {
+		return Effect.gen(function* ($) {
 			let currentInput = input;
-			let finalResult: Either<MCPError, z.infer<typeof MCPResponseSchema>> | null = null;
+			let finalResult: MCPResponse | null = null;
 
-			// Execute patterns in sequence, piping output to input
 			for (const pattern of patterns) {
 				const config = patternConfigs?.[pattern];
-				const result = await this.executePattern(pattern, currentInput, connectionConfig, config);
+				const result = yield* $(
+					MCPClient.executePattern(pattern, currentInput, connectionConfig, config)
+				);
 
-				// If any pattern execution fails, return the error
-				if ('left' in result) {
-					return result;
-				}
-
-				// Update input for next pattern with output from current pattern
-				currentInput = result.right.content;
+				currentInput = result.content;
 				finalResult = result;
 			}
 
-			// Return the result of the final pattern execution
 			if (!finalResult) {
-				return left({
-					code: 'SEQUENCE_ERROR',
-					message: 'Pattern sequence execution failed: no patterns executed',
-					details: { patterns }
-				});
+				return yield* $(
+					Effect.fail(
+						new ServiceError(
+							'SEQUENCE_ERROR',
+							'Pattern sequence execution failed: no patterns executed',
+							{ patterns }
+						)
+					)
+				);
 			}
 
 			return finalResult;
-		} catch (error) {
-			if (error instanceof Error) {
-				return left({
-					code: 'SEQUENCE_ERROR',
-					message: error.message,
-					details: error
-				});
-			}
-
-			return left({
-				code: 'UNKNOWN_ERROR',
-				message: 'An unknown error occurred during pattern sequence execution',
-				details: error
-			});
-		}
-	}
-
-	/**
-	 * Construct an MCP URL for pattern execution
-	 * @param baseUrl Base MCP server URL
-	 * @param patternName Name of the Fabric pattern
-	 * @param model Model name
-	 * @returns Constructed MCP URL
-	 */
-	private static constructMCPUrl(baseUrl: string, patternName: string, model: string): string {
-		// Remove trailing slash if present
-		const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-
-		// Construct MCP URL in the format: mcp://server/pattern?model=model_name
-		return `${normalizedBaseUrl}/patterns/${patternName}?model=${encodeURIComponent(model)}`;
+		});
 	}
 
 	/**
 	 * Check if an MCP server is available
-	 * @param connectionConfig MCP connection configuration
-	 * @returns Either an error or a boolean indicating availability
 	 */
-	static async checkServerAvailability(
-		connectionConfig: z.infer<typeof MCPConnectionConfigSchema>
-	): Promise<Either<MCPError, boolean>> {
-		try {
-			const validatedConnection = MCPConnectionConfigSchema.parse(connectionConfig);
+	static checkServerAvailability(
+		connectionConfig: MCPConnectionConfig
+	): Effect.Effect<never, ServiceError, boolean> {
+		return Effect.gen(function* ($) {
+			const validatedConnection = yield* $(
+				validateWithSchema(MCPConnectionConfigSchema, connectionConfig)
+			);
 
-			// Ping the MCP server health endpoint
-			const response = await fetch(`${validatedConnection.url}/health`, {
-				method: 'GET',
-				headers: {
-					...(validatedConnection.apiKey
-						? { Authorization: `Bearer ${validatedConnection.apiKey}` }
-						: {})
-				},
-				signal: AbortSignal.timeout(5000) // Short timeout for health check
-			});
-
-			return right(response.ok);
-		} catch (error) {
-			if (error instanceof Error) {
-				return left({
-					code: 'AVAILABILITY_CHECK_ERROR',
-					message: error.message,
-					details: error
-				});
-			}
-
-			return left({
-				code: 'UNKNOWN_ERROR',
-				message: 'An unknown error occurred during availability check',
-				details: error
-			});
-		}
+			return yield* $(
+				Effect.tryPromise({
+					try: async () => {
+						const response = await fetch(`${validatedConnection.url}/health`, {
+							method: 'GET',
+							headers: {
+								...(validatedConnection.apiKey
+									? { Authorization: `Bearer ${validatedConnection.apiKey}` }
+									: {})
+							},
+							signal: AbortSignal.timeout(5000)
+						});
+						return response.ok;
+					},
+					catch: (error) =>
+						new ServiceError(
+							'AVAILABILITY_CHECK_ERROR',
+							error instanceof Error ? error.message : 'Failed to check server availability',
+							error
+						)
+				})
+			);
+		});
 	}
 
 	/**
 	 * List available patterns on an MCP server
-	 * @param connectionConfig MCP connection configuration
-	 * @returns Either an error or an array of pattern names
 	 */
-	static async listPatterns(
-		connectionConfig: z.infer<typeof MCPConnectionConfigSchema>
-	): Promise<Either<MCPError, string[]>> {
-		try {
-			const validatedConnection = MCPConnectionConfigSchema.parse(connectionConfig);
+	static listPatterns(
+		connectionConfig: MCPConnectionConfig
+	): Effect.Effect<never, ServiceError, string[]> {
+		return Effect.gen(function* ($) {
+			const validatedConnection = yield* $(
+				validateWithSchema(MCPConnectionConfigSchema, connectionConfig)
+			);
 
-			// Request patterns list from MCP server
-			const response = await fetch(`${validatedConnection.url}/patterns`, {
-				method: 'GET',
-				headers: {
-					...(validatedConnection.apiKey
-						? { Authorization: `Bearer ${validatedConnection.apiKey}` }
-						: {})
-				},
-				signal: AbortSignal.timeout(validatedConnection.timeout)
-			});
+			const response = yield* $(
+				effectFetch<{ patterns: string[] }>(`${validatedConnection.url}/patterns`, {
+					method: 'GET',
+					headers: {
+						...(validatedConnection.apiKey
+							? { Authorization: `Bearer ${validatedConnection.apiKey}` }
+							: {})
+					},
+					signal: AbortSignal.timeout(validatedConnection.timeout)
+				})
+			);
 
-			if (!response.ok) {
-				const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
-				return left({
-					code: `HTTP_${response.status}`,
-					message: errorData.detail || `HTTP error ${response.status}`,
-					details: errorData
-				});
-			}
-
-			const data = await response.json();
-			return right(data.patterns || []);
-		} catch (error) {
-			if (error instanceof Error) {
-				return left({
-					code: 'PATTERN_LIST_ERROR',
-					message: error.message,
-					details: error
-				});
-			}
-
-			return left({
-				code: 'UNKNOWN_ERROR',
-				message: 'An unknown error occurred while listing patterns',
-				details: error
-			});
-		}
+			return response.patterns || [];
+		});
 	}
 }
 
-// Example usage with functional error handling
-export async function exampleMCPPatternExecution() {
-	const result = await MCPClient.executePattern(
+// Example usage with Effect
+export const exampleMCPPatternExecution = () => {
+	const program = MCPClient.executePattern(
 		'summarize',
 		'This is a long article about artificial intelligence and its impact on society...',
 		{
@@ -320,16 +230,5 @@ export async function exampleMCPPatternExecution() {
 		}
 	);
 
-	// Use proper Either handling
-	if ('left' in result) {
-		// Handle error case
-		const error = result.left;
-		console.error('Pattern execution failed:', error.message);
-		return { success: false, error };
-	} else {
-		// Handle success case
-		const data = result.right;
-		console.log('Pattern execution successful');
-		return { success: true, data };
-	}
-}
+	return Effect.runPromise(program);
+};

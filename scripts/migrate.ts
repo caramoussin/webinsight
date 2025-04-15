@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
 import { migrate } from 'drizzle-orm/migrator';
-import * as schema from '../src/lib/db/schema';
+import * as schema from '../src/lib/services/db/schema';
 import { join } from 'path';
 
 const sqlite = new Database(join(process.cwd(), 'local.db'));

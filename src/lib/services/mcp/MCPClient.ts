@@ -37,9 +37,9 @@ const MCPResponseSchema = S.Struct({
 });
 
 // Type inference from schemas
-type MCPConnectionConfig = S.Schema.Type<typeof MCPConnectionConfigSchema>;
-type MCPPatternConfig = S.Schema.Type<typeof MCPPatternConfigSchema>;
-type MCPResponse = S.Schema.Type<typeof MCPResponseSchema>;
+export type MCPConnectionConfig = S.Schema.Type<typeof MCPConnectionConfigSchema>;
+export type MCPPatternConfig = S.Schema.Type<typeof MCPPatternConfigSchema>;
+export type MCPResponse = S.Schema.Type<typeof MCPResponseSchema>;
 
 /**
  * MCP (Model Context Protocol) client for connecting to Fabric AI patterns and LLMs

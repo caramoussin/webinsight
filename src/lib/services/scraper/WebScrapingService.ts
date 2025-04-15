@@ -46,8 +46,8 @@ const ScraperResultSchema = S.Struct({
 });
 
 // Type inference from schemas
-type ScraperConfig = S.Schema.Type<typeof ScraperConfigSchema>;
-type ScraperResult = S.Schema.Type<typeof ScraperResultSchema>;
+export type ScraperConfig = S.Schema.Type<typeof ScraperConfigSchema>;
+export type ScraperResult = S.Schema.Type<typeof ScraperResultSchema>;
 
 export class WebScrapingService {
 	private static readonly USER_AGENTS = [

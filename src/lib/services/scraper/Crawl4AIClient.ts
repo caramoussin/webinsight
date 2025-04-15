@@ -1,4 +1,4 @@
-import * as Effect from '@effect/io/Effect';
+import * as E from '@effect/io/Effect';
 import * as S from '@effect/schema/Schema';
 import { ServiceError, validateWithSchema, effectFetch } from '../../utils/effect';
 
@@ -91,8 +91,8 @@ export class Crawl4AIClient {
 	 */
 	static extractContent(
 		options: ExtractionOptions
-	): Effect.Effect<never, ServiceError, ExtractionResponse> {
-		return Effect.gen(function* ($) {
+	): E.Effect<never, ServiceError, ExtractionResponse> {
+		return E.gen(function* ($) {
 			// Validate options
 			const validatedOptions = yield* $(validateWithSchema(ExtractionOptionsSchema, options));
 
@@ -124,8 +124,8 @@ export class Crawl4AIClient {
 	static checkRobotsTxt(
 		url: string,
 		userAgent?: string
-	): Effect.Effect<never, ServiceError, RobotsCheckResponse> {
-		return Effect.gen(function* ($) {
+	): E.Effect<never, ServiceError, RobotsCheckResponse> {
+		return E.gen(function* ($) {
 			const queryParams = new URLSearchParams({
 				url,
 				...(userAgent ? { user_agent: userAgent } : {})
@@ -157,7 +157,7 @@ export class Crawl4AIClient {
 		baseSelector?: string,
 		includeSelectors?: string[],
 		excludeSelectors?: string[]
-	): Effect.Effect<never, ServiceError, S.Schema.Type<typeof SelectorConfigSchema>> {
+	): E.Effect<never, ServiceError, S.Schema.Type<typeof SelectorConfigSchema>> {
 		return validateWithSchema(SelectorConfigSchema, {
 			base_selector: baseSelector,
 			include_selectors: includeSelectors,
@@ -176,7 +176,7 @@ export class Crawl4AIClient {
 		name: string,
 		baseSelector: string,
 		fields: S.Schema.Type<typeof ExtractionSchemaFieldSchema>[]
-	): Effect.Effect<never, ServiceError, S.Schema.Type<typeof ExtractionSchemaSchema>> {
+	): E.Effect<never, ServiceError, S.Schema.Type<typeof ExtractionSchemaSchema>> {
 		return validateWithSchema(ExtractionSchemaSchema, {
 			name,
 			base_selector: baseSelector,
@@ -186,7 +186,7 @@ export class Crawl4AIClient {
 }
 
 // Example usage with Effect
-export const exampleCrawl4AIExtraction = Effect.gen(function* ($) {
+export const exampleCrawl4AIExtraction = E.gen(function* ($) {
 	const selectorConfig = yield* $(
 		Crawl4AIClient.createSelectorConfig(
 			'article.content',

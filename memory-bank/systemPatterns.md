@@ -73,6 +73,21 @@ flowchart TD
 - Effect management
 - Data transformation pipelines
 
+### Testing Patterns (TypeScript)
+- Effect-based testing using `@effect/vitest`
+- Vitest framework for test execution
+- Mocking dependencies (e.g., `effectFetch`) using `vi.mock`
+- Unit testing Effect services and functions
+- Utilizing `Effect.gen` and `pipe` for test structure
+- Global test setup (`src/tests/setup.ts`) for runtime resets (`Effect.resetRuntime()`)
+
+### Testing Patterns (Python Microservices)
+- Pytest framework for test execution
+- Virtual environment (`venv`) for dependency isolation
+- Unit tests (`tests/test_unit.py`) using `unittest.mock` and `fastapi.testclient.TestClient`
+- Integration tests (`tests/test_integration.py`) interacting with running service
+- Test runner script (`run_tests.py`) for managing test execution
+
 ### Component Patterns
 - Atomic design
 - Smart/Dumb components
@@ -96,6 +111,11 @@ flowchart TD
 - Observer pattern
 - Strategy pattern
 - Chain of responsibility
+
+### Microservice Pattern
+- Separate Python/FastAPI service (e.g., Crawl4AI) for specific tasks
+- TypeScript client library (`Crawl4AIClient`) for interaction
+- Clear API contract between main application and microservice
 
 ## System Components
 

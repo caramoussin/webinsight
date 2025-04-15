@@ -1,12 +1,11 @@
 # Active Context
 
 ## Current Focus
-- Testing Effect-based services
-- Implementing unit tests for core services
-- Effect-based testing patterns
-- Service layer validation
-- Error handling validation
-- WebScrapingService test completion
+- Testing Effect-based services (MCPClient, Crawl4AIClient)
+- Testing Python microservices (Crawl4AI service)
+- Refining Effect-based testing patterns
+- Validating client-microservice interactions
+- Ensuring test environment setup (TS and Python venv)
 
 ## Recent Changes
 - Created Effect-based error handling system
@@ -16,6 +15,11 @@
 - Created Vitest setup for Effect
 - Implemented MCPClient tests
 - Implemented WebScrapingService tests
+- Implemented Crawl4AIClient tests (TypeScript)
+- Setup Python testing environment (venv, dependencies) for Crawl4AI service
+- Implemented and ran unit tests for Crawl4AI service (Python)
+- Created global test setup `src/tests/setup.ts` with `Effect.resetRuntime()`
+- Evaluated relevance and reliability of Crawl4AI tests
 
 ## Active Decisions
 - Using Effect for functional programming
@@ -25,7 +29,9 @@
 - Implementing Effect-based caching
 - Organizing services with Effect layers
 - Testing with @effect/vitest
-- Mocking external dependencies for tests
+- Mocking external dependencies for tests (TS & Python)
+- Using Pytest for Python service testing
+- Using FastAPI's TestClient for Python API testing
 
 ## Current Considerations
 - Effect composition patterns
@@ -36,14 +42,16 @@
 - Testing Effect-based code
 - Mock implementation patterns
 - Test coverage strategies
+- Integration testing strategies for microservices
+- Keeping mocks accurate for both TS and Python tests
 
 ## Next Steps
 1. Implement FabricAIScrapingService tests
 2. Complete service layer testing
 3. Create test utilities for common testing operations
-4. Create additional Effect-based UI hooks
-5. Continue refactoring services to use Effect
-6. Expand Effect-based testing coverage
+4. Address warnings in Python test output (Pydantic, deprecations)
+5. Define integration testing approach for Crawl4AI service
+6. Continue refactoring services to use Effect
 
 ## Open Questions
 - Effect error handling best practices
@@ -52,8 +60,8 @@
 - Service layer dependency management
 - Testing Effect-based code
 - Performance implications
-- Mock implementation strategies
-- Integration testing approaches
+- Mock implementation strategies (TS vs Python)
+- Integration testing approaches for microservices
 
 ## Current Challenges
 - Effect type system complexity
@@ -63,6 +71,8 @@
 - Testing Effect-based code
 - Mocking external dependencies
 - Testing services with complex dependencies
+- Maintaining consistency between client mocks and actual service behavior
+- Potential flakiness in integration tests
 
 ## Immediate Tasks
 - [x] Fix MCPClient test file to use proper Effect testing patterns
@@ -71,5 +81,9 @@
 - [x] Test different scraping scenarios
 - [x] Test error handling in scraping operations
 - [x] Test robots.txt checking functionality
+- [x] Create Crawl4AIClient test file (TypeScript)
+- [x] Implement Crawl4AIClient tests and mocks
+- [x] Setup Python test environment for Crawl4AI service
+- [x] Implement and run Python unit tests for Crawl4AI service
 - [ ] Create test utilities for common testing operations
 - [ ] Implement FabricAIScrapingService tests 

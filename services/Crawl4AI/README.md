@@ -1,4 +1,4 @@
-# Web Scraping Service
+# Crawl4AI Service
 
 A Python microservice for web content extraction using Crawl4AI, designed for the Flux RSS Fabric AI project.
 

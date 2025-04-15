@@ -1,7 +1,7 @@
 # Progress Tracking
 
 ## Project Status
-🟡 Effect Architecture Testing Phase
+🟡 Effect Architecture Testing Phase - Microservice Testing Focus
 
 ## Completed Items
 - ✅ Project initialization
@@ -17,13 +17,17 @@
 - ✅ Vitest setup for Effect
 - ✅ MCPClient tests implementation
 - ✅ WebScrapingService tests implementation
+- ✅ Crawl4AIClient tests implementation (TypeScript)
+- ✅ Crawl4AI Service unit tests implementation (Python)
+- ✅ Crawl4AI Service testing environment setup (venv, dependencies, runner script)
+- ✅ Global test setup (`src/tests/setup.ts`) with `Effect.resetRuntime()`
 
 ## In Progress
 - 🔄 FabricAIScrapingService tests
-- 🔄 Service layer testing
-- 🔄 Effect-based testing utilities
-- 🔄 Mock implementation patterns
-- 🔄 Error handling validation
+- 🔄 Refining service layer testing patterns
+- 🔄 Creating Effect-based testing utilities
+- 🔄 Mock implementation pattern refinement
+- 🔄 Addressing Python test warnings (Pydantic, deprecations)
 
 ## Pending
 - ⏳ Effect-based UI components
@@ -39,23 +43,28 @@
 3. Effect-based testing patterns refinement needed
 4. Cache invalidation strategy needed
 5. Effect type system complexity
+- Warnings in Python test output (Pydantic, deprecations)
+- Potential flakiness in integration tests due to external dependencies
 
 ## Milestones
 
-### 1. Effect Architecture Foundation [70%]
+### 1. Effect Architecture Foundation [80%]
 - [x] Design Effect-based architecture
 - [x] Implement core Effect types
 - [x] Create Effect error system
 - [x] Set up Effect runtime
 - [x] Create Vitest setup for Effect
+- [x] Implement global test setup with runtime reset
 - [ ] Complete Effect service pattern
 - [ ] Implement Effect store layer
 
-### 2. Service Testing [50%]
+### 2. Service Testing [70%]
 - [x] Design testing patterns with Effect
 - [x] Set up Effect test utilities
 - [x] Implement MCPClient tests
 - [x] Implement WebScrapingService tests
+- [x] Implement Crawl4AIClient tests (TypeScript)
+- [x] Implement Crawl4AI Service unit tests (Python)
 - [ ] Implement FabricAIScrapingService tests
 - [ ] Test feed service
 
@@ -82,8 +91,8 @@
 - [ ] Testing strategy
 
 ## Testing Status
-- Unit Tests: MCPClient and WebScrapingService complete, FabricAIScrapingService in progress
-- Integration Tests: Not started
+- Unit Tests: MCPClient, WebScrapingService, Crawl4AIClient (TS), Crawl4AI Service (Python) complete. FabricAIScrapingService in progress.
+- Integration Tests: Defined for Crawl4AI Service (Python), execution needs integration into workflow.
 - E2E Tests: Not started
 - Performance Tests: Not started
 
@@ -91,6 +100,6 @@
 - Effect Architecture: In progress
 - Service Patterns: In progress
 - Store Patterns: In progress
-- Testing Patterns: In progress
+- Testing Patterns: Updated with TS Effect and Python microservice patterns
 - Development Guide: Updating
 - Testing Guide: Started 

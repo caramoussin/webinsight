@@ -97,9 +97,24 @@ CACHE_TTL=
 - TypeScript for type safety
 - ESLint for linting
 - Prettier for formatting
-- Vitest for testing
+- Vitest for testing (TypeScript)
+- `@effect/vitest` for Effect integration in tests
+- `vi.mock` for mocking in Vitest
+- `Effect.resetRuntime()` in `src/tests/setup.ts` for test isolation
+- Pytest for testing (Python microservices)
+- `pytest-asyncio` for async Python tests
+- `unittest.mock` for mocking in Python tests
+- `fastapi.testclient` for testing FastAPI apps
 - PostCSS for CSS processing
 - Tailwind for styling
+
+### Microservice Environment (Python)
+- Python 3.x
+- Virtual Environment (`venv`)
+- `pip` for package management
+- FastAPI for web framework
+- Uvicorn for ASGI server
+- httpx for HTTP client (testing)
 
 ## Technical Constraints
 

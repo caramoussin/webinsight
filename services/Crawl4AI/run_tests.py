@@ -22,13 +22,13 @@ def run_command(cmd, cwd=None):
 def run_unit_tests():
     """Run the unit tests for the Crawl4AI service."""
     print("Running unit tests...")
-    venv_python = "/home/soushi888/Projets/Caramoussin/flux-rss-fabric-ai/.venv/bin/python"
+    venv_python = "/home/soushi888/Projets/Caramoussin/webinsight/.venv/bin/python"
     return run_command([venv_python, "-m", "pytest", "tests/test_unit.py", "-v"])
 
 def run_integration_tests():
     """Run the integration tests for the Crawl4AI service."""
     print("Running integration tests...")
-    venv_python = "/home/soushi888/Projets/Caramoussin/flux-rss-fabric-ai/.venv/bin/python"
+    venv_python = "/home/soushi888/Projets/Caramoussin/webinsight/.venv/bin/python"
     return run_command([venv_python, "-m", "pytest", "tests/test_integration.py", "-v"])
 
 def check_server():
@@ -58,7 +58,7 @@ def main():
     server_process = None
     if args.start_server and not check_server():
         print("Starting Crawl4AI server...")
-        venv_python = "/home/soushi888/Projets/Caramoussin/flux-rss-fabric-ai/.venv/bin/python"
+        venv_python = "/home/soushi888/Projets/Caramoussin/webinsight/.venv/bin/python"
         server_process = subprocess.Popen(
             [venv_python, "run.py"],
             stdout=subprocess.PIPE,

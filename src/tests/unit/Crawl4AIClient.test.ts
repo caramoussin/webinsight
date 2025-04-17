@@ -30,7 +30,7 @@ const mockRobotsResponse = {
 	allowed: true,
 	url: 'https://example.com',
 	robots_url: 'https://example.com/robots.txt',
-	user_agent: 'Flux-RSS-Fabric-AI'
+	user_agent: 'webinsight'
 };
 
 describe('Crawl4AIClient', () => {

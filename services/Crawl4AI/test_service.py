@@ -58,7 +58,7 @@ async def test_robots_txt():
     
     try:
         # Using a more reliable website for testing
-        result = await check_robots_txt("https://httpbin.org", "Flux-RSS-Fabric-AI")
+        result = await check_robots_txt("https://httpbin.org", "webinsight")
         
         print(f"Robots.txt check result: {result['allowed']}")
         print(f"Details: {json.dumps(result, indent=2)}")

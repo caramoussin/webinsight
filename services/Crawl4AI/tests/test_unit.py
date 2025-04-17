@@ -219,7 +219,7 @@ def test_api_robots_check(mock_robots):
         "allowed": True,
         "url": "https://example.com",
         "robots_url": "https://example.com/robots.txt",
-        "user_agent": "Flux-RSS-Fabric-AI"
+        "user_agent": "webinsight"
     }
     
     # Call the API

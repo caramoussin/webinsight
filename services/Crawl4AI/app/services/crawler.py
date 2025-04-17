@@ -508,7 +508,7 @@ async def extract_content(url: Any, selectors: Optional[Dict[str, Any]] = None, 
     
     return response
 
-async def check_robots_txt(url: str, user_agent: str = "Flux-RSS-Fabric-AI") -> Dict[str, Any]:
+async def check_robots_txt(url: str, user_agent: str = "webinsight") -> Dict[str, Any]:
     """
     Check if scraping is allowed by robots.txt for a given URL.
     

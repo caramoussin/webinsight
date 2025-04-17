@@ -1,8 +1,8 @@
-# Integration Plan for Crawl4AI in Flux RSS Fabric AI
+# Integration Plan for Crawl4AI in WebInsight
 
 ## 1. Overview
 
-Crawl4AI is an open-source LLM-friendly web crawler and scraper that provides optimized content extraction for AI applications. This integration enhances our Web Scraping Service within the Flux RSS Fabric AI project, leveraging the Model Context Protocol (MCP) to interface with Fabric AI's pattern library and LLM capabilities.
+Crawl4AI is an open-source LLM-friendly web crawler and scraper that provides optimized content extraction for AI applications. This integration enhances our Web Scraping Service within the WebInsight project, leveraging the Model Context Protocol (MCP) to interface with Fabric AI's pattern library and LLM capabilities.
 
 ### Current Implementation Status
 
@@ -22,7 +22,7 @@ The Crawl4AI service (v0.1.0) has been successfully implemented and tested as a 
 
 ## 1. Overview
 
-Crawl4AI is an open-source, LLM-friendly web crawler and scraper that provides optimized content extraction for AI applications. In Flux RSS Fabric AI, Crawl4AI powers the Web Scraping Service, and is being integrated with the Model Context Protocol (MCP) to leverage Fabric AI's pattern library and LLM capabilities.
+Crawl4AI is an open-source, LLM-friendly web crawler and scraper that provides optimized content extraction for AI applications. In WebInsight, Crawl4AI powers the Web Scraping Service, and is being integrated with the Model Context Protocol (MCP) to leverage Fabric AI's pattern library and LLM capabilities.
 
 ### Key Advantages with MCP
 
@@ -129,7 +129,6 @@ Crawl4AI is an open-source, LLM-friendly web crawler and scraper that provides o
 - **End-to-End Testing**: Test the entire system from UI to backend services.
 
 ---
-
 
 - [x] Crawl4AI Python microservice (core extraction, robots.txt, filtering)
 - [x] TypeScript client integration (Effect-based, schema-driven)

@@ -463,7 +463,7 @@ graph TD
 
 ## Project Vision
 
-Flux RSS Fabric AI aims to revolutionize content aggregation and analysis through intelligent, user-centric design and advanced AI technologies with MCP.
+WebInsight aims to revolutionize content aggregation and analysis through intelligent, user-centric design and advanced AI technologies with MCP.
 
 ## Project Roadmap
 

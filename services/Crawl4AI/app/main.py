@@ -66,7 +66,7 @@ async def api_extract_content(request_data: ExtractionOptions):
             try:
                 robots_result = await check_robots_txt(
                     url_str,  # Use string URL instead of HttpUrl object
-                    request_data.user_agent or "Flux-RSS-Fabric-AI"
+                    request_data.user_agent or "webinsight"
                 )
                 
                 if not robots_result["allowed"]:
@@ -121,7 +121,7 @@ async def api_extract_content(request_data: ExtractionOptions):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/robots-check")
-async def check_robots(url: HttpUrl, user_agent: Optional[str] = "Flux-RSS-Fabric-AI"):
+async def check_robots(url: HttpUrl, user_agent: Optional[str] = "webinsight"):
     """Check if scraping is allowed by robots.txt for a given URL."""
     try:
         result = await check_robots_txt(str(url), user_agent)

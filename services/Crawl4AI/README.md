@@ -1,6 +1,6 @@
-# Crawl4AI Service
+# WebInsight Crawl4AI Service
 
-A Python microservice for web content extraction using Crawl4AI v0.5.0, designed for the Flux RSS Fabric AI project. This service provides a FastAPI-based REST interface for extracting content from web pages, with support for both static and dynamic (JavaScript-heavy) websites.
+A Python microservice for web content extraction using WebInsight, designed for the WebInsight platform. This service provides a FastAPI-based REST interface for extracting content from web pages, with support for both static and dynamic (JavaScript-heavy) websites.
 
 ## Features
 
@@ -29,11 +29,11 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-3. Run post-installation setup for Crawl4AI:
+3. Run post-installation setup for WebInsight:
 
 ```bash
-crawl4ai-setup
-crawl4ai-doctor  # Verify installation
+webinsight-setup
+webinsight-doctor  # Verify installation
 ```
 
 ## Usage
@@ -129,7 +129,7 @@ To enable browser-based extraction for dynamic websites using Playwright, set `u
 ### Check Robots.txt
 
 ```http
-GET /robots-check?url=https://example.com&user_agent=Flux-RSS-Fabric-AI
+GET /robots-check?url=https://example.com&user_agent=webinsight
 ```
 
 Checks if scraping is allowed by robots.txt for a given URL.
@@ -141,13 +141,13 @@ Checks if scraping is allowed by robots.txt for a given URL.
   "allowed": true,
   "url": "https://example.com",
   "robots_url": "https://example.com/robots.txt",
-  "user_agent": "Flux-RSS-Fabric-AI"
+  "user_agent": "webinsight"
 }
 ```
 
 ## Integration with TypeScript
 
-This service is designed to be consumed by the TypeScript backend of the Flux RSS Fabric AI project. The TypeScript client implementation (`Crawl4AIClient.ts`) provides a type-safe interface for interacting with this service using Effect for functional programming.
+This service is designed to be consumed by the TypeScript backend of the WebInsight project. The TypeScript client implementation (`Crawl4AIClient.ts`) provides a type-safe interface for interacting with this service using Effect for functional programming.
 
 ### TypeScript Client Usage
 

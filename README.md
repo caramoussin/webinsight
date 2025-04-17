@@ -1,8 +1,8 @@
-# Flux RSS Fabric AI
+# WebInsight
 
 ## Overview
 
-The **Smart RSS Aggregator App** is a local-first application designed to enhance content consumption through intelligent RSS feed aggregation and AI-powered analysis. Built with **Bun** and **SvelteKit**, it operates via a unified local server, ensuring user privacy, data ownership, and full offline functionality. The app extends beyond traditional RSS aggregation by incorporating **web scraping and HTML/JSON parsing**, leveraging **Crawl4AI** for robust content extraction. Powered by **Fabric AI** with **Model Context Protocol (MCP)**, it features three specialized AI agents—**the Archivist**, **the Scribe**, and **the Librarian**—to collect, summarize, and organize content into a personalized knowledge hub.
+**WebInsight** is a local-first platform for web content extraction, semantic enrichment, and AI-driven insights. Built with **Bun** and **SvelteKit**, it operates via a unified local server, ensuring user privacy, data ownership, and full offline functionality. The platform extends beyond traditional RSS aggregation by providing advanced web scraping, HTML/JSON parsing, and semantic analysis, powered by Fabric AI and the Model Context Protocol (MCP). It features specialized AI agents—**the Archivist**, **the Scribe**, and **the Librarian**—to collect, summarize, and organize content into a personalized knowledge hub.
 
 ## Current Implementation Highlights
 
@@ -40,7 +40,7 @@ The **Smart RSS Aggregator App** is a local-first application designed to enhanc
   - Web Scraping for Non-RSS Sources
   - HTML and JSON Content Parsing
   - Configurable Scraping Rules
-  - Crawl4AI integration with MCP
+  - WebInsight extraction engine with MCP integration
   - Optional Brave Search API integration
 - 🧠 AI-Powered Content Analysis
   - Automatic Summarization via Fabric patterns
@@ -78,8 +78,8 @@ The **Smart RSS Aggregator App** is a local-first application designed to enhanc
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/yourusername/flux-rss-fabric-ai.git
-   cd flux-rss-fabric-ai
+   git clone https://github.com/yourusername/webinsight.git
+   cd webinsight
    ```
 
 2. Install dependencies:

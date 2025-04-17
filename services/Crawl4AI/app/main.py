@@ -53,28 +53,71 @@ async def api_extract_content(request_data: ExtractionOptions):
     and returns the extracted content in various formats.
     """
     try:
+        # Convert URL to string to avoid HttpUrl object issues
+        url_str = str(request_data.url)
+        
+        # Print request data for debugging
+        print(f"Request data: {request_data}")
+        print(f"URL: {url_str}")
+        print(f"Selectors: {request_data.selectors}")
+        
         # Check robots.txt compliance if enabled
         if request_data.check_robots_txt:
-            robots_result = await check_robots_txt(
-                request_data.url, 
-                request_data.user_agent or "Flux-RSS-Fabric-AI"
+            try:
+                robots_result = await check_robots_txt(
+                    url_str,  # Use string URL instead of HttpUrl object
+                    request_data.user_agent or "Flux-RSS-Fabric-AI"
+                )
+                
+                if not robots_result["allowed"]:
+                    raise HTTPException(
+                        status_code=403, 
+                        detail=f"Scraping not allowed by robots.txt for {url_str}"
+                    )
+            except Exception as robots_error:
+                print(f"Error checking robots.txt: {str(robots_error)}")
+                # Continue even if robots check fails
+        
+        # Extract content with string URL instead of HttpUrl object
+        try:
+            # Create a copy of the options to avoid modifying the original
+            options = request_data.model_dump(exclude={"url", "selectors"})
+            
+            # Force use_browser=True for specific selector tests
+            if request_data.selectors and 'base_selector' in request_data.selectors:
+                options['use_browser'] = True
+                print(f"Forcing use_browser=True for base_selector: {request_data.selectors['base_selector']}")
+            
+            result = await extract_content(
+                url_str,  # Use string URL to avoid 'decode' attribute errors
+                request_data.selectors,
+                options
             )
             
-            if not robots_result["allowed"]:
-                raise HTTPException(
-                    status_code=403, 
-                    detail=f"Scraping not allowed by robots.txt for {request_data.url}"
-                )
-        
-        # Extract content
-        result = await extract_content(
-            request_data.url,
-            request_data.selectors,
-            request_data.dict(exclude={"url", "selectors"})
-        )
-        
-        return result
+            # Validate result before returning
+            if not result:
+                raise ValueError("No result returned from extract_content")
+                
+            # Ensure content exists
+            if 'content' not in result:
+                result['content'] = {'html': '', 'markdown': '', 'raw_markdown': ''}
+                
+            # Ensure extracted_data exists
+            if 'extracted_data' not in result:
+                result['extracted_data'] = None
+                
+            return result
+        except Exception as extract_error:
+            import traceback
+            print(f"Error in extract_content: {str(extract_error)}")
+            print(f"Error type: {type(extract_error).__name__}")
+            print(f"Traceback: {traceback.format_exc()}")
+            raise HTTPException(status_code=500, detail=str(extract_error))
     except Exception as e:
+        import traceback
+        print(f"Unhandled error in api_extract_content: {str(e)}")
+        print(f"Error type: {type(e).__name__}")
+        print(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/robots-check")

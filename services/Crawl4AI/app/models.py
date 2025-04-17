@@ -68,7 +68,7 @@ class ExtractionSchema(BaseModel):
         }
 
 class ExtractionOptions(BaseModel):
-    """Options for content extraction using Crawl4AI."""
+    """Options for content extraction using Crawl4AI, including browser-based extraction via Playwright."""
     url: HttpUrl = Field(..., description="URL to extract content from")
     selectors: Optional[SelectorConfig] = Field(None, description="CSS selectors for content extraction")
     extraction_schema: Optional[ExtractionSchema] = Field(None, description="Schema for structured data extraction")
@@ -77,6 +77,7 @@ class ExtractionOptions(BaseModel):
     headless: bool = Field(True, description="Run browser in headless mode")
     verbose: bool = Field(False, description="Enable verbose logging")
     user_agent: Optional[str] = Field(None, description="Custom user agent string")
+    use_browser: bool = Field(False, description="Use Playwright for dynamic content extraction (JS rendering)")
     
     # Content filtering
     filter_type: Optional[str] = Field("pruning", description="Content filter type (pruning or bm25)")
@@ -103,6 +104,7 @@ class ExtractionOptions(BaseModel):
                 },
                 "headless": True,
                 "verbose": False,
+                "use_browser": True,
                 "filter_type": "pruning",
                 "threshold": 0.48,
                 "use_cache": True,

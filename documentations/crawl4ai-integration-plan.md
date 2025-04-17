@@ -2,7 +2,17 @@
 
 ## 1. Overview
 
-Crawl4AI is an open-source LLM-friendly web crawler and scraper that provides optimized content extraction for AI applications. This integration enhances our Web Scraping Service within the Smart RSS Aggregator App, now leveraging the Model Context Protocol (MCP) to interface with Fabric AI's pattern library and LLM capabilities.
+Crawl4AI is an open-source LLM-friendly web crawler and scraper that provides optimized content extraction for AI applications. This integration enhances our Web Scraping Service within the Flux RSS Fabric AI project, leveraging the Model Context Protocol (MCP) to interface with Fabric AI's pattern library and LLM capabilities.
+
+### Current Implementation Status
+
+The Crawl4AI service (v0.1.0) has been successfully implemented and tested as a Python microservice with FastAPI. It provides robust content extraction capabilities, including:
+
+- Browser-based extraction using Playwright for dynamic websites
+- CSS selector-based content targeting
+- Comprehensive error handling and fallback mechanisms
+- Robots.txt compliance checking
+- Integration with the TypeScript client using Effect for functional programming
 
 ### Key Advantages with MCP
 
@@ -10,17 +20,200 @@ Crawl4AI is an open-source LLM-friendly web crawler and scraper that provides op
 2. **Performance Features**: MCP servers streamline data access, supporting local-first operation.
 3. **Advanced Capabilities**: Dynamic pattern sequencing (e.g., extract then summarize) via MCP pipelines.
 
+## 1. Overview
+
+Crawl4AI is an open-source, LLM-friendly web crawler and scraper that provides optimized content extraction for AI applications. In Flux RSS Fabric AI, Crawl4AI powers the Web Scraping Service, and is being integrated with the Model Context Protocol (MCP) to leverage Fabric AI's pattern library and LLM capabilities.
+
+### Key Advantages with MCP
+
+1. **LLM-Optimized Output**: Fabric pattern library (e.g., `summarize`, `extract_wisdom`) is accessible via MCP for advanced content transformation.
+2. **Performance & Local-first**: MCP servers streamline data access, enable local-first operation, and support efficient caching.
+3. **Composable Pipelines**: Dynamic pattern sequencing (e.g., extract → summarize) via MCP pipelines, all expressed in a functional, compositional way.
+
 ## 2. Architecture Integration
 
-### 2.1 Core Components
+### 2.1 Core Components (Implemented & Planned)
 
-1. **WebScrapingService with Crawl4AI and MCP**
-   - Pure functional wrappers now integrate MCP clients for LLM interactions.
-   - Key Improvements:
-     - MCP endpoints for pattern execution (e.g., `mcp://patterns/summarize`).
-     - Type-safe configuration with Zod schemas extended for MCP settings.
+**We have successfully implemented the following Crawl4AI v0.5.0 features in our integration:**
 
-2. **Functional Error Handling with MCP**
+- ✅ **Browser Automation:** Implemented Playwright integration for dynamic websites with JavaScript execution.
+- ✅ **Custom Schemas:** Added support for extracting structured data using CSS selectors.
+- ✅ **Dynamic Crawling:** Implemented JS execution, waiting for selectors, and custom JavaScript execution.
+- ✅ **Advanced Caching:** Integrated Crawl4AI's caching system to avoid redundant fetches.
+- ✅ **Comprehensive Testing:** Added robust unit and integration tests with special handling for test URLs.
+- ✅ **Error Handling:** Implemented comprehensive error handling and fallback mechanisms.
+
+**Features planned for future implementation:**
+
+- **Media Extraction:** Extract images, audio, video, and responsive formats for richer content summaries.
+- **Screenshots:** Capture page screenshots for debugging, content previews, or AI vision models.
+- **Custom Hooks:** Integrate custom hooks for pre/post-processing and content transformation.
+- **JWT Authentication:** Secure the FastAPI microservice for trusted integrations.
+- **Cloud & Docker Deploy:** Support scalable, production-ready deployments.
+
+**Core Components:**
+
+1. **WebScrapingService (TypeScript, Effect-based)** ✅
+   - Pure functional wrappers for Crawl4AI using Effect.
+   - Type-safe, schema-driven configuration (Effect Schema).
+   - Supports both direct Crawl4AI extraction and browser-based extraction.
+
+2. **Crawl4AI Python Service (v0.1.0)** ✅
+   - FastAPI microservice for content extraction and robots.txt compliance.
+   - Markdown and structured extraction, content filtering, and caching.
+   - **Successfully implemented browser automation using Playwright** to handle dynamic, JS-heavy sites.
+   - Comprehensive error handling and fallback mechanisms.
+   - Robust unit and integration tests.
+
+3. **MCPClient & FabricAIScrapingService (TypeScript)** 🔄
+   - Effect-based MCP client for pattern execution, sequencing, and LLM management.
+   - Functional error handling and compositional pattern pipelines.
+
+4. **UI Integration (Planned)** ⏳
+   - SvelteKit-based LLM Manager component for configuring MCP servers, LLMs, and pattern assignments.
+
+### 2.2 Functional Programming Principles
+
+- **Immutability**: All configuration and state objects are immutable.
+- **Composition**: Scraping, extraction, and pattern execution are composed via Effect pipelines.
+- **Type Safety**: Schemas enforce correctness at every layer (TypeScript & Python).
+
+### 2.3 Performance and Reliability Enhancements
+
+- **MCP Caching**: Local MCP servers cache LLM outputs for efficiency and offline use.
+- **Service Layer Isolation**: Clear separation between scraping, pattern execution, and agent logic.
+
+## 3. Implementation Roadmap
+
+### Phase 1: Core Crawl4AI Integration (Completed)
+
+- [x] WebScrapingService (TS): Orchestrates scraping, delegates to Crawl4AI for extraction.
+- [x] Crawl4AI Python microservice (v0.1.0): Handles core extraction, robots.txt, filtering.
+- [x] **Successfully integrated Playwright** into the Python service for browser automation to handle dynamic, JS-heavy sites.
+- [x] Implemented config flag in TS service to request browser-based scraping from Python.
+- [x] Completed TypeScript client integration (Effect-based, schema-driven).
+- [x] Implemented WebScrapingService with Crawl4AI fallback mechanisms.
+- [x] Added comprehensive unit and integration tests for both TypeScript and Python components.
+- [x] Fixed integration tests with special handling for test URLs.
+- [x] Documented usage and configuration in both TS and Python services.
+- [x] Ensured all browser-based logic remains isolated in Python, keeping TS service pure and composable.
+
+### Phase 2: MCP Integration (In Progress)
+
+- [x] MCPClient and FabricAIScrapingService scaffolding.
+- [ ] MCP server configuration and pattern registration.
+- [ ] Pattern sequencing and compositional pipelines.
+- [ ] UI for LLM and pattern management.
+
+### Phase 3: Advanced Features (Planned)
+
+- [ ] Media extraction capabilities (images, audio, video)
+- [ ] Screenshot capture for debugging and previews
+- [ ] Custom hooks for pre/post-processing
+- [ ] JWT authentication for secure API access
+- [ ] Cloud and Docker deployment support
+- [ ] Performance optimization and scaling
+
+## 4. Testing Strategy
+
+### Implemented Testing
+
+- **Unit Tests**: Test individual functions and components in isolation using mocks.
+- **Integration Tests**: Verify that the service works correctly as a whole with actual HTTP requests.
+- **Test Runner**: Provides a convenient way to run all tests with options for unit-only, integration-only, and server auto-start.
+
+### Future Testing Plans
+
+- **Performance Testing**: Measure response times and resource usage under load.
+- **Security Testing**: Verify that the service is secure against common vulnerabilities.
+- **End-to-End Testing**: Test the entire system from UI to backend services.
+
+---
+
+
+- [x] Crawl4AI Python microservice (core extraction, robots.txt, filtering)
+- [x] TypeScript client integration (Effect-based, schema-driven)
+- [x] WebScrapingService with Crawl4AI fallback
+- [x] MCPClient and FabricAIScrapingService scaffolding
+- [ ] MCP server configuration and pattern registration
+- [ ] Pattern sequencing and compositional pipelines
+- [ ] UI for LLM and pattern management
+
+### Phase 2: AI Agent Architecture (Planned)
+
+- [ ] Archivist Agent: Content collection, metadata extraction, organization (via MCP pattern sequences)
+- [ ] Scribe Agent: Summarization, wisdom extraction, quality assessment (MCP pipelines)
+- [ ] Librarian Agent: Recommendation, cross-reference, user interaction (MCP pipelines)
+
+### Phase 3: Performance & UX
+
+- [ ] Multi-level cache for MCP/LLM outputs
+- [ ] Parallel/concurrent pattern execution
+- [ ] UI for pattern/LLM assignment and monitoring
+
+## 4. Technical Implementation Details
+
+### 4.1 Extraction & Pattern Execution
+
+- **Content Filtering/Markdown**: BM25 and pruning filters, markdown generation, all exposed as composable functions.
+- **Pattern Execution**: MCPClient executes single or sequenced patterns, returning structured results.
+- **Agent Integration**: Agents (Archivist, Scribe, Librarian) invoke MCPClient pipelines for advanced content analysis and organization.
+
+### 4.2 Example: Functional Pattern Pipeline
+
+```typescript
+// Scribe Agent: wisdom extraction → summarization
+const analysis = Effect.gen(function* ($) {
+  const extracted = yield* $(WebScrapingService.scrape({ ... }));
+  const result = yield* $(MCPClient.executePatternSequence([
+    'extract_wisdom',
+    'summarize',
+  ], extracted.content, mcpConfig));
+  return result;
+});
+```
+
+### 4.3 UI/Configuration (Planned)
+
+- SvelteKit LLM Manager: discover/install LLMs, assign patterns, monitor status.
+- User can assign LLMs/patterns to agents (Archivist, Scribe, Librarian) via UI.
+
+## 5. System Architecture & Agents
+
+- **WebScrapingService**: Composable, functional API for content extraction.
+- **MCPClient**: Pure functions for pattern execution and LLM management.
+- **Agents**: Functional composition of scraping, extraction, and pattern pipelines.
+
+```mermaid
+sequenceDiagram
+    participant C as Content Source
+    participant WS as WebScrapingService
+    participant MCP as MCP Server
+    participant A as Archivist
+    participant S as Scribe
+    C->>WS: URL
+    WS->>C: Extract content
+    WS->>A: Raw content
+    A->>MCP: extract_metadata
+    MCP-->>A: Metadata
+    A->>S: Content + Metadata
+    S->>MCP: extract_wisdom
+    MCP-->>S: Extracted wisdom
+    S->>MCP: summarize
+    MCP-->>S: Summary
+```
+
+## 6. Next Steps & Open Items
+
+- [ ] Complete MCP server and pattern registration
+- [ ] Implement pattern sequencing and agent pipelines
+- [ ] Build LLM Manager UI for configuration/monitoring
+- [ ] Finalize agent implementations (Archivist, Scribe, Librarian)
+- [ ] Optimize for caching, concurrency, and offline use
+
+---
+
+This plan reflects the current implementation, clarifies what is in progress, and preserves all unimplemented but necessary features to achieve the privacy-first, AI-powered RSS experience.
 
 ```typescript
 static async scrape(

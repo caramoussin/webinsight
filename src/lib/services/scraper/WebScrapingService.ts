@@ -232,6 +232,10 @@ export class WebScrapingService {
 		});
 	}
 
+	// private static scrapWithPuppeteer(config: ScraperConfig): Effect.Effect<never, ServiceError, ScraperResult> {
+
+	// }
+
 	/**
 	 * Extract links from markdown content
 	 */

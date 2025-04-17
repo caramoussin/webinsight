@@ -66,6 +66,7 @@ The Smart RSS Aggregator App integrates Fabric AI with MCP to enhance content pr
 ### 6. Optional Brave Search Integration
 
 #### Core Integration Features
+
 - Privacy-focused web search capabilities
 - AI-optimized content enrichment
 - Schema-enriched metadata extraction
@@ -73,6 +74,7 @@ The Smart RSS Aggregator App integrates Fabric AI with MCP to enhance content pr
 - Efficient query management (2,000 free monthly queries)
 
 #### Query Management System
+
 - Intelligent query budget allocation per agent:
   - Archivist: 40% (metadata enrichment, content discovery)
   - Scribe: 35% (content analysis, summarization)
@@ -82,6 +84,7 @@ The Smart RSS Aggregator App integrates Fabric AI with MCP to enhance content pr
 - Automatic fallback to local processing
 
 #### Integration Tiers
+
 1. **Basic Tier (Free - 2,000 queries/month)**
    - Essential search capabilities
    - Basic metadata enrichment
@@ -95,6 +98,7 @@ The Smart RSS Aggregator App integrates Fabric AI with MCP to enhance content pr
    - Additional search features (news, video)
 
 #### Fallback Architecture
+
 ```typescript
 interface BraveSearchFallback {
   mode: 'automatic' | 'manual';

@@ -1,4 +1,4 @@
-# WebInsight - Work in Progress
+# WebInsight - Work In Progress & Active Decisions
 
 ## 1. Current Focus
 
@@ -49,6 +49,14 @@
 * Add support for local LLM connections via Ollama.
 * Implement scheduled data fetching with configurable frequency.
 * Create AI processing pipeline configuration UI.
+* Implement Profile Management System:
+  * Profile creation UI (public/private option).
+  * Separate database file creation per profile.
+  * Profile metadata storage (e.g., `profiles.json`).
+  * Profile switching mechanism.
+  * SQLCipher integration for private profiles (`better-sqlite3-sqlcipher`).
+  * Password input and key derivation (PBKDF2) for unlocking private profiles.
+  * Custom 'on-profile-load' migration logic using Effect.
 
 ### 3.2 Medium-term
 
@@ -69,6 +77,8 @@
 
 * **Local-first Architecture**: Committed to maintaining local data storage and processing for privacy.
 * **SQLite with Drizzle ORM**: Selected for data persistence due to simplicity and performance.
+* **Profile Storage**: Adopted "one profile, one database" model with optional SQLCipher encryption.
+* **Migrations**: Switched to custom, on-profile-load migration logic due to multi-DB architecture.
 * **SvelteKit**: Chosen for both frontend and backend to maintain a unified codebase.
 * **Bun Runtime**: Selected for performance advantages over Node.js.
 * **Effect Library**: Adopted for functional programming patterns, error handling, and type safety.
@@ -87,3 +97,5 @@
 * Ensuring consistent content extraction across diverse web sources.
 * Implementing robust error handling for AI processing pipelines.
 * Creating an intuitive UI for configuring complex AI pattern sequences.
+* Implementing secure key management and derivation for encrypted profiles.
+* Developing and testing the custom, per-profile database migration logic.

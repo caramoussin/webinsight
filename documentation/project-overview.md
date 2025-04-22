@@ -34,6 +34,10 @@ The platform extends beyond traditional RSS aggregation by providing advanced we
   * Content Categorization
   * Personalized recommendations by AI agents
   * Dynamic LLM sequencing through MCP
+* **Profile Management**:
+  * Support for multiple user profiles.
+  * Each profile stored in a separate database file.
+  * Optional database-level encryption per profile using SQLCipher.
 * **Feed Collection Management**: Organize feeds into collections
 * **Local-First Architecture**:
   * Privacy-preserving MCP servers
@@ -64,6 +68,7 @@ The application follows a layered architecture with a strong emphasis on functio
 * **Data Layer**:
   * SQLite database with Drizzle ORM
   * MCP connection management
+  * Profile-specific databases (optionally encrypted via SQLCipher)
   * Immutable data structures
   * Pure data transformations
   * Encrypted storage for API credentials

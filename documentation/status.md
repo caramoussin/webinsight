@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-This document tracks the implementation status of WebInsight, highlighting completed features, work in progress, and planned tasks. It serves as a quick reference for the current state of the project.
+This document tracks the implementation status of WebInsight, highlighting completed features that enable users to gain insights from web content, work in progress, and planned enhancements. It serves as a quick reference for the current state of the project.
 
 ## 2. Completed Features
 
@@ -62,6 +62,7 @@ This document tracks the implementation status of WebInsight, highlighting compl
 * ⏳ Implement scheduled data fetching UI
 * ⏳ Create AI processing pipeline configuration UI
 * ⏳ Add support for local LLM connections via Ollama
+* ⏳ Implement Profile Management (separate DBs, optional encryption)
 
 ### 4.2 Medium-term
 

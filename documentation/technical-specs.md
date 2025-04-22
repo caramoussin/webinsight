@@ -1,8 +1,8 @@
-# Smart RSS Aggregator App Specification
+# WebInsight - Technical Specifications
 
 ## Overview
 
-The Smart RSS Aggregator App integrates Fabric AI with MCP to enhance content processing using Fabric's pattern library, dynamic LLM sequencing, and a UI for LLM management.
+WebInsight integrates Fabric AI with the Model Context Protocol (MCP) to enhance web content processing and insight generation. This specification details the technical foundation, including the use of Fabric's pattern library, dynamic LLM sequencing via MCP, and the UI for managing these AI capabilities.
 
 ## Features
 
@@ -142,9 +142,20 @@ interface BraveSearchFallback {
 ### Data Layer
 
 - SQLite for persistence with MCP connection schema
+- **Profile Databases**: Uses the "one profile, one database" model. Each profile's data resides in a dedicated SQLite file (e.g., `~/.config/webinsights/profiles/<profile_id>.db`).
+- **Profile Metadata**: A central `profiles.json` file or `metadata.db` tracks profile names, database file paths, and encryption status.
+- **Optional Encryption**: Private profiles utilize SQLCipher for full database encryption.
+  - **Dependency**: Requires the `better-sqlite3-sqlcipher` package (or equivalent Bun-compatible SQLCipher binding) instead of plain `better-sqlite3` for encrypted databases.
+  - **Algorithm**: AES-256 (SQLCipher default).
+  - **Key Derivation**: User password for private profiles is converted to an encryption key using PBKDF2 (or similar standard KDF) before being passed to SQLCipher.
 - In-memory caching
 - File system storage
 - Data migrations
+- **Data Migrations (Custom, On-Load)**:
+  - Drizzle ORM defines the schema, but the standard `migrate` function is not used.
+  - Migrations are applied when a profile is loaded using a custom script.
+  - The script connects (using password if encrypted), reads `__drizzle_migrations`, identifies pending `.sql` files from the `/migrations` folder, executes them via raw SQL, and updates the history table.
+  - **Error Handling**: Migration logic for each profile is implemented using the `Effect` library to manage potential errors during connection, SQL execution, or history updates.
 - Backup system
 - Query optimization
 - Immutable data structures
@@ -386,7 +397,9 @@ graph TD
 
 - Local-only access by default
 - Process isolation
-- Data encryption
+- Data encryption:
+  - SQLCipher (AES-256) for optional, per-profile database encryption.
+  - Secure storage for API keys (mechanism TBD, e.g., OS keychain or within encrypted profile DB).
 - Secure configuration for MCP
 - Permission management
 
@@ -463,7 +476,7 @@ graph TD
 
 ## Project Vision
 
-WebInsight aims to revolutionize content aggregation and analysis through intelligent, user-centric design and advanced AI technologies with MCP.
+WebInsight aims to revolutionize content aggregation and analysis, transforming raw web data into meaningful insights through intelligent, user-centric design and advanced AI technologies integrated via MCP.
 
 ## Project Roadmap
 
@@ -551,6 +564,11 @@ WebInsight aims to revolutionize content aggregation and analysis through intell
 Note: Timeline estimates are subject to adjustment based on development progress and priorities.
 
 ## Technical Constraints and Considerations
+
+### Profile Management Complexity
+
+- **Migrations**: Applying schema changes across multiple, potentially encrypted databases requires a custom migration script run on profile load, adding complexity compared to single-database migrations.
+- **Key Management**: Securely handling user passwords and deriving/using encryption keys for private profiles is critical.
 
 ### Web Scraping Limitations
 

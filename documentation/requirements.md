@@ -1,22 +1,22 @@
-# WebInsight Requirements
+# WebInsight - Functional Requirements
 
 ## 1. Introduction
 
-This document outlines the core requirements for the WebInsight Smart RSS Aggregator application. It defines the problems the application solves, the target users, and the key features from a functional perspective.
+This document outlines the core functional requirements for WebInsight. It defines the problems WebInsight aims to solve by providing intelligent tools for content aggregation and analysis, the target users, and the key features enabling users to gain deeper insights from web content.
 
 ## 2. Goals & Problems Solved
 
-* **Goal**: Provide users with an intelligent, local-first tool to aggregate, process, and analyze content from various web sources (RSS, web pages, APIs).
+* **Goal**: Provide users with WebInsight, an intelligent, local-first tool to aggregate, process, and analyze content from various web sources (RSS, web pages, APIs).
 * **Problem**: Information overload from multiple sources; difficulty in extracting key insights, summarizing content, and organizing information efficiently.
-* **Goal**: Enhance user productivity and knowledge management by leveraging AI for content understanding.
+* **Goal**: Enhance user productivity and knowledge management through WebInsight by leveraging AI for deeper content understanding.
 * **Problem**: Need for privacy-preserving AI tools that operate locally without relying solely on external cloud services.
-* **Goal**: Offer a flexible and configurable platform for content interaction.
+* **Goal**: Offer a flexible and configurable platform for content interaction and insight generation.
 
 ## 3. Target Users
 
-* Researchers, students, professionals, and knowledge workers who need to monitor and analyze information from diverse online sources.
+* Researchers, students, professionals, and knowledge workers seeking efficient ways to monitor, analyze, and gain insights from diverse online information sources.
 * Users concerned with data privacy who prefer local data processing.
-* Individuals looking for customizable AI-powered tools for personal knowledge management.
+* Individuals looking for customizable AI-powered tools for personal knowledge management and insight discovery.
 
 ## 4. Functional Requirements (Features)
 
@@ -61,18 +61,28 @@ This document outlines the core requirements for the WebInsight Smart RSS Aggreg
 
 ### 4.4 Data Management & Privacy
 
-* **FR4.1**: Store all user data (feeds, articles, collections, configurations) locally.
-* **FR4.2**: Use a local SQLite database for primary data persistence.
-* **FR4.3**: Ensure user privacy by defaulting to local processing and local LLMs where possible.
-* **FR4.4**: Provide options for data import/export.
-* **FR4.5**: Securely store any necessary API keys or credentials.
-* **FR4.6**: Implement basic data backup mechanisms.
+* **FR4.1**: Allow users to create multiple profiles to manage different contexts or data sets.
+* **FR4.2**: Each profile's data MUST be stored in a separate, isolated database file.
+* **FR4.3**: When creating a profile, the user MUST be able to choose if the profile's database should be encrypted (private) or unencrypted (public).
+* **FR4.4**: For encrypted profiles, require a user-provided password to unlock and access the profile data upon loading.
+* **FR4.5**: User can use a strong passwrod generator to create a password for their profile.
+* **FR4.6**: Provide mechanisms to switch between loaded profiles.
+
+### 4.5 Data Management & Privacy
+
+* **FR5.1**: Store all user data (feeds, articles, collections, configurations) locally within the context of the currently active profile.
+* **FR5.2**: Use a local SQLite database for primary data persistence for each profile.
+* **FR5.3**: Ensure user privacy by defaulting to local processing and local LLMs where possible.
+* **FR5.4**: Apply SQLCipher encryption to the entire database file for profiles marked as private.
+* **FR5.5**: Provide options for data import/export (scope to be defined, likely per-profile).
+* **FR5.6**: Securely store any necessary API keys or credentials (potentially within the profile database if encrypted, or a separate secure store).
+* **FR5.7**: Implement basic data backup mechanisms (potentially per-profile).
 
 ## 5. Non-Functional Requirements
 
 * **NFR1**: **Performance**: The application should be responsive, especially the UI. Background tasks (fetching, AI processing) should not block the UI.
 * **NFR2**: **Reliability**: Fetching and processing should be robust, with appropriate error handling and retries.
-* **NFR3**: **Privacy**: Prioritize local data storage and processing.
-* **NFR4**: **Usability**: The interface should be intuitive for managing feeds, content, and AI configurations.
+* **NFR3**: **Privacy**: Prioritize local data storage and processing. Provide robust optional encryption for sensitive profiles.
+* **NFR4**: **Usability**: The interface should be intuitive for managing feeds, content, AI configurations, and profiles.
 * **NFR5**: **Modularity**: The architecture should allow for adding new content sources, AI patterns, or features relatively easily.
-* **NFR6**: **Security**: Protect user data and credentials stored locally.
+* **NFR6**: **Security**: Protect user data and credentials stored locally. Implement strong encryption (SQLCipher) for private profiles and secure key handling.

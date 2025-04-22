@@ -1,31 +1,80 @@
-# Smart RSS Aggregator App - Detailed Architecture
+# WebInsight - Detailed Architecture
 
 ## Overview
 
-The Smart RSS Aggregator App leverages Fabric AI with the Model Context Protocol (MCP) for intelligent content processing, integrating Fabric's pattern library and LLM sequencing. Built with Bun and SvelteKit, this local-first application follows functional programming principles, emphasizing pure functions, immutable data structures, and declarative code patterns, enhanced by MCP for modular AI interactions.
+WebInsight leverages Fabric AI with the Model Context Protocol (MCP) for intelligent content processing, transforming aggregated web content into actionable insights. It integrates Fabric's pattern library and LLM sequencing capabilities via MCP. Built with Bun and SvelteKit, this local-first application prioritizes privacy and user control while following functional programming principles (pure functions, immutable data structures, declarative patterns) to create a robust platform for insight generation. Its core architecture is deeply rooted in functional programming principles, utilizing **Effect TS** extensively for managing complexity, ensuring type safety, handling side effects, and composing business logic in a declarative and robust manner.
 
 ## Programming Paradigm
 
-### Functional Programming Approach
+### Functional Programming with Effect TS
+
+WebInsight embraces functional programming, with Effect TS serving as the backbone for managing effects, concurrency, resources, and application structure. This approach aims for:
+
+- **Declarative Business Logic**: Expressing *what* needs to happen rather than *how*, using Effect's combinators to build complex workflows from smaller, reusable effects.
+- **Robust Error Handling**: Leveraging Effect's typed error channels (`Effect<A, E, R>`) to explicitly handle potential failures at the type level, eliminating runtime exceptions for expected errors.
+- **Resource Safety**: Utilizing `Scope` and `Layer` to ensure resources (database connections, file handles, network requests) are acquired and released safely, preventing leaks.
+- **Asynchronous & Concurrent Operations**: Managing asynchronous tasks and concurrency with powerful primitives like Fibers, ensuring responsiveness and efficient resource utilization.
+- **Dependency Management**: Using `Context` and `Layer` for modular and type-safe dependency injection.
 
 ```typescript
-// Example of pure function for content transformation with MCP
-const transformContent = (content: Content): TransformedContent => {
-  const mcpResult = await mcp.executePattern('summarize', content.body, 'mcp://localhost:11434/llama2');
-  return {
-    ...content,
-    title: formatTitle(content.title),
-    summary: mcpResult,
-    tags: extractTags(content.body)
-  };
-};
+// Example: Effect-based content transformation using Layer for dependencies
+import { Effect, Layer, Context, pipe } from 'effect';
+import * as Schema from "@effect/schema/Schema";
 
-// Example of function composition with MCP sequencing
+// Define Service Interfaces (Context Tags)
+class MCPService extends Context.Tag('MCPService')<MCPService, {
+  readonly executePattern: (pattern: string, input: unknown, target: string) => Effect.Effect<unknown, MCPError>;
+}>() {}
+class ContentDB extends Context.Tag('ContentDB')<ContentDB, {
+  readonly saveArticle: (article: Article) => Effect.Effect<void, DBError>;
+}>() {}
+
+// Define Data Schema with @effect/schema
+const ArticleSchema = Schema.Struct({
+  id: Schema.String,
+  title: Schema.String,
+  rawContent: Schema.String,
+  summary: Schema.Option(Schema.String),
+});
+type Article = Schema.Schema.To<typeof ArticleSchema>;
+
+// Business Logic composed with Effect
+const transformAndSaveContent = (rawContent: string): Effect.Effect<Article, MCPError | DBError, MCPService | ContentDB> =>
+  Effect.gen(function*(_) {
+    const mcp = yield* _(MCPService);
+    const db = yield* _(ContentDB);
+    const title = extractTitle(rawContent); // Assume pure helper function
+    const summaryResult = yield* _(mcp.executePattern('summarize', rawContent, 'mcp://default'));
+    const summary = yield* _(Schema.decode(Schema.String)(summaryResult)); // Validate MCP output
+
+    const article: Article = {
+      id: generateId(), // Assume pure helper function
+      title,
+      rawContent,
+      summary: Option.some(summary),
+    };
+
+    yield* _(db.saveArticle(article));
+    return article;
+  });
+
+// Example Layer providing live implementation
+const MCPServiceLive = Layer.succeed(MCPService, {
+  executePattern: (pattern, input, target) => Effect.succeed(`Summary of ${input}`)
+});
+
+// Running the effect with dependencies provided
+const runnable = transformAndSaveContent("Some raw text...").pipe(
+  Effect.provideLayer(MCPServiceLive),
+  // pipe(Effect.provideLayer(ContentDBLive)) // Provide DB Layer elsewhere
+);
+
+// Example of function composition (conceptual)
 const processArticle = pipe(
-  fetchContent,
-  parseContent,
-  transformContentWithMCP(['extract_wisdom', 'summarize']),
-  storeContent
+  fetchContent, // Effect<RawContent, HttpError, HttpClient>
+  parseContent, // Effect<ParsedData, ParseError, ParserService>
+  transformAndSaveContent, // Effect<Article, MCPError | DBError, MCPService | ContentDB>
+  storeContent // Effect<void, DbError, DbService>
 );
 
 const addArticleToCollection = (collection, article) => ({
@@ -35,6 +84,14 @@ const addArticleToCollection = (collection, article) => ({
 ```
 
 ### Core Principles
+
+- **Pure Functions**: Functions with no side effects, now leveraging MCP for consistent LLM outputs
+- **Immutability**: Data structures remain unchanged, with MCP configurations immutable
+- **Function Composition**: Complex operations built with MCP pipelines
+- **Higher-Order Functions**: Enhanced by MCP for dynamic pattern execution
+- **Declarative Style**: Expressing intent with Fabric patterns via MCP
+
+### Effect TS Core Principles Applied:
 
 - **Pure Functions**: Functions with no side effects, now leveraging MCP for consistent LLM outputs
 - **Immutability**: Data structures remain unchanged, with MCP configurations immutable
@@ -150,6 +207,7 @@ src/
 
 #### Core Services
 
++// All core services below are designed as Effect Layers, providing their functionality via Context Tags.
 1. **Feed Service**
    - RSS feed fetching and parsing
    - Feed validation and sanitization
@@ -159,6 +217,7 @@ src/
 2. **Web Scraping Service (Crawl4AI + MCP)**
    - HTML content extraction
    - Metadata parsing with Fabric patterns via MCP
+   - **Dependency Injection**: Provided as a `Layer`, potentially depends on `HttpClient` and `MCPService` layers.
    - Rate limiting and throttling
    - Local caching mechanism for MCP outputs
    - Robots.txt compliance
@@ -177,6 +236,7 @@ src/
    - Nitter instance management for X content
      - Instance cycling and fallback mechanism
      - Instance health monitoring
+   - **Dependency Injection**: Provided as a `Layer`.
    - Local caching of feed content
    - Feed validation and error recovery
 
@@ -185,6 +245,7 @@ src/
    - Support for various API services (X, GitHub, Reddit, etc.)
    - Secure credential storage
    - Rate limit management
+   - **Dependency Injection**: Provided as a `Layer`, depends on `HttpClient` and potentially `EncryptionService` layers.
    - Response parsing and normalization with MCP patterns
 
    ```typescript
@@ -209,6 +270,7 @@ src/
    - Content processing queue with MCP pipelines
    - AI task management via MCP
    - System maintenance tasks
+   - **Dependency Injection**: Provided as a `Layer`, orchestrates other service layers.
 
 ### 3. AI Layer (Fabric AI + MCP)
 
@@ -257,6 +319,27 @@ src/
 
 #### Database Schema (SQLite + Drizzle ORM)
 
+#### Profile-Specific Database Architecture
+
+- **Model**: Each user profile corresponds to a separate SQLite database file (e.g., `~/.config/webinsights/profiles/<profile_id>.db`), enabling strong data isolation.
+- **Storage**: Profile databases are stored in a dedicated directory within the application's data folder.
+- **Metadata**: A central mechanism (e.g., `profiles.json` or a separate small `metadata.db`) stores profile metadata, including the path to the profile's database file and its encryption status (public/private).
+
+#### Optional Encryption (SQLCipher)
+
+- **Privacy Choice**: Users can designate a profile as private during creation, triggering database encryption.
+- **Mechanism**: Private profile databases are encrypted using SQLCipher (via `better-sqlite3-sqlcipher` binding), providing full database file AES-256 encryption.
+- **Key Management**: The encryption key for a private profile is derived from a user-provided password using a strong key derivation function (e.g., PBKDF2). The password is required each time the private profile is loaded.
+
+#### Connection Management
+
+- **Dynamic Connections**: Database connections are established dynamically based on the currently selected profile.
+- **Conditional Driver**: The application uses the standard `better-sqlite3` driver for public profiles and the `better-sqlite3-sqlcipher` driver for private profiles.
+- **Key Provision**: For private profiles, the derived encryption key is provided to SQLCipher (`PRAGMA key = '...'`) immediately after establishing the connection.
+
+#### Database Schema (Per-Profile)
+
+The following schema applies individually to *each* profile's database file.
 ```typescript
 // Feed Table
 interface Feed {
@@ -331,8 +414,8 @@ interface NitterInstance {
 // MCP Connection Table
 interface MCPConnection {
   id: string;
-  url: string;          // e.g., mcp://localhost:11434/llama2
-  vendor: string;       // e.g., ollama, openai
+  url: string; // e.g., mcp://localhost:11434/llama2
+  vendor: string; // e.g., ollama, openai
   model: string;
   status: ConnectionStatus;
 }
@@ -340,15 +423,26 @@ interface MCPConnection {
 
 #### Storage Strategy
 
-- SQLite for structured data including MCP connections
+- **Validation**: Uses `@effect/schema` for defining and validating all core data structures (Feed, Article, Collection, etc.) fetched from or saved to the database, replacing Zod.
+- SQLite for structured data within each profile's database.
 - File system for content cache
 - In-memory cache for frequent access
 - Automatic backups
-- Data migrations
+- Data Migrations (On-Profile Load):
+  - Migrations are managed using Drizzle ORM schema definitions but applied via a custom process.
+  - Standard Drizzle `migrate` function is NOT used directly due to the multi-database nature.
+  - **Process**: When a specific profile database (public or private) is loaded:
+    1. Check the database's internal migration history table (`__drizzle_migrations`).
+    2. Compare applied migrations against the migration files (`migrations/*.sql`) defined in the codebase.
+    3. Identify and apply any pending `.sql` migration files sequentially.
+    4. Update the profile database's migration history table.
+  - **Error Handling**: The migration process for each profile is wrapped in an `Effect`, allowing for robust, functional error handling and recovery strategies.
 - Query optimization
 - Local caching of API responses and MCP outputs
 
 ### 5. Integration Layer
+
+Interactions via this layer leverage Effect for managing asynchronous communication and errors.
 
 #### WebSocket Communication
 
@@ -382,6 +476,9 @@ interface JobScheduler {
    - Encrypted sensitive data including MCP credentials
    - Secure configuration storage
    - Access control mechanisms for MCP servers
+   - Optional, robust full-database encryption for private profiles via SQLCipher.
+   - **Encryption Service**: An Effect `Layer` responsible for handling password hashing (PBKDF2) and potentially credential encryption/decryption.
+   - Password-based key derivation for private profile decryption.
 
 2. **Privacy Measures**
    - No external data sharing by default
@@ -474,6 +571,7 @@ interface Logger {
 
 ### Functional Programming Guidelines
 
++- **Embrace Effect**: Structure application logic primarily using Effect data types and combinators.
 - Prefer pure functions over methods with side effects
 - Use immutable data structures (arrays, objects) with spread operators
 - Leverage function composition for complex operations with MCP
@@ -481,6 +579,7 @@ interface Logger {
 - Separate data from behavior
 - Handle side effects explicitly and at the edges of the system
 - Implement error handling with functional patterns (Option, Either, etc.)
++- **Dependency Management**: Define services using `Context.Tag` and compose the application using `Layer`.
 
 ### Project Setup
 

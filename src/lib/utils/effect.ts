@@ -55,39 +55,37 @@ export const effectFetch = <T>(
 	init?: RequestInit,
 	retryCount = 3,
 	timeoutMs = 10000
-): Effect.Effect<never, ServiceError, T> =>
-	Effect.gen(function* (_) {
-		const fetchEffect = tryCatchPromise(
-			() => fetchJSON<T>(input, init),
-			(error) =>
-				error instanceof ServiceError
-					? error
-					: new ServiceError('FETCH_ERROR', 'Failed to fetch data', error)
-		);
+): Effect.Effect<never, ServiceError, T> => {
+	// Create the fetch effect
+	const fetchEffect = tryCatchPromise(
+		() => fetchJSON<T>(input, init),
+		(error) =>
+			error instanceof ServiceError
+				? error
+				: new ServiceError('FETCH_ERROR', 'Failed to fetch data', error)
+	);
 
-		// Add timeout
-		const withTimeout = Effect.flatMap(
-			Effect.timeout(fetchEffect, Duration.millis(timeoutMs)),
-			Option.match({
-				onNone: () =>
-					Effect.fail(new ServiceError('TIMEOUT', `Request timed out after ${timeoutMs}ms`)),
-				onSome: Effect.succeed
-			})
-		);
+	// Add timeout
+	const withTimeout = Effect.flatMap(
+		Effect.timeout(fetchEffect, Duration.millis(timeoutMs)),
+		Option.match({
+			onNone: () =>
+				Effect.fail(new ServiceError('TIMEOUT', `Request timed out after ${timeoutMs}ms`)),
+			onSome: Effect.succeed
+		})
+	);
 
-		// Add retry with exponential backoff
-		const withRetry = Effect.retry(
-			withTimeout,
-			Schedule.exponential(Duration.seconds(1)).pipe(Schedule.compose(Schedule.recurs(retryCount)))
-		);
+	// Add retry with exponential backoff
+	const withRetry = Effect.retry(
+		withTimeout,
+		Schedule.exponential(Duration.seconds(1)).pipe(Schedule.compose(Schedule.recurs(retryCount)))
+	);
 
-		// Add tracing
-		return yield* _(
-			Effect.withSpan('effectFetch', {
-				attributes: { url: input.toString() }
-			})(withRetry)
-		);
-	});
+	// Add tracing
+	return Effect.withSpan('effectFetch', {
+		attributes: { url: input.toString() }
+	})(withRetry);
+};
 
 // Helper for running Effects
 export const runEffect = <E, A>(

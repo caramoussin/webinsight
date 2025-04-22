@@ -10,6 +10,7 @@ The scraping services provide robust content extraction and analysis capabilitie
 ## Features
 
 ### WebScrapingService
+
 - 🌐 Multi-Format Support
   - HTML content extraction
   - JSON data parsing
@@ -24,6 +25,7 @@ The scraping services provide robust content extraction and analysis capabilitie
   - Flexible content parsing
 
 ### FabricAIScrapingService
+
 - 🧠 AI-Powered Analysis
   - Content summarization
   - Entity extraction
@@ -88,6 +90,7 @@ const result = await Effect.runPromise(
 ## Configuration
 
 ### WebScrapingService Options
+
 - `url`: Target website URL
 - `contentType`: Type of content to scrape (`html`, `json`, `rss`)
 - `selector`: CSS selector for content extraction
@@ -96,6 +99,7 @@ const result = await Effect.runPromise(
 - `crawl4AIOptions`: Configuration for Crawl4AI integration
 
 ### FabricAIScrapingService Options
+
 - All WebScrapingService options, plus:
 - `scrapingOptions`: Advanced scraping configuration
   - `filterType`: Content filtering method

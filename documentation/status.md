@@ -31,10 +31,11 @@ This document tracks the implementation status of WebInsight, highlighting compl
 
 ## 3. In Progress
 
-### 3.1 Content Aggregation
+### 3.1 Content Aggregation & MCP Refactor
 
-* 🔄 Crawl4AI integration for JavaScript-heavy websites (90%)
-* ✅ Rate limiting and robots.txt compliance (100%)
+* 🔄 **Refactor Crawl4AI into MCP Server** (Python/FastAPI/Playwright) (30%) - Defining MCP interface and implementing server logic.
+* 🔄 **Implement Backend MCP Client for Crawl4AI** (SvelteKit/Effect TS) (10%) - Building logic to interact with the Crawl4AI MCP server.
+* ✅ Rate limiting and robots.txt compliance (100%) - *To be verified within Crawl4AI MCP server implementation.*
 * 🔄 JSON API client for Reddit, GitHub, etc. (40%)
 * 🔄 Scheduled data fetching with configurable frequency (30%)
 
@@ -86,7 +87,7 @@ This document tracks the implementation status of WebInsight, highlighting compl
 
 ### 5.2 Major
 
-* 🐛 Occasional timeouts when scraping JavaScript-heavy websites
+* 🐛 Occasional timeouts when scraping JavaScript-heavy websites - *May be impacted by Crawl4AI refactor.*
 * 🐛 Memory usage spikes during AI processing of large articles
 * 🐛 Complex error handling in Effect chains can be difficult to debug
 
@@ -107,6 +108,6 @@ This document tracks the implementation status of WebInsight, highlighting compl
 
 ## 7. Next Release Target
 
-* **Version**: 0.2.0
+* **Version**: 0.1.0
 * **Target Date**: June 15, 2025
-* **Focus**: Complete AI agent implementation, finalize MCP integration, implement scheduled data fetching, and create AI processing pipeline configuration UI
+* **Focus**: **Complete Crawl4AI MCP refactor (Server & Client)**, complete AI agent implementation, finalize MCP configuration UI, implement scheduled data fetching, and create AI processing pipeline configuration UI.

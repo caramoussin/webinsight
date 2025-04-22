@@ -2,12 +2,11 @@
 Crawler service for extracting content from URLs using Crawl4AI.
 This module provides pure functions for content extraction and robots.txt checking.
 """
-import asyncio
 import time
 import traceback
 import urllib.robotparser
 from urllib.parse import urlparse
-from typing import Dict, List, Optional, Any, Union
+from typing import Dict, Optional, Any
 
 # Import Crawl4AI components (updated for v0.5.0)
 # Use top-level imports as available in the installed package

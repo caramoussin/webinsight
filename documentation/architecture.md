@@ -91,7 +91,7 @@ const addArticleToCollection = (collection, article) => ({
 - **Higher-Order Functions**: Enhanced by MCP for dynamic pattern execution
 - **Declarative Style**: Expressing intent with Fabric patterns via MCP
 
-### Effect TS Core Principles Applied:
+### Effect TS Core Principles Applied
 
 - **Pure Functions**: Functions with no side effects, now leveraging MCP for consistent LLM outputs
 - **Immutability**: Data structures remain unchanged, with MCP configurations immutable
@@ -207,113 +207,104 @@ src/
 
 #### Core Services
 
-+// All core services below are designed as Effect Layers, providing their functionality via Context Tags.
-1. **Feed Service**
-   - RSS feed fetching and parsing
-   - Feed validation and sanitization
-   - Update scheduling
-   - Feed categorization
+1. **Feed Service**: Handles RSS/Atom feed fetching and parsing.
+2. **Web Scraping Service (MCP Client)**:
+    - Acts as an **MCP client** to interact with the dedicated **Crawl4AI MCP Server** (the Python/Playwright microservice).
+    - Responsible for requesting content extraction for specific URLs based on triggers from the API layer (manual fetches) or background jobs/AI agents.
+    - May still contain logic for basic parsing or selecting appropriate Crawl4AI MCP actions.
 
-2. **Web Scraping Service (Crawl4AI + MCP)**
-   - HTML content extraction
-   - Metadata parsing with Fabric patterns via MCP
-   - **Dependency Injection**: Provided as a `Layer`, potentially depends on `HttpClient` and `MCPService` layers.
-   - Rate limiting and throttling
-   - Local caching mechanism for MCP outputs
-   - Robots.txt compliance
-   - Configurable scraping rules
-   - Ethical scraping practices
-
-   ```typescript
-   interface WebScrapingService {
-     extractContent(url: string, selectors: SelectorConfig): Promise<ScrapedContent>;
-     processWithMCP(content: ScrapedContent, pattern: string): Promise<ProcessedContent>;
-   }
-   ```
+    ```typescript
+    // Conceptual interface for the service acting as an MCP client
+    interface WebScrapingClientService {
+      requestScrape(url: string, options: CrawlOptions): Effect.Effect<ScrapedContent, MCPError | NetworkError, Crawl4AI_MCP_Client>; // Uses Crawl4AI MCP
+    }
+    ```
 
 3. **RSS Service with Nitter Integration**
-   - RSS feed fetching and parsing
-   - Nitter instance management for X content
-     - Instance cycling and fallback mechanism
-     - Instance health monitoring
-   - **Dependency Injection**: Provided as a `Layer`.
-   - Local caching of feed content
-   - Feed validation and error recovery
+    - RSS feed fetching and parsing
+    - Nitter instance management for X content
+      - Instance cycling and fallback mechanism
+      - Instance health monitoring
+    - **Dependency Injection**: Provided as a `Layer`.
+    - Local caching of feed content
+    - Feed validation and error recovery
 
 4. **API Client Service with MCP**
-   - Configurable API source management via MCP
-   - Support for various API services (X, GitHub, Reddit, etc.)
-   - Secure credential storage
-   - Rate limit management
-   - **Dependency Injection**: Provided as a `Layer`, depends on `HttpClient` and potentially `EncryptionService` layers.
-   - Response parsing and normalization with MCP patterns
+    - Configurable API source management via MCP
+    - Support for various API services (X, GitHub, Reddit, etc.)
+    - Secure credential storage
+    - Rate limit management
+    - **Dependency Injection**: Provided as a `Layer`, depends on `HttpClient` and potentially `EncryptionService` layers.
+    - Response parsing and normalization with MCP patterns
 
-   ```typescript
-   interface ApiClientService {
-     configureMCPConnection(config: MCPConfig): Promise<MCPConnection>;
-     fetchFromEndpoint(source: ApiSource, endpoint: string, params: object): Promise<ApiResponse>;
-     handleRateLimits(source: ApiSource): Promise<RateLimitInfo>;
-     parseResponse(response: ApiResponse): Promise<ParsedContent>;
-   }
-   
-   interface MCPConfig {
-     vendor: string;       // e.g., ollama, openai
-     model: string;
-     url: string;          // e.g., mcp://localhost:11434/llama2
-     credentials?: Credentials;
-   }
-   ```
+    ```typescript
+    interface ApiClientService {
+      configureMCPConnection(config: MCPConfig): Promise<MCPConnection>;
+      fetchFromEndpoint(source: ApiSource, endpoint: string, params: object): Promise<ApiResponse>;
+      handleRateLimits(source: ApiSource): Promise<RateLimitInfo>;
+      parseResponse(response: ApiResponse): Promise<ParsedContent>;
+    }
+    
+    interface MCPConfig {
+      vendor: string;       // e.g., ollama, openai
+      model: string;
+      url: string;          // e.g., mcp://localhost:11434/llama2
+      credentials?: Credentials;
+    }
+    ```
 
 5. **Background Job Service**
-   - Feed update scheduling
-   - API request scheduling (respecting rate limits)
-   - Content processing queue with MCP pipelines
-   - AI task management via MCP
-   - System maintenance tasks
-   - **Dependency Injection**: Provided as a `Layer`, orchestrates other service layers.
+    - Feed update scheduling
+    - API request scheduling (respecting rate limits)
+    - Content processing queue with MCP pipelines
+    - AI task management via MCP
+    - System maintenance tasks
+    - **Dependency Injection**: Provided as a `Layer`, orchestrates other service layers.
 
 ### 3. AI Layer (Fabric AI + MCP)
 
 #### Agent Architecture
 
-1. **The Archivist**
+1. **The Archivist**:
+    - Responsible for content collection and metadata extraction.
+    - **Uses the Feed Service for RSS/Atom feeds.**
+    - **Uses the Crawl4AI MCP Server (via the backend MCP client) for scraping web pages.**
+    - Executes Fabric patterns (e.g., `extract_metadata`) via MCP to enrich content.
+    - May trigger Brave Search Integration for additional context.
 
-   ```typescript
-   interface ArchivistAgent {
-     collectContent(source: ContentSource): Promise<Content>;
-     extractMetadata(content: Content): Promise<Metadata>;
-     organizeContent(content: Content, metadata: Metadata): Promise<OrganizedContent>;
-     mapRelationships(content: Content[]): Promise<ContentMap>;
-     processContent(source: ContentSource, patternSequence: string[]): Promise<Content>;
-   }
-   ```
+    ```typescript
+    // Conceptual interface
+    interface ArchivistAgent {
+      collectFromUrl(url: string): Promise<Content>;
+      enrichMetadata(contentId: string): Promise<Metadata>;
+    }
+    ```
 
-   - Uses MCP to sequence Fabric patterns (e.g., `extract_metadata` → `organize`)
+2. **The Scribe**:
+    - Executes Fabric patterns (e.g., `summarize`) via MCP
+    - Analyzes content for insights
 
-2. **The Scribe**
+    ```typescript
+    interface ScribeAgent {
+      summarizeContent(content: Content): Promise<Summary>;
+      extractKeyPoints(content: Content): Promise<KeyPoint[]>;
+      analyzeSentiment(content: Content): Promise<SentimentAnalysis>;
+      assessQuality(content: Content): Promise<QualityScore>;
+    }
+    ```
 
-   ```typescript
-   interface ScribeAgent {
-     summarizeContent(content: Content): Promise<Summary>;
-     extractKeyPoints(content: Content): Promise<KeyPoint[]>;
-     analyzeSentiment(content: Content): Promise<SentimentAnalysis>;
-     assessQuality(content: Content): Promise<QualityScore>;
-   }
-   ```
+3. **The Librarian**:
+    - Generates recommendations based on user preferences and content analysis
+    - Creates cross-references between content pieces
+    - Suggests organization for collections
 
-   - Executes Fabric patterns (e.g., `summarize`) via MCP
-
-3. **The Librarian**
-
-   ```typescript
-   interface LibrarianAgent {
-     generateRecommendations(userPrefs: UserPreferences): Promise<Recommendation[]>;
-     createCrossReferences(content: Content[]): Promise<Reference[]>;
-     suggestOrganization(collections: Collection[]): Promise<OrganizationSuggestion>;
-   }
-   ```
-
-   - Leverages MCP pipelines for recommendation workflows
+    ```typescript
+    interface LibrarianAgent {
+      generateRecommendations(userPrefs: UserPreferences): Promise<Recommendation[]>;
+      createCrossReferences(content: Content[]): Promise<Reference[]>;
+      suggestOrganization(collections: Collection[]): Promise<OrganizationSuggestion>;
+    }
+    ```
 
 ### 4. Data Layer
 
@@ -340,6 +331,7 @@ src/
 #### Database Schema (Per-Profile)
 
 The following schema applies individually to *each* profile's database file.
+
 ```typescript
 // Feed Table
 interface Feed {
@@ -572,6 +564,7 @@ interface Logger {
 ### Functional Programming Guidelines
 
 +- **Embrace Effect**: Structure application logic primarily using Effect data types and combinators.
+
 - Prefer pure functions over methods with side effects
 - Use immutable data structures (arrays, objects) with spread operators
 - Leverage function composition for complex operations with MCP
@@ -689,135 +682,42 @@ graph TB
         subgraph Core["Core Services"]
             RSS[RSS Service]
             NIT[Nitter Service]
-            WS[Web Scraper]
+            WS[Web Scraper Client] // Client logic in backend
             APIC[API Client]
             BSI[Brave Search Integration]
             DB[(SQLite DB)]
-            MCP[MCP Servers]
+            MCP_Client[MCP Client Logic] // Backend acts as client
         end
         subgraph AI["AI Layer"]
-            FA[Fabric AI]
-            MCP_C[MCP Clients]
+            FA[Fabric AI Patterns]
+            Agents[AI Agents] // Use MCP Client
+        end
+        subgraph ExternalMCP["External MCP Servers"]
+            direction LR
+            Crawl4AI_MCP[Crawl4AI MCP Server]
+            Fabric_MCP[Fabric MCP Server]
+            LLM_MCP[LLM MCP Servers]
         end
     end
     UI --> API
     SW --> API
     API --> Core
-    Core --> MCP
-    MCP --> FA
-    FA --> MCP_C
+    API -- triggers --> Agents
     BG --> Core
-    BG --> AI
-    BSI --> MCP
+    BG --> Agents
+    Core -- uses --> MCP_Client
+    Agents -- uses --> MCP_Client
+    MCP_Client -- calls --> ExternalMCP // MCP Client connects to MCP Servers
+    BSI -- uses --> MCP_Client
     BSI --> DB
 ```
 
+**Note on Diagram:**
+
+- `WS[Web Scraper Client]` represents the service logic within the SvelteKit backend that *initiates* scraping requests.
+- `MCP_Client[MCP Client Logic]` represents the backend's capability to act as a client to various MCP servers.
+- `ExternalMCP[...]` represents the standalone MCP servers, including the refactored `Crawl4AI MCP Server`, Fabric, and LLMs. The backend's `MCP_Client` connects to these.
+
 ### Optional Brave Search Integration Flow
 
-```mermaid
-graph TB
-    subgraph BraveSearch["Brave Search Layer"]
-        API[API Client]
-        Cache[Local Cache]
-        Budget[Query Budget]
-    end
-    
-    subgraph Agents["AI Agents"]
-        A[Archivist]
-        S[Scribe]
-        L[Librarian]
-    end
-    
-    subgraph FallbackSystem["Fallback System"]
-        Local[Local Processing]
-        Hybrid[Hybrid Mode]
-    end
-    
-    API --> Cache
-    Cache --> A
-    Cache --> S
-    Cache --> L
-    Budget --> API
-    A --> Local
-    S --> Local
-    L --> Local
-    Local --> Hybrid
-```
-
-#### Integration Data Flow
-
-## Flow Process Description
-
-1. **Agent Request Phase**
-   - Each AI agent (Archivist, Scribe, Librarian) initiates requests based on their specific needs
-   - Requests are managed according to pre-allocated quota percentages
-   - Archivist: 40% (metadata enrichment, content discovery)
-   - Scribe: 35% (content analysis, summarization)
-   - Librarian: 25% (recommendations, trends)
-
-2. **Cache Check Phase**
-   - Query Manager first checks Local Cache
-   - Cache hits return immediately to agents
-   - Cache implements LRU (Least Recently Used) strategy
-   - Configurable TTL per content type
-
-3. **Budget Verification Phase**
-   - Monthly quota tracking (2000 queries for free tier)
-   - Per-agent allocation monitoring
-   - Budget status influences routing decision
-
-4. **API Interaction Phase**
-   - Conditional API calls based on budget availability
-   - Feature access based on tier (free/premium)
-   - Response processing and enrichment
-   - Schema data extraction and storage
-
-5. **Fallback Handling Phase**
-   - Activates on budget depletion or API unavailability
-   - Two operation modes:
-     - Local-only: Uses only cached/local data
-     - Hybrid: Combines local processing with limited API calls
-
-6. **Result Processing Phase**
-   - Schema enrichment when available
-   - Cache storage with TTL
-   - Result delivery to requesting agent
-
-7. **Cache Management Phase**
-   - Periodic cache cleanup
-   - Priority-based retention
-   - Storage optimization
-   - TTL management
-
-### Integration Configuration
-
-```typescript
-interface BraveSearchConfig {
-    enabled: boolean;
-    apiKey?: string;
-    tier: 'free' | 'premium';
-    queryBudget: {
-        monthly: number;
-        distribution: {
-            archivist: number;   // 0.4
-            scribe: number;      // 0.35
-            librarian: number;   // 0.25
-        };
-    };
-    cache: {
-        enabled: boolean;
-        ttl: number;            // in seconds
-        maxSize: number;        // in MB
-        strategy: 'lru' | 'fifo';
-    };
-    fallback: {
-        mode: 'automatic' | 'manual';
-        strategy: 'local' | 'hybrid';
-        thresholds: {
-            budgetWarning: number;    // percentage
-            errorRate: number;        // percentage
-            latency: number;          // milliseconds
-        };
-    };
-}
-```
+{{ ... }}

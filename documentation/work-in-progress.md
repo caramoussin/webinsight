@@ -3,8 +3,8 @@
 ## 1. Current Focus
 
 * **Effect Functional Programming Integration**: Implementing the Effect library for functional programming patterns, error handling, and type safety.
-* **Crawl4AI Integration**: Finalizing the integration of Crawl4AI for enhanced web scraping capabilities, particularly for JavaScript-heavy websites.
-* **MCP Client Implementation**: Developing the Model Context Protocol (MCP) client for connecting to Fabric pattern library and LLMs.
+* **Crawl4AI MCP Refactoring**: Planning and starting the refactor of the `Crawl4AI` service into a dedicated Model Context Protocol (MCP) server.
+* **MCP Client Implementation**: Developing the Model Context Protocol (MCP) client for connecting to Fabric pattern library, LLMs, and the future `Crawl4AI` MCP server.
 * **AI Agent Development**: Implementing the specialized AI agents (Archivist, Scribe, Librarian) using the MCP client.
 
 ## 2. Recent Changes
@@ -44,6 +44,8 @@
 
 ### 3.1 Short-term (Current Sprint)
 
+* **Implement Crawl4AI MCP Server**: Refactor the existing `Crawl4AI` Python/FastAPI service to expose its functionality via an MCP interface.
+* **Implement Manual Fetching UI**: Create UI elements allowing users to input a URL, trigger fetching via the `Crawl4AI` MCP (using the backend MCP client), display the fetched content, and initiate AI processing.
 * Implement AI agents (Archivist, Scribe, Librarian) using the MCP client.
 * Develop UI components for MCP configuration management.
 * Add support for local LLM connections via Ollama.
@@ -83,6 +85,7 @@
 * **Bun Runtime**: Selected for performance advantages over Node.js.
 * **Effect Library**: Adopted for functional programming patterns, error handling, and type safety.
 * **Fabric Pattern Library**: Selected for AI pattern execution via MCP.
+* **Crawl4AI as MCP Server**: The `Crawl4AI` web scraping service will be refactored into a standalone MCP server to standardize its interface and allow direct interaction from AI agents and other MCP clients (including the main backend).
 
 ### 4.2 Open Questions
 
@@ -94,8 +97,9 @@
 
 * Handling rate limits and blocking from various content sources.
 * Managing LLM resource usage for efficient local processing.
-* Ensuring consistent content extraction across diverse web sources.
+* Ensuring consistent content extraction across diverse web sources via the `Crawl4AI` MCP.
 * Implementing robust error handling for AI processing pipelines.
 * Creating an intuitive UI for configuring complex AI pattern sequences.
 * Implementing secure key management and derivation for encrypted profiles.
 * Developing and testing the custom, per-profile database migration logic.
+* Developing the `Crawl4AI` MCP server interface.

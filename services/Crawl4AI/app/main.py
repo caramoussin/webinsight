@@ -2,11 +2,10 @@
 FastAPI application for the Web Scraping Service using Crawl4AI.
 This service provides endpoints for extracting content from URLs using various strategies.
 """
-import asyncio
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field, HttpUrl
-from typing import Dict, List, Optional, Any, Union
+from pydantic import HttpUrl
+from typing import Optional, Any
 
 # Import models
 from app.models import (

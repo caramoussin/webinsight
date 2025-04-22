@@ -27,9 +27,11 @@ This document outlines the core functional requirements for WebInsight. It defin
   * **FR1.2.1**: Handle dynamic, JavaScript-heavy websites.
 * **FR1.3**: Fetch content from configured JSON APIs (e.g., Reddit, GitHub, X API).
 * **FR1.4**: Manage content sources (add, edit, delete feeds, URLs, API configurations).
-* **FR1.5**: Respect `robots.txt` rules during scraping.
+* **FR1.5**: Respect `robots.txt` rules during scraping (handled by Crawl4AI MCP).
 * **FR1.6**: Provide mechanisms for handling rate limits for feeds and APIs.
 * **FR1.7**: Allow users to configure scheduled/periodic data fetching with customizable frequency for automated content collection.
+* **FR1.8**: Provide a UI mechanism for users to manually input a URL (RSS, HTML, JSON) and trigger immediate content fetching and optional AI processing.
+  * **FR1.8.1**: Display the fetched content directly in the UI.
 
 ### 4.2 Content Processing & AI Analysis (Leveraging Fabric AI & MCP)
 

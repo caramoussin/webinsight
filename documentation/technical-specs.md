@@ -8,10 +8,12 @@ WebInsight integrates Fabric AI with the Model Context Protocol (MCP) to enhance
 
 ### 1. Content Collection and Processing
 
-#### Web Scraping (Powered by Crawl4AI + MCP)
+#### Web Scraping (Powered by **Crawl4AI MCP Server**)
 
-- Processes scraped content with Fabric patterns via MCP (e.g., `summarize`).
-- Configurable LLM connections through MCP UI.
+- Dedicated Python microservice (`Crawl4AI`) implementing an MCP server interface for web crawling and content extraction.
+- Uses Playwright for handling JavaScript-heavy sites.
+- Processes scraped content with Fabric patterns via MCP (e.g., `summarize`), orchestrated by the main backend or AI agents acting as MCP clients.
+- Configurable LLM connections through MCP UI (used by the *consumers* of the scraped content, not Crawl4AI itself).
 
 ### 2. AI-Powered Analysis
 
@@ -117,18 +119,24 @@ interface BraveSearchFallback {
 
 ## Technical Architecture
 
-### Unified Local Server
+### Unified Local Server (SvelteKit/Bun Backend)
 
 - Runtime: Bun for high-performance operations
 - Application Server: SvelteKit for frontend and backend logic
 - Database: SQLite with Drizzle ORM for type-safe data management
-- Web Scraping: Crawl4AI with MCP for content extraction
+- **Web Scraping Client**: Logic within the backend acts as an MCP client to communicate with the external `Crawl4AI MCP Server`.
 - RSS & Nitter: Feed Service with Nitter instance management
 - API Integration: Configurable API client service with MCP
 - AI Integration: Fabric AI with MCP for pattern execution and LLM management
 - Real-Time Updates: WebSocket for live notifications including MCP updates
 - Background Jobs: Custom scheduler for periodic tasks and API rate limit management
 - Programming Paradigm: Functional programming with pure functions and immutable data structures
+
+### External Services / Servers
+
+- **Crawl4AI MCP Server**: Standalone Python/FastAPI/Playwright microservice providing web scraping capabilities via an MCP interface.
+- **Fabric MCP Server(s)**: Servers exposing Fabric AI patterns.
+- **LLM MCP Server(s)**: Servers (local like Ollama or external) exposing LLMs via MCP.
 
 ### Frontend Stack
 
@@ -251,28 +259,29 @@ flowchart LR
     L --> DB
 ```
 
-### AI Agents Interaction
+### Interaction Sequence (Example: Manual Fetch)
 
 ```mermaid
 sequenceDiagram
-    participant C as Content Source
-    participant MCP as MCP Server
-    participant A as Archivist
-    participant S as Scribe
-    participant L as Librarian
-    participant U as User Interface
-    C->>A: New content available
-    A->>MCP: extract_wisdom
-    MCP-->>A: Wisdom extracted
-    A->>S: Processed content
-    S->>MCP: summarize
-    MCP-->>S: Summary generated
-    S->>L: Send summary
-    L->>MCP: recommend
-    MCP-->>L: Recommendations
-    L->>U: Update user feed
-    U->>L: User interaction
-    L->>L: Update preferences
+    participant UI as Frontend UI
+    participant API as Backend API (SvelteKit)
+    participant MCPClient as Backend MCP Client Logic
+    participant CrawlMCP as Crawl4AI MCP Server
+    participant Agents as AI Agents (e.g., Scribe)
+    participant FabricMCP as Fabric MCP Server
+
+    UI->>API: POST /api/fetch (url: '...')
+    API->>MCPClient: Initiate scrape request for URL
+    MCPClient->>CrawlMCP: Call scrape_url(url='...')
+    CrawlMCP-->>MCPClient: Return { success: true, content: '...' }
+    MCPClient-->>API: Scraped content received
+    API->>Agents: Request AI processing (e.g., summarize) for content
+    Agents->>MCPClient: Initiate MCP pattern call
+    MCPClient->>FabricMCP: Call execute_pattern(pattern='summarize', data=content)
+    FabricMCP-->>MCPClient: Return { success: true, result: 'summary...' }
+    MCPClient-->>Agents: Summary received
+    Agents-->>API: Processing complete, return summary
+    API-->>UI: Return { content: '...', summary: '...' }
 ```
 
 ### Component Dependencies
@@ -498,10 +507,14 @@ WebInsight aims to revolutionize content aggregation and analysis, transforming 
   - [ ] Feed collection organization
   - [ ] Feed categorization
   - [ ] Offline reading support
-- [ ] Implement Crawl4AI with MCP
+- [ ] **Implement Crawl4AI MCP Server**
+  - [ ] Define MCP interface for Crawl4AI
+  - [ ] Refactor Python service to implement MCP
+  - [ ] Implement Backend MCP client logic for Crawl4AI
+- [ ] Integrate Crawl4AI MCP results with AI processing
   - [ ] MCP pattern integration
   - [ ] LLM sequencing support
-  - [ ] Robots.txt compliance
+- [ ] Ensure Robots.txt compliance (within Crawl4AI MCP Server)
 
 ### Phase 3: AI Agents Implementation (Next)
 

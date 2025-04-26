@@ -18,11 +18,11 @@ Refactor the existing `Crawl4AIClient.ts` integration to align with the Model Co
   - [x] Use defined Effect Schemas for input validation and output shaping.
   - [x] Finalize service implementation and fix type issues.
 - [x] **Add Unit Tests**: Add unit tests for provider logic (including Effect error channels) in `src/tests/unit/server/mcp/crawl4ai/`.
+- [x] **Integration Testing**: Add integration tests for the end-to-end MCP flow (Client -> Host -> Server -> Python Service), covering happy paths and edge cases (timeouts, invalid URLs, robots denial).
 
-## In Progress Tasks (Integration & Testing)
+## In Progress Tasks (Integration & Host Connection)
 
 - [ ] **Integrate MCP Provider**: Connect the provider to the main SvelteKit MCP host.
-- [ ] **Integration Testing**: Add integration tests for the end-to-end MCP flow (Client -> Host -> Provider -> Python Service), covering happy paths and edge cases (timeouts, invalid URLs, robots denial).
 
 ## Future Tasks
 
@@ -39,20 +39,24 @@ Refactor the existing `Crawl4AIClient.ts` integration to align with the Model Co
     - Use Effect TS extensively for HTTP calls, error handling, schema validation (`effectFetch`, `validateWithSchema`). ✅
     - Manage configuration (e.g., `CRAWL4AI_URL` via env vars) within the Effect context. ✅
 3. **Unit Test Provider**: Add unit tests for the provider logic. ✅
-4. **Integrate & Refactor**: Wire up the provider and update client code.
-5. **Integration Test**: Implement comprehensive integration tests.
+4. **Integration Test**: Implement comprehensive integration tests. ✅
+    - Create mock Express server to simulate Python backend. ✅
+    - Test happy paths and error cases for all MCP tools. ✅
+    - Verify end-to-end workflows with proper error handling. ✅
+5. **Integrate & Refactor**: Wire up the provider and update client code.
 6. **Fix Linter Errors**: Clean up any related linter issues.
 7. **Document**: Update project documentation (`architecture.md`, `technical-specs.md`, `status.md`, `work-in-progress.md`) reflecting the changes and decisions made.
 
 ### Relevant Files
 
 - `src/lib/services/scraper/Crawl4AIClient.ts` - Existing client (to be potentially deprecated/removed).
-- `src/lib/server/mcp/providers/crawl4ai/` - **(Created)** Provider implementation.
+- `src/lib/server/mcp/crawl4ai/` - **(Created)** Provider implementation.
   - `index.ts` / `service.ts` / `schemas.ts` / `errors.ts` - Provider logic, schemas, custom errors.
 - `src/lib/server/mcp/host.ts` - **(To be located/verified)** Main MCP host.
 - `.cursor/rules/effect-ts.mdc` - **(Reviewed)** Effect TS specific rules.
 - `src/lib/utils/effect.ts` - Core Effect utilities.
 - `services/Crawl4AI/README.md` - Python service API reference.
 - `documentation/` - Files to be updated.
-- `src/tests/unit/server/mcp/providers/crawl4ai/` - **(Created)** Unit test directory.
-- `documentation/task-lists/crawl4ai-mcp.md` - This file.
+- `src/tests/unit/server/mcp/crawl4ai/` - **(Created)** Unit test directory.
+- `src/tests/integration/server/mcp/crawl4ai/` - **(Created)** Integration test directory.
+- `documentation/task-lists/crawl4ai-mcp-task-list.md` - This file.

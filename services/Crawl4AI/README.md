@@ -175,8 +175,8 @@ const extractEffect = client.extractContent({
 
 // Run the effect
 Effect.runPromise(extractEffect)
-  .then(result => console.log(result))
-  .catch(error => console.error(error));
+  .then((result) => console.log(result))
+  .catch((error) => console.error(error));
 ```
 
 ## Testing

@@ -89,7 +89,7 @@ const FabricAI = Context.Tag<FabricAIScrapingService>();
 // Cache Key Schema
 const CacheKeySchema = Z.object({
   articleId: Z.string(),
-  queryType: Z.enum(['summary', 'recommendation', 'metadata']),
+  queryType: Z.enum(['summary', 'recommendation', 'metadata'])
 });
 
 // Service Interface
@@ -114,7 +114,11 @@ const makeHybridCAGService = Effect.gen(function* (_) {
         Effect.gen(function* (_) {
           const cached = yield* _(
             Effect.tryPromise(() =>
-              db.select().from(cachedResults).where({ articleId: key.articleId, queryType: key.queryType }).get()
+              db
+                .select()
+                .from(cachedResults)
+                .where({ articleId: key.articleId, queryType: key.queryType })
+                .get()
             )
           );
 
@@ -123,35 +127,34 @@ const makeHybridCAGService = Effect.gen(function* (_) {
           }
 
           const context = yield* _(retrieveContext(key.articleId, key.queryType));
-          const result = yield* _(
-            generateResult(key.articleId, key.queryType, context)
-          );
+          const result = yield* _(generateResult(key.articleId, key.queryType, context));
 
           yield* _(
             Effect.tryPromise(() =>
-              db.insert(cachedResults).values({
-                articleId: key.articleId,
-                queryType: key.queryType,
-                result,
-                timestamp: Date.now(),
-                ttl: 24 * 60 * 60 * 1000,
-              }).run()
+              db
+                .insert(cachedResults)
+                .values({
+                  articleId: key.articleId,
+                  queryType: key.queryType,
+                  result,
+                  timestamp: Date.now(),
+                  ttl: 24 * 60 * 60 * 1000
+                })
+                .run()
             )
           );
 
           return result;
         }),
       capacity: 1000,
-      timeToLive: '1 day',
+      timeToLive: '1 day'
     })
   );
 
   const retrieveContext = (articleId: string, queryType: string) =>
     Effect.gen(function* (_) {
       const article = yield* _(
-        Effect.tryPromise(() =>
-          db.select().from(articles).where({ id: articleId }).get()
-        )
+        Effect.tryPromise(() => db.select().from(articles).where({ id: articleId }).get())
       );
       if (!article) return [];
 
@@ -161,15 +164,13 @@ const makeHybridCAGService = Effect.gen(function* (_) {
         )
       );
 
-      return similarArticles.map(a => a.content);
+      return similarArticles.map((a) => a.content);
     });
 
   const generateResult = (articleId: string, queryType: string, context: string[]) =>
     Effect.gen(function* (_) {
       const article = yield* _(
-        Effect.tryPromise(() =>
-          db.select().from(articles).where({ id: articleId }).get()
-        )
+        Effect.tryPromise(() => db.select().from(articles).where({ id: articleId }).get())
       );
       if (!article) return yield* _(Effect.fail(new Error('Article not found')));
 
@@ -195,20 +196,17 @@ const makeHybridCAGService = Effect.gen(function* (_) {
     }
   };
 
-  return { 
+  return {
     getOrGenerate: (articleId, queryType, context = []) =>
       pipe(
         CacheKeySchema.parse({ articleId, queryType }),
-        key => cache.get(key),
-        Effect.flatMap(result => Effect.succeed(result))
-      ) 
+        (key) => cache.get(key),
+        Effect.flatMap((result) => Effect.succeed(result))
+      )
   };
 });
 
-const HybridCAGServiceLive = Layer.effect(
-  HybridCAGService,
-  makeHybridCAGService
-).pipe(
+const HybridCAGServiceLive = Layer.effect(HybridCAGService, makeHybridCAGService).pipe(
   Layer.provide(Database.Live),
   Layer.provide(WebScraping.Live),
   Layer.provide(FabricAI.Live)

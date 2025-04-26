@@ -8,18 +8,18 @@ const sqlite = new Database(join(process.cwd(), 'local.db'));
 const db = drizzle(sqlite, { schema });
 
 async function runMigrations() {
-	console.log('Running migrations...');
-	try {
-		await migrate(db, {
-			migrationsFolder: join(process.cwd(), 'migrations')
-		});
-		console.log('Migrations completed successfully');
-	} catch (error) {
-		console.error('Error running migrations:', error);
-		process.exit(1);
-	} finally {
-		sqlite.close();
-	}
+  console.log('Running migrations...');
+  try {
+    await migrate(db, {
+      migrationsFolder: join(process.cwd(), 'migrations')
+    });
+    console.log('Migrations completed successfully');
+  } catch (error) {
+    console.error('Error running migrations:', error);
+    process.exit(1);
+  } finally {
+    sqlite.close();
+  }
 }
 
 runMigrations();

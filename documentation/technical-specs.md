@@ -13,7 +13,7 @@ WebInsight integrates Fabric AI with the Model Context Protocol (MCP) for specia
 - Dedicated Python microservice (`Crawl4AI`) implementing an MCP server interface for web crawling and content extraction.
 - Uses Playwright for handling JavaScript-heavy sites.
 - Processes scraped content with Fabric patterns via MCP (e.g., `summarize`), orchestrated by the main backend or AI agents acting as MCP clients.
-- Configurable LLM connections through the LLMProviderService UI (used by the *consumers* of the scraped content, not Crawl4AI itself).
+- Configurable LLM connections through the LLMProviderService UI (used by the _consumers_ of the scraped content, not Crawl4AI itself).
 
 ### 2. AI-Powered Analysis
 
@@ -101,6 +101,7 @@ WebInsight integrates Fabric AI with the Model Context Protocol (MCP) for specia
 #### Integration Tiers
 
 1. **Basic Tier (Free - 2,000 queries/month)**
+
    - Essential search capabilities
    - Basic metadata enrichment
    - Local cache system
@@ -146,7 +147,7 @@ interface BraveSearchFallback {
 const cache = Cache.make({
   lookup: (key) => retrieveOrGenerateContent(key),
   capacity: 1000,
-  timeToLive: '1 day',
+  timeToLive: '1 day'
 });
 ```
 
@@ -155,7 +156,8 @@ const cache = Cache.make({
 - Runtime: Bun for high-performance operations
 - Application Server: SvelteKit for frontend and backend logic
 - Database: SQLite with Drizzle ORM for type-safe data management
-- **Web Scraping Client**: Logic within the backend acts as an MCP client to communicate with the external `Crawl4AI MCP Server`.
+- **Crawl4AI MCP Provider**: Logic within the backend implements the MCP provider interface for the Crawl4AI service, exposing web content extraction capabilities as standardized MCP tools.
+- **MCP Host**: Central registry for MCP providers that routes tool calls to the appropriate provider and provides a unified API for clients.
 - RSS & Nitter: Feed Service with Nitter instance management
 - API Integration: Configurable API client service with MCP
 - AI Integration: Fabric AI with MCP for pattern execution and direct Effect-based LLMProviderService for LLM management
@@ -165,7 +167,7 @@ const cache = Cache.make({
 
 ### External Services / Servers
 
-- **Crawl4AI MCP Server**: Standalone Python/FastAPI/Playwright microservice providing web scraping capabilities via an MCP interface.
+- **Crawl4AI Service**: Backend service that provides web scraping capabilities, now exposed through the MCP infrastructure for standardized access.
 - **Fabric MCP Server(s)**: Servers exposing Fabric AI patterns.
 - **LLM Provider Service**: Direct Effect-based service using @effect/ai for interacting with LLM providers (local like Ollama or external like OpenAI).
 
@@ -450,6 +452,7 @@ graph TD
 ## Development Process
 
 1. Server Setup
+
    - Bun server configuration
    - Database schema design with MCP tables
    - API development with MCP endpoints
@@ -457,6 +460,7 @@ graph TD
    - WebSocket implementation for MCP updates
 
 2. Frontend Development
+
    - SvelteKit setup
    - Component library including MCP UI
    - Real-time updates
@@ -464,12 +468,14 @@ graph TD
    - UI/UX implementation
 
 3. Core Features
+
    - RSS feed management
    - Content organization with MCP patterns
    - Search functionality enhanced by MCP
    - Data import/export
 
 4. AI Features
+
    - Content analysis with Fabric patterns via MCP
    - Categorization system
    - Summarization through MCP pipelines
@@ -542,14 +548,15 @@ WebInsight aims to revolutionize content aggregation and analysis, transforming 
   - [ ] Feed collection organization
   - [ ] Feed categorization
   - [ ] Offline reading support
-- [ ] **Implement Crawl4AI MCP Server**
-  - [ ] Define MCP interface for Crawl4AI
-  - [ ] Refactor Python service to implement MCP
-  - [ ] Implement Backend MCP client logic for Crawl4AI
+- [x] **Implement Crawl4AI MCP Provider**
+  - [x] Define MCP interface for Crawl4AI
+  - [x] Implement MCP host for provider registration and tool execution
+  - [x] Implement Crawl4AI MCP provider with Effect-based error handling
+  - [x] Create API endpoints for MCP tool discovery and execution
+  - [x] Implement MCP-based client for Crawl4AI
 - [ ] Integrate Crawl4AI MCP results with AI processing
-  - [ ] MCP pattern integration
-  - [ ] LLM provider service implementation using @effect/ai
-- [ ] Ensure Robots.txt compliance (within Crawl4AI MCP Server)
+- [ ] Implement LLM Provider Service with @effect/ai
+- [x] Ensure Robots.txt compliance (implemented in Crawl4AI MCP provider)
 
 ### Phase 3: AI Agents Implementation (Next)
 

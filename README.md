@@ -140,9 +140,9 @@ export default {
   queryBudget: {
     monthly: 2000, // Free tier limit
     distribution: {
-      archivist: 0.4,  // 40% allocation
-      scribe: 0.35,    // 35% allocation
-      librarian: 0.25  // 25% allocation
+      archivist: 0.4, // 40% allocation
+      scribe: 0.35, // 35% allocation
+      librarian: 0.25 // 25% allocation
     }
   },
   caching: {
@@ -154,7 +154,7 @@ export default {
     mode: 'automatic',
     localOnly: true
   }
-}
+};
 ```
 
 ## Architecture
@@ -162,6 +162,7 @@ export default {
 The Smart RSS Aggregator App follows a layered architecture with a strong emphasis on functional programming:
 
 1. **Frontend Layer** (SvelteKit):
+
    - Components structure with UI (shadcn-svelte), feed, content, and AI components
    - Server-side rendering with SvelteKit
    - Reactive state management using Svelte stores
@@ -169,6 +170,7 @@ The Smart RSS Aggregator App follows a layered architecture with a strong emphas
    - MCP UI for LLM management
 
 2. **Backend Layer** (Bun + SvelteKit):
+
    - API endpoints in routes/api/
    - Core services including Feed Service, Web Scraping Service with Crawl4AI, and API Client Service
    - Pure functions with minimal side effects
@@ -176,6 +178,7 @@ The Smart RSS Aggregator App follows a layered architecture with a strong emphas
    - MCP integration for AI pattern execution
 
 3. **AI Layer** (Fabric AI with MCP):
+
    - Three specialized agents:
      - **The Archivist**: Collects content, extracts metadata using MCP pattern sequences
      - **The Scribe**: Summarizes content, extracts key points via Fabric patterns

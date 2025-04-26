@@ -13,3 +13,6 @@ export * from './errors';
 
 // Export service
 export * from './service';
+
+// Export provider adapter
+export * from './provider';

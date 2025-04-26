@@ -35,12 +35,12 @@ Due to Twitter/X deprecating their official RSS feeds, this service uses Nitter 
 import { TwitterRSSService } from './TwitterRSSService';
 
 async function fetchUserRSS() {
-    try {
-        const rssFeed = await TwitterRSSService.fetchRSSFeed('username');
-        console.log(rssFeed);
-    } catch (error) {
-        console.error('RSS retrieval failed', error);
-    }
+  try {
+    const rssFeed = await TwitterRSSService.fetchRSSFeed('username');
+    console.log(rssFeed);
+  } catch (error) {
+    console.error('RSS retrieval failed', error);
+  }
 }
 ```
 

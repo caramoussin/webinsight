@@ -2,11 +2,11 @@ import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
-	return twMerge(clsx(inputs));
+  return twMerge(clsx(inputs));
 }
 
 export function generateId(): string {
-	return crypto.randomUUID();
+  return crypto.randomUUID();
 }
 
 /**
@@ -24,47 +24,47 @@ export function generateId(): string {
  * can be used to animate the element with the `web` animation library.
  */
 export function flyAndScale(
-	node: Element,
-	params: {
-		duration?: number;
-		x?: number;
-		y?: number;
-		start?: number;
-	} = {}
+  node: Element,
+  params: {
+    duration?: number;
+    x?: number;
+    y?: number;
+    start?: number;
+  } = {}
 ) {
-	const style = getComputedStyle(node);
-	const transform = style.transform === 'none' ? '' : style.transform;
+  const style = getComputedStyle(node);
+  const transform = style.transform === 'none' ? '' : style.transform;
 
-	const scaleConversion = (valueA: number, scaleA: [number, number], scaleB: [number, number]) => {
-		const [minA, maxA] = scaleA;
-		const [minB, maxB] = scaleB;
+  const scaleConversion = (valueA: number, scaleA: [number, number], scaleB: [number, number]) => {
+    const [minA, maxA] = scaleA;
+    const [minB, maxB] = scaleB;
 
-		const percentage = (valueA - minA) / (maxA - minA);
-		const valueB = percentage * (maxB - minB) + minB;
+    const percentage = (valueA - minA) / (maxA - minA);
+    const valueB = percentage * (maxB - minB) + minB;
 
-		return valueB;
-	};
+    return valueB;
+  };
 
-	const styleToString = (style: Record<string, string | number>) => {
-		return Object.keys(style).reduce((str, key) => {
-			if (style[key] === undefined) return str;
-			return str + `${key}:${style[key]};`;
-		}, '');
-	};
+  const styleToString = (style: Record<string, string | number>) => {
+    return Object.keys(style).reduce((str, key) => {
+      if (style[key] === undefined) return str;
+      return str + `${key}:${style[key]};`;
+    }, '');
+  };
 
-	return {
-		duration: params.duration ?? 200,
-		delay: 0,
-		css: (t: number) => {
-			const scale = scaleConversion(t, [0, 1], [0.85, 1]);
-			const x = scaleConversion(t, [0, 1], [params.x ?? 0, 0]);
-			const y = scaleConversion(t, [0, 1], [params.y ?? 0, 0]);
+  return {
+    duration: params.duration ?? 200,
+    delay: 0,
+    css: (t: number) => {
+      const scale = scaleConversion(t, [0, 1], [0.85, 1]);
+      const x = scaleConversion(t, [0, 1], [params.x ?? 0, 0]);
+      const y = scaleConversion(t, [0, 1], [params.y ?? 0, 0]);
 
-			return styleToString({
-				transform: `${transform} translate3d(${x}px, ${y}px, 0) scale(${scale})`,
-				opacity: t
-			});
-		},
-		start: params.start ?? 0
-	};
+      return styleToString({
+        transform: `${transform} translate3d(${x}px, ${y}px, 0) scale(${scale})`,
+        opacity: t
+      });
+    },
+    start: params.start ?? 0
+  };
 }

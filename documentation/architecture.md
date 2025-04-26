@@ -2,7 +2,7 @@
 
 ## Overview
 
-WebInsight leverages Fabric AI with the Model Context Protocol (MCP) for intelligent content processing, transforming aggregated web content into actionable insights. It integrates Fabric's pattern library and uses a direct Effect-based LLMProviderService powered by **@effect/ai** for LLM interactions, while specialized tools like Crawl4AI are exposed via MCP. Built with Bun and SvelteKit, this local-first application prioritizes privacy and user control while following functional programming principles (pure functions, immutable data structures, declarative patterns) to create a robust platform for insight generation. Its core architecture is deeply rooted in functional programming principles, utilizing **Effect TS** extensively for managing complexity, ensuring type safety, handling side effects, and composing business logic in a declarative and robust manner.
+WebInsight leverages Fabric AI with the Model Context Protocol (MCP) for intelligent content processing, transforming aggregated web content into actionable insights. It integrates Fabric's pattern library and uses a direct Effect-based LLMProviderService powered by **@effect/ai** for LLM interactions, while specialized tools like Crawl4AI are exposed via MCP. The application implements a central MCP host that serves as a registry for providers, with the Crawl4AI MCP provider offering standardized access to web content extraction capabilities. Built with Bun and SvelteKit, this local-first application prioritizes privacy and user control while following functional programming principles (pure functions, immutable data structures, declarative patterns) to create a robust platform for insight generation. Its core architecture is deeply rooted in functional programming principles, utilizing **Effect TS** extensively for managing complexity, ensuring type safety, handling side effects, and composing business logic in a declarative and robust manner.
 
 ## Programming Paradigm
 
@@ -10,7 +10,7 @@ WebInsight leverages Fabric AI with the Model Context Protocol (MCP) for intelli
 
 WebInsight embraces functional programming, with Effect TS serving as the backbone for managing effects, concurrency, resources, and application structure. This approach aims for:
 
-- **Declarative Business Logic**: Expressing *what* needs to happen rather than *how*, using Effect's combinators to build complex workflows from smaller, reusable effects.
+- **Declarative Business Logic**: Expressing _what_ needs to happen rather than _how_, using Effect's combinators to build complex workflows from smaller, reusable effects.
 - **Robust Error Handling**: Leveraging Effect's typed error channels (`Effect<A, E, R>`) to explicitly handle potential failures at the type level, eliminating runtime exceptions for expected errors.
 - **Resource Safety**: Utilizing `Scope` and `Layer` to ensure resources (database connections, file handles, network requests) are acquired and released safely, preventing leaks.
 - **Asynchronous & Concurrent Operations**: Managing asynchronous tasks and concurrency with powerful primitives like Fibers, ensuring responsiveness and efficient resource utilization.
@@ -20,28 +20,40 @@ WebInsight embraces functional programming, with Effect TS serving as the backbo
 ```typescript
 // Example: Effect-based content transformation using Layer for dependencies
 import { Effect, Layer, Context, pipe } from 'effect';
-import * as Schema from "@effect/schema/Schema";
+import * as Schema from '@effect/schema/Schema';
 
 // Define Service Interfaces (Context Tags)
-class MCPService extends Context.Tag('MCPService')<MCPService, {
-  readonly executePattern: (pattern: string, input: unknown, target: string) => Effect.Effect<unknown, MCPError>;
-}>() {}
-class ContentDB extends Context.Tag('ContentDB')<ContentDB, {
-  readonly saveArticle: (article: Article) => Effect.Effect<void, DBError>;
-}>() {}
+class MCPService extends Context.Tag('MCPService')<
+  MCPService,
+  {
+    readonly executePattern: (
+      pattern: string,
+      input: unknown,
+      target: string
+    ) => Effect.Effect<unknown, MCPError>;
+  }
+>() {}
+class ContentDB extends Context.Tag('ContentDB')<
+  ContentDB,
+  {
+    readonly saveArticle: (article: Article) => Effect.Effect<void, DBError>;
+  }
+>() {}
 
 // Define Data Schema with @effect/schema
 const ArticleSchema = Schema.Struct({
   id: Schema.String,
   title: Schema.String,
   rawContent: Schema.String,
-  summary: Schema.Option(Schema.String),
+  summary: Schema.Option(Schema.String)
 });
 type Article = Schema.Schema.To<typeof ArticleSchema>;
 
 // Business Logic composed with Effect
-const transformAndSaveContent = (rawContent: string): Effect.Effect<Article, MCPError | DBError, MCPService | ContentDB> =>
-  Effect.gen(function*(_) {
+const transformAndSaveContent = (
+  rawContent: string
+): Effect.Effect<Article, MCPError | DBError, MCPService | ContentDB> =>
+  Effect.gen(function* (_) {
     const mcp = yield* _(MCPService);
     const db = yield* _(ContentDB);
     const title = extractTitle(rawContent); // Assume pure helper function
@@ -52,7 +64,7 @@ const transformAndSaveContent = (rawContent: string): Effect.Effect<Article, MCP
       id: generateId(), // Assume pure helper function
       title,
       rawContent,
-      summary: Option.some(summary),
+      summary: Option.some(summary)
     };
 
     yield* _(db.saveArticle(article));
@@ -65,8 +77,8 @@ const MCPServiceLive = Layer.succeed(MCPService, {
 });
 
 // Running the effect with dependencies provided
-const runnable = transformAndSaveContent("Some raw text...").pipe(
-  Effect.provideLayer(MCPServiceLive),
+const runnable = transformAndSaveContent('Some raw text...').pipe(
+  Effect.provideLayer(MCPServiceLive)
   // pipe(Effect.provideLayer(ContentDBLive)) // Provide DB Layer elsewhere
 );
 
@@ -137,7 +149,14 @@ src/
 │   │   │   ├── archivist.ts
 │   │   │   ├── scribe.ts
 │   │   │   ├── librarian.ts
-│   │   │   └── mcp.ts         # MCP integration logic
+│   │   ├── mcp/              # MCP integration
+│   │   │   ├── host.ts         # MCP host implementation
+│   │   │   └── crawl4ai/       # Crawl4AI MCP provider
+│   │   │       ├── index.ts      # Provider exports
+│   │   │       ├── service.ts    # Provider implementation
+│   │   │       ├── schemas.ts    # Data schemas
+│   │   │       ├── errors.ts     # Error types
+│   │   │       └── provider.ts   # Provider adapter
 │   │   ├── rss/
 │   │   │   ├── parser.ts
 │   │   │   └── fetcher.ts
@@ -214,7 +233,7 @@ interface HybridCAGService {
 const cache = Cache.make({
   lookup: (key) => retrieveOrGenerateContent(key),
   capacity: 1000,
-  timeToLive: '1 day',
+  timeToLive: '1 day'
 });
 ```
 
@@ -237,105 +256,145 @@ src/
 #### Core Services
 
 1. **Feed Service**: Handles RSS/Atom feed fetching and parsing.
-2. **Web Scraping Service (MCP Client)**:
-    - Acts as an **MCP client** to interact with the dedicated **Crawl4AI MCP Server** (the Python/Playwright microservice).
-    - Responsible for requesting content extraction for specific URLs based on triggers from the API layer (manual fetches) or background jobs/AI agents.
-    - May still contain logic for basic parsing or selecting appropriate Crawl4AI MCP actions.
+2. **MCP Architecture**:
 
-    ```typescript
-    // Conceptual interface for the service acting as an MCP client
-    interface WebScrapingClientService {
-      requestScrape(url: string, options: CrawlOptions): Effect.Effect<ScrapedContent, MCPError | NetworkError, Crawl4AI_MCP_Client>; // Uses Crawl4AI MCP
-    }
-    ```
+   - **MCP Host**: Central registry for MCP providers that routes tool calls to the appropriate provider.
+     - Implements provider registration and discovery mechanisms.
+     - Provides unified API for tool discovery and execution.
+     - Handles errors consistently across providers.
+   - **Crawl4AI MCP**: MCP host and client implementation.
+     - **Crawl4AI MCP Provider**: Implements the MCP provider interface for the Crawl4AI service.
+       - Exposes web content extraction capabilities as standardized MCP tools.
+       - Implements robust error handling with Effect TS.
+       - Validates inputs and outputs with Effect Schema.
+     - **MCP-based Crawl4AI Client**: Client that uses the MCP infrastructure to access Crawl4AI capabilities.
+       - Maintains the same API as the original client for backward compatibility.
+       - Leverages the MCP infrastructure for standardized access.
+
+   ```typescript
+   // Implemented MCP host and provider architecture
+   interface MCPHostService {
+     // Register a provider with the host
+     registerProvider(provider: MCPProvider): Effect.Effect<void, MCPHostError>;
+     // List all tools from all providers
+     listAllTools(): Effect.Effect<Array<MCPTool>, MCPHostError>;
+     // Call a tool by name and provider
+     callTool<P, R>(
+       toolName: string,
+       providerName: string,
+       params: P
+     ): Effect.Effect<R, MCPHostError | ServiceError>;
+   }
+
+   // Crawl4AI MCP provider implementation
+   interface Crawl4AIService {
+     // Extract content from a web page
+     extractContent(
+       params: ExtractContentInput
+     ): Effect.Effect<ExtractContentOutput, Crawl4AIMCPError>;
+     // Check if scraping is allowed by robots.txt
+     checkRobotsTxt(
+       params: CheckRobotsTxtInput
+     ): Effect.Effect<CheckRobotsTxtOutput, Crawl4AIMCPError>;
+     // List available MCP tools
+     listTools(): Effect.Effect<Array<Tool>, Crawl4AIMCPError>;
+     // Call a tool by name
+     callTool<P, R>(name: string, params: P): Effect.Effect<R, Crawl4AIMCPError>;
+   }
+   ```
 
 3. **RSS Service with Nitter Integration**
-    - RSS feed fetching and parsing
-    - Nitter instance management for X content
-      - Instance cycling and fallback mechanism
-      - Instance health monitoring
-    - **Dependency Injection**: Provided as a `Layer`.
-    - Local caching of feed content
-    - Feed validation and error recovery
+
+   - RSS feed fetching and parsing
+   - Nitter instance management for X content
+     - Instance cycling and fallback mechanism
+     - Instance health monitoring
+   - **Dependency Injection**: Provided as a `Layer`.
+   - Local caching of feed content
+   - Feed validation and error recovery
 
 4. **API Client Service with MCP**
-    - Configurable API source management via MCP
-    - Support for various API services (X, GitHub, Reddit, etc.)
-    - Secure credential storage
-    - Rate limit management
-    - **Dependency Injection**: Provided as a `Layer`, depends on `HttpClient` and potentially `EncryptionService` layers.
-    - Response parsing and normalization with MCP patterns
 
-    ```typescript
-    interface ApiClientService {
-      configureMCPConnection(config: MCPConfig): Promise<MCPConnection>;
-      fetchFromEndpoint(source: ApiSource, endpoint: string, params: object): Promise<ApiResponse>;
-      handleRateLimits(source: ApiSource): Promise<RateLimitInfo>;
-      parseResponse(response: ApiResponse): Promise<ParsedContent>;
-    }
-    
-    interface MCPConfig {
-      vendor: string;       // e.g., ollama, openai
-      model: string;
-      url: string;          // e.g., mcp://localhost:11434/llama2
-      credentials?: Credentials;
-    }
-    ```
+   - Configurable API source management via MCP
+   - Support for various API services (X, GitHub, Reddit, etc.)
+   - Secure credential storage
+   - Rate limit management
+   - **Dependency Injection**: Provided as a `Layer`, depends on `HttpClient` and potentially `EncryptionService` layers.
+   - Response parsing and normalization with MCP patterns
+
+   ```typescript
+   interface ApiClientService {
+     configureMCPConnection(config: MCPConfig): Promise<MCPConnection>;
+     fetchFromEndpoint(source: ApiSource, endpoint: string, params: object): Promise<ApiResponse>;
+     handleRateLimits(source: ApiSource): Promise<RateLimitInfo>;
+     parseResponse(response: ApiResponse): Promise<ParsedContent>;
+   }
+
+   interface MCPConfig {
+     vendor: string; // e.g., ollama, openai
+     model: string;
+     url: string; // e.g., mcp://localhost:11434/llama2
+     credentials?: Credentials;
+   }
+   ```
 
 5. **Background Job Service**
-    - Feed update scheduling
-    - API request scheduling (respecting rate limits)
-    - Content processing queue with MCP pipelines
-    - AI task management via MCP
-    - System maintenance tasks
-    - Cache management (invalidation, refresh)
-    - Context retrieval optimization
-    - **Dependency Injection**: Provided as a `Layer`, orchestrates other service layers.
+   - Feed update scheduling
+   - API request scheduling (respecting rate limits)
+   - Content processing queue with MCP pipelines
+   - AI task management via MCP
+   - System maintenance tasks
+   - Cache management (invalidation, refresh)
+   - Context retrieval optimization
+   - **Dependency Injection**: Provided as a `Layer`, orchestrates other service layers.
 
 ### 3. AI Layer (Fabric AI + MCP)
 
 #### Agent Architecture
 
 1. **The Archivist**:
-    - Responsible for content collection and metadata extraction.
-    - **Uses the Feed Service for RSS/Atom feeds.**
-    - **Uses the Crawl4AI MCP Server (via the backend MCP client) for scraping web pages.**
-    - Executes Fabric patterns (e.g., `extract_metadata`) via MCP to enrich content.
-    - May trigger Brave Search Integration for additional context.
 
-    ```typescript
-    // Conceptual interface
-    interface ArchivistAgent {
-      collectFromUrl(url: string): Promise<Content>;
-      enrichMetadata(contentId: string): Promise<Metadata>;
-    }
-    ```
+   - Responsible for content collection and metadata extraction.
+   - **Uses the Feed Service for RSS/Atom feeds.**
+   - **Uses the Crawl4AI MCP Server (via the backend MCP client) for scraping web pages.**
+   - Executes Fabric patterns (e.g., `extract_metadata`) via MCP to enrich content.
+   - May trigger Brave Search Integration for additional context.
+
+   ```typescript
+   // Conceptual interface
+   interface ArchivistAgent {
+     collectFromUrl(url: string): Promise<Content>;
+     enrichMetadata(contentId: string): Promise<Metadata>;
+   }
+   ```
 
 2. **The Scribe**:
-    - Executes Fabric patterns (e.g., `summarize`) via MCP
-    - Analyzes content for insights
 
-    ```typescript
-    interface ScribeAgent {
-      summarizeContent(content: Content): Promise<Summary>;
-      extractKeyPoints(content: Content): Promise<KeyPoint[]>;
-      analyzeSentiment(content: Content): Promise<SentimentAnalysis>;
-      assessQuality(content: Content): Promise<QualityScore>;
-    }
-    ```
+   - Executes Fabric patterns (e.g., `summarize`) via MCP
+   - Analyzes content for insights
+
+   ```typescript
+   interface ScribeAgent {
+     summarizeContent(content: Content): Promise<Summary>;
+     extractKeyPoints(content: Content): Promise<KeyPoint[]>;
+     analyzeSentiment(content: Content): Promise<SentimentAnalysis>;
+     assessQuality(content: Content): Promise<QualityScore>;
+   }
+   ```
 
 3. **The Librarian**:
-    - Generates recommendations based on user preferences and content analysis
-    - Creates cross-references between content pieces
-    - Suggests organization for collections
 
-    ```typescript
-    interface LibrarianAgent {
-      generateRecommendations(userPrefs: UserPreferences): Promise<Recommendation[]>;
-      createCrossReferences(content: Content[]): Promise<Reference[]>;
-      suggestOrganization(collections: Collection[]): Promise<OrganizationSuggestion>;
-    }
-    ```
+   - Generates recommendations based on user preferences and content analysis
+   - Creates cross-references between content pieces
+   - Suggests organization for collections
+
+   ```typescript
+   interface LibrarianAgent {
+     generateRecommendations(userPrefs: UserPreferences): Promise<Recommendation[]>;
+     createCrossReferences(content: Content[]): Promise<Reference[]>;
+     suggestOrganization(collections: Collection[]): Promise<OrganizationSuggestion>;
+   }
+   ```
 
 ### 4. Data Layer
 
@@ -361,7 +420,7 @@ src/
 
 #### Database Schema (Per-Profile)
 
-The following schema applies individually to *each* profile's database file.
+The following schema applies individually to _each_ profile's database file.
 
 ```typescript
 // Feed Table
@@ -419,7 +478,7 @@ interface UserPreferences {
   aiSettings: AISettings;
   uiSettings: UISettings;
   scrapingSettings: ScrapingSettings;
-  llmSettings: LLMSettings;  // Added for LLM provider configuration
+  llmSettings: LLMSettings; // Added for LLM provider configuration
 }
 
 // API Source Table
@@ -497,7 +556,7 @@ interface JobScheduler {
   scheduleContentProcessing(): void;
   scheduleApiRequests(): void;
   scheduleMaintenanceTasks(): void;
-  scheduleMCPTasks(): void;  // Added for MCP server management
+  scheduleMCPTasks(): void; // Added for MCP server management
 }
 ```
 
@@ -506,6 +565,7 @@ interface JobScheduler {
 ### Data Protection
 
 1. **Local Storage Security**
+
    - Encrypted sensitive data including MCP credentials
    - Secure configuration storage
    - Access control mechanisms for MCP servers
@@ -527,7 +587,8 @@ interface JobScheduler {
    ```typescript
    // Memoized function example with MCP
    const memoizedAnalyze = memoize(
-     (content: Content): Analysis => mcp.executePattern('analyze', content, 'mcp://localhost:11434/llama2'),
+     (content: Content): Analysis =>
+       mcp.executePattern('analyze', content, 'mcp://localhost:11434/llama2'),
      (content) => content.id
    );
    ```
@@ -555,7 +616,7 @@ interface JobScheduler {
      feed: FeedCache;
      apiResponse: ApiResponseCache;
      scrapedContent: ScrapedContentCache;
-     llmCache: LLMCache;  // Added for LLM provider outputs
+     llmCache: LLMCache; // Added for LLM provider outputs
      set: <T>(key: string, value: T) => CacheManager;
      get: <T>(key: string) => Option<T>;
    }
@@ -585,7 +646,7 @@ interface ErrorHandler {
   handleNetworkError(error: NetworkError): Promise<void>;
   handleDatabaseError(error: DatabaseError): Promise<void>;
   handleAIError(error: AIError): Promise<void>;
-  handleMCPError(error: MCPError): Promise<void>;  // Added for MCP-specific errors
+  handleMCPError(error: MCPError): Promise<void>; // Added for MCP-specific errors
 }
 ```
 
@@ -613,7 +674,7 @@ interface Logger {
 - Separate data from behavior
 - Handle side effects explicitly and at the edges of the system
 - Implement error handling with functional patterns (Option, Either, etc.)
-+- **Dependency Management**: Define services using `Context.Tag` and compose the application using `Layer`.
+  +- **Dependency Management**: Define services using `Context.Tag` and compose the application using `Layer`.
 
 ### Project Setup
 
@@ -634,12 +695,14 @@ bun run test
 ### Testing Strategy
 
 1. **Unit Tests**
+
    - Component testing including MCP UI
    - Service testing with MCP integration
    - AI agent testing with Fabric patterns
    - MCP connection testing
 
 2. **Integration Tests**
+
    - API endpoint testing with MCP
    - Data flow testing through MCP pipelines
    - UI interaction testing with MCP configuration
@@ -654,6 +717,7 @@ bun run test
 ### Local Deployment
 
 1. **Installation Process**
+
    - Dependencies check
    - Database initialization with MCP schema
    - Configuration setup including MCP servers and LLM providers
@@ -673,7 +737,7 @@ interface HealthCheck {
   checkAIServices(): Promise<HealthStatus>;
   checkNetworkServices(): Promise<HealthStatus>;
   checkFileSystem(): Promise<HealthStatus>;
-  checkMCPServers(): Promise<HealthStatus>;  // Added for MCP monitoring
+  checkMCPServers(): Promise<HealthStatus>; // Added for MCP monitoring
 }
 ```
 
@@ -685,7 +749,7 @@ interface Metrics {
   monitorResourceUsage(): Promise<ResourceUsage>;
   trackUserInteractions(): Promise<UserMetrics>;
   measureResponseTimes(): Promise<ResponseTimeMetrics>;
-  trackMCPPerformance(): Promise<MCPMetrics>;  // Added for MCP-specific metrics
+  trackMCPPerformance(): Promise<MCPMetrics>; // Added for MCP-specific metrics
 }
 ```
 

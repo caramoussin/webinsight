@@ -54,11 +54,13 @@ Crawl4AI is an open-source, LLM-friendly web crawler and scraper that provides o
 **Core Components:**
 
 1. **WebScrapingService (TypeScript, Effect-based)** ✅
+
    - Pure functional wrappers for Crawl4AI using Effect.
    - Type-safe, schema-driven configuration (Effect Schema).
    - Supports both direct Crawl4AI extraction and browser-based extraction.
 
 2. **Crawl4AI Python Service (v0.1.0)** ✅
+
    - FastAPI microservice for content extraction and robots.txt compliance.
    - Markdown and structured extraction, content filtering, and caching.
    - **Successfully implemented browser automation using Playwright** to handle dynamic, JS-heavy sites.
@@ -66,6 +68,7 @@ Crawl4AI is an open-source, LLM-friendly web crawler and scraper that provides o
    - Robust unit and integration tests.
 
 3. **MCPClient & FabricAIScrapingService (TypeScript)** 🔄
+
    - Effect-based MCP client for pattern execution, sequencing, and LLM management.
    - Functional error handling and compositional pattern pipelines.
 
@@ -250,6 +253,7 @@ static async scrape(
 ### Phase 1: Core Integration (2 weeks)
 
 1. **Setup and Configuration**
+
    - Install Crawl4AI and Fabric CLI: `pip install -U crawl4ai` and `go install github.com/danielmiessler/fabric@latest`.
    - Configure MCP servers for Fabric patterns and LLMs.
 
@@ -338,6 +342,7 @@ interface ArchivistAgent {
 - Uses MCP to sequence patterns (e.g., `extract_metadata` → `organize`).
 
 2. **The Scribe**
+
    - Executes Fabric patterns via MCP for summarization and analysis.
 
 3. **The Librarian**
@@ -350,8 +355,8 @@ interface ArchivistAgent {
 ```typescript
 interface MCPConnection {
   id: string;
-  url: string;          // e.g., mcp://localhost:11434/llama2
-  vendor: string;       // e.g., ollama, openai
+  url: string; // e.g., mcp://localhost:11434/llama2
+  vendor: string; // e.g., ollama, openai
   model: string;
   status: ConnectionStatus;
 }
@@ -375,7 +380,7 @@ interface WebSocketEvents {
 
 ```typescript
 interface CacheManager {
-  mcpCache: MCPCache;  // Cache for MCP LLM outputs
+  mcpCache: MCPCache; // Cache for MCP LLM outputs
 }
 ```
 

@@ -127,11 +127,13 @@ Both services use Effect for robust error handling:
 The scraping services are used throughout the app for:
 
 1. **Feed Processing**
+
    - RSS feed extraction
    - Article content scraping
    - Media attachment handling
 
 2. **Content Analysis**
+
    - Automatic summarization
    - Topic categorization
    - Content recommendations

@@ -54,11 +54,13 @@ Integrate MCP as a bridge between Fabric AI’s agents (Archivist, Scribe, Libra
 #### Components
 
 1. **MCP Servers**:
+
    - **Local LLMs**: Each local LLM (e.g., via Ollama) runs as an MCP server on the user’s device, exposing endpoints for Fabric patterns.
    - **External LLMs**: Connect to vendor APIs (e.g., OpenAI) as MCP servers, with encrypted communication.
    - **Pattern Library**: An MCP server hosts the Fabric pattern library, serving patterns as callable endpoints.
 
 2. **MCP Clients**:
+
    - Fabric AI agents (e.g., Scribe) act as MCP clients, requesting data or LLM outputs via standardized MCP calls.
    - The app’s backend (Bun + SvelteKit) mediates these requests, ensuring seamless integration.
 
@@ -73,46 +75,46 @@ graph TB
         subgraph "Smart RSS Aggregator App"
             UI[UI Layer<br>SvelteKit]
             Backend[Backend Layer<br>Bun + SvelteKit]
-            
+
             subgraph "Fabric AI Agents"
                 Archivist[The Archivist]
                 Scribe[The Scribe]
                 Librarian[The Librarian]
             end
-            
+
             subgraph "MCP Layer"
                 MCPClient[MCP Clients]
                 PatternLib[Pattern Library<br>Server]
             end
-            
+
             subgraph "LLM Layer"
                 LocalLLM[Local LLM<br>Servers]
                 ExternalLLM[External LLM<br>Connectors]
             end
         end
     end
-    
+
     subgraph "External Services"
         OpenAI[OpenAI API]
         Anthropic[Anthropic API]
     end
-    
+
     UI <--> Backend
     Backend <--> Archivist
     Backend <--> Scribe
     Backend <--> Librarian
-    
+
     Archivist <--> MCPClient
     Scribe <--> MCPClient
     Librarian <--> MCPClient
-    
+
     MCPClient <--> PatternLib
     MCPClient <--> LocalLLM
     MCPClient <--> ExternalLLM
-    
+
     ExternalLLM <--> OpenAI
     ExternalLLM <--> Anthropic
-    
+
     style Smart RSS Aggregator App fill:#f5f5f5,stroke:#333,stroke-width:1px
     style Fabric AI Agents fill:#e1f5fe,stroke:#0288d1,stroke-width:1px
     style MCP Layer fill:#e8f5e9,stroke:#388e3c,stroke-width:1px
@@ -162,7 +164,7 @@ sequenceDiagram
     participant LocalLLM as Local LLM
     participant Scribe as The Scribe
     participant DB as SQLite Database
-    
+
     Content->>Archivist: Raw content
     Archivist->>MCPClient: Request pattern execution
     MCPClient->>PatternLib: Get "extract_wisdom" pattern
@@ -176,7 +178,7 @@ sequenceDiagram
     MCPClient-->>Archivist: Processed content
     Archivist->>Scribe: Pass for further analysis
     Scribe->>DB: Store results
-    
+
     Note over MCPClient,LocalLLM: Pattern execution can<br>fallback to external LLMs<br>if configured
 ```
 
@@ -210,44 +212,44 @@ graph LR
         LLMManager[LLM Manager Component]
         AgentConfig[Agent Configuration]
     end
-    
+
     subgraph "Backend Services"
         API[API Endpoints]
         MCPManager[MCP Manager]
         OllamaService[Ollama Service]
         APIKeyManager[API Key Manager]
     end
-    
+
     subgraph "MCP Infrastructure"
         LocalServer[Local MCP Server]
         ExternalConnector[External MCP Connector]
         PatternRegistry[Pattern Registry]
     end
-    
+
     subgraph "Storage"
         Config[Configuration Files]
         Database[SQLite Database]
     end
-    
+
     User((User))-->Settings
     Settings-->LLMManager
     LLMManager-->AgentConfig
-    
+
     LLMManager-->API
     API-->MCPManager
     MCPManager-->OllamaService
     MCPManager-->APIKeyManager
-    
+
     OllamaService-->LocalServer
     APIKeyManager-->ExternalConnector
     MCPManager-->PatternRegistry
-    
+
     MCPManager-->Config
     MCPManager-->Database
-    
+
     LocalServer-.->|Executes Patterns|PatternRegistry
     ExternalConnector-.->|Executes Patterns|PatternRegistry
-    
+
     style User fill:#f9f9f9,stroke:#333,stroke-width:2px
     style User Interface fill:#e3f2fd,stroke:#2196f3,stroke-width:1px
     style Backend Services fill:#e8f5e9,stroke:#4caf50,stroke-width:1px
@@ -287,7 +289,7 @@ class MCPManager {
   async executePattern(pattern: string, input: string, llmUrl: string) {
     const response = await fetch(`${llmUrl}/${pattern}`, {
       method: 'POST',
-      body: JSON.stringify({ input }),
+      body: JSON.stringify({ input })
     });
     return response.json();
   }
@@ -334,7 +336,11 @@ async function runSequence(input: string, patterns: string[], llmUrl: string) {
 }
 
 // Usage: Archivist -> Scribe
-const output = await runSequence(article, ['extract_wisdom', 'summarize'], 'mcp://localhost:11434/llama2');
+const output = await runSequence(
+  article,
+  ['extract_wisdom', 'summarize'],
+  'mcp://localhost:11434/llama2'
+);
 ```
 
 ---

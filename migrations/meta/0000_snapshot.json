@@ -70,12 +70,8 @@
           "name": "ai_analysis_logs_feed_item_id_feed_items_id_fk",
           "tableFrom": "ai_analysis_logs",
           "tableTo": "feed_items",
-          "columnsFrom": [
-            "feed_item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["feed_item_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -133,9 +129,7 @@
       "indexes": {
         "collection_name_idx": {
           "name": "collection_name_idx",
-          "columns": [
-            "name"
-          ],
+          "columns": ["name"],
           "isUnique": true
         }
       },
@@ -144,12 +138,8 @@
           "name": "collections_profile_id_profiles_id_fk",
           "tableFrom": "collections",
           "tableTo": "profiles",
-          "columnsFrom": [
-            "profile_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["profile_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -272,9 +262,7 @@
       "indexes": {
         "feed_item_link_idx": {
           "name": "feed_item_link_idx",
-          "columns": [
-            "link"
-          ],
+          "columns": ["link"],
           "isUnique": true
         }
       },
@@ -283,12 +271,8 @@
           "name": "feed_items_feed_id_feeds_id_fk",
           "tableFrom": "feed_items",
           "tableTo": "feeds",
-          "columnsFrom": [
-            "feed_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["feed_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -375,9 +359,7 @@
       "indexes": {
         "feed_url_idx": {
           "name": "feed_url_idx",
-          "columns": [
-            "url"
-          ],
+          "columns": ["url"],
           "isUnique": true
         }
       },
@@ -386,12 +368,8 @@
           "name": "feeds_profile_id_profiles_id_fk",
           "tableFrom": "feeds",
           "tableTo": "profiles",
-          "columnsFrom": [
-            "profile_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["profile_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -399,12 +377,8 @@
           "name": "feeds_collection_id_collections_id_fk",
           "tableFrom": "feeds",
           "tableTo": "collections",
-          "columnsFrom": [
-            "collection_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["collection_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -463,9 +437,7 @@
       "indexes": {
         "name_idx": {
           "name": "name_idx",
-          "columns": [
-            "name"
-          ],
+          "columns": ["name"],
           "isUnique": true
         }
       },

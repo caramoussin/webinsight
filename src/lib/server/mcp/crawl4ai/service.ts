@@ -5,7 +5,7 @@ import {
 	effectFetch,
 	ServiceError,
 	createServiceTag
-} from '../../../../utils/effect';
+} from '../../../utils/effect';
 
 import * as Schemas from './schemas';
 import * as Errors from './errors';

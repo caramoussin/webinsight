@@ -2,7 +2,7 @@
 
 ## Overview
 
-WebInsight integrates Fabric AI with the Model Context Protocol (MCP) to enhance web content processing and insight generation. This specification details the technical foundation, including the use of Fabric's pattern library, dynamic LLM sequencing via MCP, and the UI for managing these AI capabilities.
+WebInsight integrates Fabric AI with the Model Context Protocol (MCP) for specialized tools like Crawl4AI, while using a direct Effect-based LLMProviderService for LLM interactions. This specification details the technical foundation, including the use of Fabric's pattern library, the LLMProviderService for LLM integration, and the UI for managing these AI capabilities.
 
 ## Features
 
@@ -13,7 +13,7 @@ WebInsight integrates Fabric AI with the Model Context Protocol (MCP) to enhance
 - Dedicated Python microservice (`Crawl4AI`) implementing an MCP server interface for web crawling and content extraction.
 - Uses Playwright for handling JavaScript-heavy sites.
 - Processes scraped content with Fabric patterns via MCP (e.g., `summarize`), orchestrated by the main backend or AI agents acting as MCP clients.
-- Configurable LLM connections through MCP UI (used by the *consumers* of the scraped content, not Crawl4AI itself).
+- Configurable LLM connections through the LLMProviderService UI (used by the *consumers* of the scraped content, not Crawl4AI itself).
 
 ### 2. AI-Powered Analysis
 
@@ -31,7 +31,7 @@ WebInsight integrates Fabric AI with the Model Context Protocol (MCP) to enhance
 
 ### 3. User Interface and Experience
 
-- MCP UI: SvelteKit component to install and configure LLMs (local like Ollama, external like OpenAI).
+- LLM Provider UI: SvelteKit component to install and configure LLM providers (local like Ollama, external like OpenAI).
   - Example: Select "Ollama/llama2," configure temperature, assign to Scribe.
 - Server-rendered SvelteKit application
 - Responsive Tailwind CSS design
@@ -52,7 +52,7 @@ WebInsight integrates Fabric AI with the Model Context Protocol (MCP) to enhance
 - User data control
 - Secure configuration
 - Encrypted storage for API credentials
-- No reliance on external services for content processing beyond optional MCP-configured LLMs
+- No reliance on external services for content processing beyond optional LLM providers
 
 ### 5. API Integration
 
@@ -127,7 +127,7 @@ interface BraveSearchFallback {
 - **Web Scraping Client**: Logic within the backend acts as an MCP client to communicate with the external `Crawl4AI MCP Server`.
 - RSS & Nitter: Feed Service with Nitter instance management
 - API Integration: Configurable API client service with MCP
-- AI Integration: Fabric AI with MCP for pattern execution and LLM management
+- AI Integration: Fabric AI with MCP for pattern execution and direct Effect-based LLMProviderService for LLM management
 - Real-Time Updates: WebSocket for live notifications including MCP updates
 - Background Jobs: Custom scheduler for periodic tasks and API rate limit management
 - Programming Paradigm: Functional programming with pure functions and immutable data structures
@@ -136,7 +136,7 @@ interface BraveSearchFallback {
 
 - **Crawl4AI MCP Server**: Standalone Python/FastAPI/Playwright microservice providing web scraping capabilities via an MCP interface.
 - **Fabric MCP Server(s)**: Servers exposing Fabric AI patterns.
-- **LLM MCP Server(s)**: Servers (local like Ollama or external) exposing LLMs via MCP.
+- **LLM Provider Service**: Direct Effect-based service using @effect/ai for interacting with LLM providers (local like Ollama or external like OpenAI).
 
 ### Frontend Stack
 
@@ -395,8 +395,8 @@ graph TD
 
 ### Configuration
 
-- Initial setup wizard with MCP LLM selection
-- LLM provider selection and installation via UI
+- Initial setup wizard with LLM provider selection
+- LLM provider selection and configuration via UI
 - API key management for external MCP connections
 - Port configuration for MCP servers
 - Resource limits
@@ -481,7 +481,7 @@ graph TD
 - Storage: 2GB minimum
 - CPU: Multi-core processor
 - OS: Cross-platform (Windows, macOS, Linux)
-- Internet: Optional for content fetching and external MCP LLMs
+- Internet: Optional for content fetching and external LLM providers
 
 ## Project Vision
 
@@ -513,7 +513,7 @@ WebInsight aims to revolutionize content aggregation and analysis, transforming 
   - [ ] Implement Backend MCP client logic for Crawl4AI
 - [ ] Integrate Crawl4AI MCP results with AI processing
   - [ ] MCP pattern integration
-  - [ ] LLM sequencing support
+  - [ ] LLM provider service implementation using @effect/ai
 - [ ] Ensure Robots.txt compliance (within Crawl4AI MCP Server)
 
 ### Phase 3: AI Agents Implementation (Next)
@@ -522,7 +522,7 @@ WebInsight aims to revolutionize content aggregation and analysis, transforming 
 
 - [ ] Integrate MCP with Fabric AI
   - [ ] Pattern library access
-  - [ ] UI for LLM configuration
+  - [ ] UI for LLM provider configuration with @effect/ai integration
 - [ ] The Archivist Agent
   - [ ] Content collection system
   - [ ] Metadata extraction with MCP

@@ -3,9 +3,9 @@ import * as Effect from '@effect/io/Effect';
 import { pipe } from '@effect/data/Function';
 import { test } from '@effect/vitest';
 
-import { makeLiveService } from '../../../../../../lib/server/mcp/providers/crawl4ai/service';
-import * as Errors from '../../../../../../lib/server/mcp/providers/crawl4ai/errors';
-import * as EffectUtils from '../../../../../../lib/utils/effect';
+import { makeLiveService } from '../../../../../lib/server/mcp/crawl4ai/service';
+import * as Errors from '../../../../../lib/server/mcp/crawl4ai/errors';
+import * as EffectUtils from '../../../../../lib/utils/effect';
 
 // Mock effectFetch and validateWithSchema
 vi.mock('../../../../../../lib/utils/effect', () => ({

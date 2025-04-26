@@ -36,23 +36,24 @@ This document tracks the implementation status of WebInsight, highlighting compl
 * 🔄 **Refactor Crawl4AI into MCP Server** (Python/FastAPI/Playwright) (30%) - Defining MCP interface and implementing server logic.
 * 🔄 **Implement Backend MCP Client for Crawl4AI** (SvelteKit/Effect TS) (10%) - Building logic to interact with the Crawl4AI MCP server.
 * ✅ Rate limiting and robots.txt compliance (100%) - *To be verified within Crawl4AI MCP server implementation.*
-* 🔄 JSON API client for Reddit, GitHub, etc. (40%)
-* 🔄 Scheduled data fetching with configurable frequency (30%)
+* 🔄 JSON API client for Reddit, GitHub, etc. (0%)
+* 🔄 Scheduled data fetching with configurable frequency (0%)
 
 ### 3.2 AI Features
 
-* 🔄 AI agent implementation (Archivist, Scribe, Librarian) (40%)
-* 🔄 Content summarization with Fabric patterns (60%)
-* 🔄 Metadata extraction from content (50%)
-* 🔄 Local LLM integration via Ollama (50%)
-* 🔄 AI processing pipeline configuration (20%)
+* 🔄 AI agent implementation (Archivist, Scribe, Librarian) (0%)
+* 🔄 Content summarization with Fabric patterns (0%)
+* 🔄 Metadata extraction from content (0%)
+* 🔄 LLM Provider Service implementation using @effect/ai (0%)
+* 🔄 Local LLM integration via Ollama with @effect/ai (0%)
+* 🔄 AI processing pipeline configuration (0%)
 
 ### 3.3 User Experience
 
-* 🔄 Advanced search and filtering (40%)
-* 🔄 Content organization into collections (60%)
-* 🔄 UI for MCP configuration (30%)
-* 🔄 Pattern sequence configuration interface (10%)
+* 🔄 Advanced search and filtering (0%)
+* 🔄 Content organization into collections (0%)
+* 🔄 UI for MCP configuration (0%)
+* 🔄 Pattern sequence configuration interface (0%)
 
 ## 4. Planned Features
 
@@ -62,7 +63,7 @@ This document tracks the implementation status of WebInsight, highlighting compl
 * ⏳ Finalize UI for MCP configuration
 * ⏳ Implement scheduled data fetching UI
 * ⏳ Create AI processing pipeline configuration UI
-* ⏳ Add support for local LLM connections via Ollama
+* ⏳ Add support for local LLM connections via Ollama using @effect/ai
 * ⏳ Implement Profile Management (separate DBs, optional encryption)
 
 ### 4.2 Medium-term

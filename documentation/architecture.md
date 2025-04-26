@@ -2,7 +2,7 @@
 
 ## Overview
 
-WebInsight leverages Fabric AI with the Model Context Protocol (MCP) for intelligent content processing, transforming aggregated web content into actionable insights. It integrates Fabric's pattern library and LLM sequencing capabilities via MCP. Built with Bun and SvelteKit, this local-first application prioritizes privacy and user control while following functional programming principles (pure functions, immutable data structures, declarative patterns) to create a robust platform for insight generation. Its core architecture is deeply rooted in functional programming principles, utilizing **Effect TS** extensively for managing complexity, ensuring type safety, handling side effects, and composing business logic in a declarative and robust manner.
+WebInsight leverages Fabric AI with the Model Context Protocol (MCP) for intelligent content processing, transforming aggregated web content into actionable insights. It integrates Fabric's pattern library and uses a direct Effect-based LLMProviderService powered by **@effect/ai** for LLM interactions, while specialized tools like Crawl4AI are exposed via MCP. Built with Bun and SvelteKit, this local-first application prioritizes privacy and user control while following functional programming principles (pure functions, immutable data structures, declarative patterns) to create a robust platform for insight generation. Its core architecture is deeply rooted in functional programming principles, utilizing **Effect TS** extensively for managing complexity, ensuring type safety, handling side effects, and composing business logic in a declarative and robust manner.
 
 ## Programming Paradigm
 
@@ -85,7 +85,7 @@ const addArticleToCollection = (collection, article) => ({
 
 ### Core Principles
 
-- **Pure Functions**: Functions with no side effects, now leveraging MCP for consistent LLM outputs
+- **Pure Functions**: Functions with no side effects, now leveraging @effect/ai-based LLMProviderService for consistent LLM outputs
 - **Immutability**: Data structures remain unchanged, with MCP configurations immutable
 - **Function Composition**: Complex operations built with MCP pipelines
 - **Higher-Order Functions**: Enhanced by MCP for dynamic pattern execution
@@ -93,7 +93,7 @@ const addArticleToCollection = (collection, article) => ({
 
 ### Effect TS Core Principles Applied
 
-- **Pure Functions**: Functions with no side effects, now leveraging MCP for consistent LLM outputs
+- **Pure Functions**: Functions with no side effects, now leveraging @effect/ai-based LLMProviderService for consistent LLM outputs
 - **Immutability**: Data structures remain unchanged, with MCP configurations immutable
 - **Function Composition**: Complex operations built with MCP pipelines
 - **Higher-Order Functions**: Enhanced by MCP for dynamic pattern execution
@@ -127,7 +127,7 @@ src/
 │   │       ├── AIInsights.svelte
 │   │       ├── SummaryView.svelte
 │   │       ├── RecommendationList.svelte
-│   │       └── LLMManager.svelte  # New component for MCP LLM configuration
+│   │       └── LLMManager.svelte  # New component for LLM provider configuration
 │   ├── server/
 │   │   ├── db/
 │   │   │   ├── schema/
@@ -187,7 +187,7 @@ src/
 - Service Workers for offline functionality
 - Dark mode support via Tailwind CSS
 - Responsive design using shadcn-svelte components
-- Declarative UI components with MCP LLM management
+- Declarative UI components with LLM provider management
 
 ### 2. Backend Layer (Bun + SvelteKit)
 
@@ -378,7 +378,7 @@ interface UserPreferences {
   aiSettings: AISettings;
   uiSettings: UISettings;
   scrapingSettings: ScrapingSettings;
-  mcpSettings: MCPSettings;  // Added for LLM configuration
+  llmSettings: LLMSettings;  // Added for LLM provider configuration
 }
 
 // API Source Table
@@ -514,7 +514,7 @@ interface JobScheduler {
      feed: FeedCache;
      apiResponse: ApiResponseCache;
      scrapedContent: ScrapedContentCache;
-     mcpCache: MCPCache;  // Added for MCP LLM outputs
+     llmCache: LLMCache;  // Added for LLM provider outputs
      set: <T>(key: string, value: T) => CacheManager;
      get: <T>(key: string) => Option<T>;
    }
@@ -615,7 +615,7 @@ bun run test
 1. **Installation Process**
    - Dependencies check
    - Database initialization with MCP schema
-   - Configuration setup including MCP servers
+   - Configuration setup including MCP servers and LLM providers
 
 2. **Update Mechanism**
    - Version checking
@@ -682,21 +682,27 @@ graph TB
         subgraph Core["Core Services"]
             RSS[RSS Service]
             NIT[Nitter Service]
-            WS[Web Scraper Client] // Client logic in backend
+            WS["Web Scraper Client"]
             APIC[API Client]
             BSI[Brave Search Integration]
             DB[(SQLite DB)]
-            MCP_Client[MCP Client Logic] // Backend acts as client
+            MCP_Client["MCP Client Logic"]
+            LLM_Service["LLM Provider Service"]
         end
         subgraph AI["AI Layer"]
             FA[Fabric AI Patterns]
-            Agents[AI Agents] // Use MCP Client
+            Agents["AI Agents"]
         end
         subgraph ExternalMCP["External MCP Servers"]
             direction LR
             Crawl4AI_MCP[Crawl4AI MCP Server]
             Fabric_MCP[Fabric MCP Server]
-            LLM_MCP[LLM MCP Servers]
+        end
+        subgraph ExternalLLM["External LLM Providers"]
+            direction LR
+            Ollama[Ollama]
+            OpenAI[OpenAI]
+            Anthropic[Anthropic]
         end
     end
     UI --> API
@@ -706,17 +712,22 @@ graph TB
     BG --> Core
     BG --> Agents
     Core -- uses --> MCP_Client
+    Core -- uses --> LLM_Service
     Agents -- uses --> MCP_Client
-    MCP_Client -- calls --> ExternalMCP // MCP Client connects to MCP Servers
+    Agents -- uses --> LLM_Service
+    MCP_Client -- "calls" --> ExternalMCP
+    LLM_Service -- "calls" --> ExternalLLM
     BSI -- uses --> MCP_Client
     BSI --> DB
 ```
 
 **Note on Diagram:**
 
-- `WS[Web Scraper Client]` represents the service logic within the SvelteKit backend that *initiates* scraping requests.
-- `MCP_Client[MCP Client Logic]` represents the backend's capability to act as a client to various MCP servers.
-- `ExternalMCP[...]` represents the standalone MCP servers, including the refactored `Crawl4AI MCP Server`, Fabric, and LLMs. The backend's `MCP_Client` connects to these.
+- **Web Scraper Client**: Represents the service logic within the SvelteKit backend that initiates scraping requests.
+- **MCP Client Logic**: Represents the backend's capability to act as a client to specialized MCP servers like Crawl4AI.
+- **LLM Provider Service**: Represents the @effect/ai-based service for interacting with LLM providers in a provider-agnostic way.
+- **External MCP Servers**: Represents the standalone MCP servers for specialized tools, including the refactored Crawl4AI MCP Server and Fabric.
+- **External LLM Providers**: Represents the LLM providers (OpenAI, Anthropic, Ollama) that the LLM Service connects to through @effect/ai adapters.
 
 ### Optional Brave Search Integration Flow
 

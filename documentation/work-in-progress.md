@@ -4,7 +4,8 @@
 
 * **Effect Functional Programming Integration**: Implementing the Effect library for functional programming patterns, error handling, and type safety.
 * **Crawl4AI MCP Refactoring**: Planning and starting the refactor of the `Crawl4AI` service into a dedicated Model Context Protocol (MCP) server.
-* **MCP Client Implementation**: Developing the Model Context Protocol (MCP) client for connecting to Fabric pattern library, LLMs, and the future `Crawl4AI` MCP server.
+* **MCP Client Implementation**: Developing the Model Context Protocol (MCP) client for connecting to Fabric pattern library and the `Crawl4AI` MCP server.
+* **LLM Provider Service**: Implementing a direct Effect-based service using @effect/ai for LLM interactions rather than using MCP for LLM providers.
 * **AI Agent Development**: Implementing the specialized AI agents (Archivist, Scribe, Librarian) using the MCP client.
 
 ## 2. Recent Changes
@@ -48,7 +49,7 @@
 * **Implement Manual Fetching UI**: Create UI elements allowing users to input a URL, trigger fetching via the `Crawl4AI` MCP (using the backend MCP client), display the fetched content, and initiate AI processing.
 * Implement AI agents (Archivist, Scribe, Librarian) using the MCP client.
 * Develop UI components for MCP configuration management.
-* Add support for local LLM connections via Ollama.
+* Add support for local LLM connections via Ollama using the @effect/ai-based LLMProviderService.
 * Implement scheduled data fetching with configurable frequency.
 * Create AI processing pipeline configuration UI.
 * Implement Profile Management System:
@@ -96,8 +97,9 @@
 ### 4.3 Known Challenges
 
 * Handling rate limits and blocking from various content sources.
-* Managing LLM resource usage for efficient local processing.
+* Managing LLM resource usage for efficient local processing with the @effect/ai-based LLMProviderService approach.
 * Ensuring consistent content extraction across diverse web sources via the `Crawl4AI` MCP.
+* Implementing a clean interface for LLM interactions through the @effect/ai-based LLMProviderService.
 * Implementing robust error handling for AI processing pipelines.
 * Creating an intuitive UI for configuring complex AI pattern sequences.
 * Implementing secure key management and derivation for encrypted profiles.

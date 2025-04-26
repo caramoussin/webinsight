@@ -15,6 +15,7 @@ WebInsight embraces functional programming, with Effect TS serving as the backbo
 - **Resource Safety**: Utilizing `Scope` and `Layer` to ensure resources (database connections, file handles, network requests) are acquired and released safely, preventing leaks.
 - **Asynchronous & Concurrent Operations**: Managing asynchronous tasks and concurrency with powerful primitives like Fibers, ensuring responsiveness and efficient resource utilization.
 - **Dependency Management**: Using `Context` and `Layer` for modular and type-safe dependency injection.
+- **Caching & Performance Optimization**: Utilizing `Effect.Cache` for type-safe, efficient caching of AI-generated outputs in the hybrid CAG/RAG strategy.
 
 ```typescript
 // Example: Effect-based content transformation using Layer for dependencies
@@ -105,7 +106,7 @@ const addArticleToCollection = (collection, article) => ({
 
 #### Components Structure
 
-```
+```plaintext
 src/
 ├── lib/
 │   ├── components/
@@ -191,9 +192,37 @@ src/
 
 ### 2. Backend Layer (Bun + SvelteKit)
 
+#### Hybrid CAG/RAG Strategy
+
+WebInsight implements a hybrid Cache-Augmented Generation (CAG) and Retrieval-Augmented Generation (RAG) strategy using Effect.Cache to optimize AI operations:
+
+- **Cache-Augmented Generation (CAG)**: Caches AI-generated outputs (summaries, recommendations, metadata) to reduce redundant computations and improve response times.
+- **Retrieval-Augmented Generation (RAG)**: Retrieves relevant content from the local database to provide context for AI generation, improving output quality and relevance.
+- **Implementation**: Uses `Effect.Cache` with type-safe key/value storage, configurable TTL, and metadata-based context retrieval.
+
+```typescript
+// Example: HybridCAGService using Effect.Cache
+interface HybridCAGService {
+  getOrGenerate: (
+    articleId: string,
+    queryType: 'summary' | 'recommendation' | 'metadata',
+    context?: string[]
+  ) => Effect.Effect<string, Error, Database | FabricAI>;
+}
+
+// Cache implementation with Effect.Cache
+const cache = Cache.make({
+  lookup: (key) => retrieveOrGenerateContent(key),
+  capacity: 1000,
+  timeToLive: '1 day',
+});
+```
+
+The hybrid approach follows a workflow that checks the cache first, then retrieves context if needed, and finally generates new content, ensuring optimal performance without compromising quality.
+
 #### Server Structure
 
-```
+```plaintext
 src/
 ├── routes/
 │   ├── api/              # API endpoints
@@ -259,6 +288,8 @@ src/
     - Content processing queue with MCP pipelines
     - AI task management via MCP
     - System maintenance tasks
+    - Cache management (invalidation, refresh)
+    - Context retrieval optimization
     - **Dependency Injection**: Provided as a `Layer`, orchestrates other service layers.
 
 ### 3. AI Layer (Fabric AI + MCP)
@@ -367,6 +398,16 @@ interface Collection {
   tags: string[];
   createdAt: Date;
   updatedAt: Date;
+}
+
+// Cached Results Table (for CAG/RAG strategy)
+interface CachedResult {
+  id: string;
+  articleId: string;
+  queryType: 'summary' | 'recommendation' | 'metadata';
+  result: string;
+  timestamp: number;
+  ttl: number;
 }
 
 // User Preferences Table

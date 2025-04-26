@@ -17,17 +17,30 @@ WebInsight integrates Fabric AI with the Model Context Protocol (MCP) for specia
 
 ### 2. AI-Powered Analysis
 
+#### Hybrid CAG/RAG Strategy
+
+- **Cache-Augmented Generation (CAG)**: Caches AI outputs to reduce redundant computations and improve response times.
+- **Retrieval-Augmented Generation (RAG)**: Enhances AI generation with relevant context from the local database.
+- **Effect.Cache Integration**: Provides type-safe, efficient caching with configurable TTL.
+- **Performance Benefits**: Reduces LLM usage, improves response times, and enhances reliability.
+- **Quality Improvements**: Context retrieval improves relevance and accuracy of AI-generated content.
+
 #### The Archivist Agent
 
 - Uses MCP to pipe content through pattern sequences (e.g., `extract_wisdom` → `organize`).
+- Leverages the RAG component to enrich metadata extraction with contextual information.
 
 #### The Scribe Agent
 
 - Executes Fabric patterns via MCP for summarization and key point extraction.
+- Uses cached results when available via the CAG component.
+- Enhances summaries with context from similar articles via the RAG component.
 
 #### The Librarian Agent
 
 - Leverages MCP for dynamic recommendation workflows.
+- Uses metadata-based retrieval to find relevant articles for recommendations.
+- Caches recommendation results to improve performance.
 
 ### 3. User Interface and Experience
 
@@ -119,6 +132,24 @@ interface BraveSearchFallback {
 
 ## Technical Architecture
 
+### Performance Optimization with Hybrid CAG/RAG
+
+- **Cache Implementation**: Uses `Effect.Cache` with a capacity of 1000 entries and configurable TTL.
+- **Cache Keys**: Structured as `{ articleId, queryType }` for type-safe lookups.
+- **Context Retrieval**: Uses metadata-based queries to find relevant articles for context.
+- **Database Schema**: Extended with `cached_results` table to persist cached outputs.
+- **Invalidation Strategy**: Time-based (TTL) and content-based (article updates) invalidation.
+- **User Configuration**: Adjustable TTL settings via preferences UI.
+
+```typescript
+// Example cache configuration
+const cache = Cache.make({
+  lookup: (key) => retrieveOrGenerateContent(key),
+  capacity: 1000,
+  timeToLive: '1 day',
+});
+```
+
 ### Unified Local Server (SvelteKit/Bun Backend)
 
 - Runtime: Bun for high-performance operations
@@ -150,7 +181,9 @@ interface BraveSearchFallback {
 ### Data Layer
 
 - SQLite for persistence with MCP connection schema
+- Extended schema for CAG/RAG strategy:
 - **Profile Databases**: Uses the "one profile, one database" model. Each profile's data resides in a dedicated SQLite file (e.g., `~/.config/webinsights/profiles/<profile_id>.db`).
+- **CAG/RAG Tables**: Each profile database includes a `cached_results` table with fields for `articleId`, `queryType`, `result`, `timestamp`, and `ttl`.
 - **Profile Metadata**: A central `profiles.json` file or `metadata.db` tracks profile names, database file paths, and encryption status.
 - **Optional Encryption**: Private profiles utilize SQLCipher for full database encryption.
   - **Dependency**: Requires the `better-sqlite3-sqlcipher` package (or equivalent Bun-compatible SQLCipher binding) instead of plain `better-sqlite3` for encrypted databases.
@@ -174,6 +207,8 @@ interface BraveSearchFallback {
 - Direct Fabric AI integration with MCP
 - Shared resource management
 - Efficient data passing via MCP servers
+- Performance optimization with hybrid CAG/RAG strategy
+- Context-enhanced AI generation via metadata-based retrieval
 - Result caching for pattern outputs
 - Background processing of MCP requests
 - Model management through MCP UI
@@ -527,14 +562,19 @@ WebInsight aims to revolutionize content aggregation and analysis, transforming 
   - [ ] Content collection system
   - [ ] Metadata extraction with MCP
   - [ ] Content labeling and organization
+  - [ ] Context-enhanced metadata extraction with RAG
 - [ ] The Scribe Agent
   - [ ] Content summarization via MCP
   - [ ] Key points extraction
   - [ ] Sentiment analysis integration
+  - [ ] Performance optimization with CAG
+  - [ ] Quality improvement with RAG
 - [ ] The Librarian Agent
   - [ ] Content recommendation system
   - [ ] Cross-reference generation
   - [ ] Dynamic content relationships
+  - [ ] Metadata-based article retrieval
+  - [ ] Recommendation caching with CAG
 
 ### Phase 4: Enhanced User Experience
 

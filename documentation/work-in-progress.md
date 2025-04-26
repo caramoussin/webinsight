@@ -7,6 +7,7 @@
 * **MCP Client Implementation**: Developing the Model Context Protocol (MCP) client for connecting to Fabric pattern library and the `Crawl4AI` MCP server.
 * **LLM Provider Service**: Implementing a direct Effect-based service using @effect/ai for LLM interactions rather than using MCP for LLM providers.
 * **AI Agent Development**: Implementing the specialized AI agents (Archivist, Scribe, Librarian) using the MCP client.
+* **Hybrid CAG/RAG Strategy**: Implementing a Cache-Augmented Generation and Retrieval-Augmented Generation strategy using Effect.Cache to optimize AI performance and accuracy.
 
 ## 2. Recent Changes
 
@@ -20,6 +21,7 @@
 * Moved fabric-mcp.md to components/ subdirectory.
 * Updated requirements to include configurable scheduled data fetching.
 * Added requirements for customizable AI processing pipelines with pattern sequences.
+* Created cag-rag-strategy.md in integrations/ documenting the hybrid CAG/RAG approach with Effect.Cache.
 
 ### 2.2 Core Features
 
@@ -27,6 +29,7 @@
   * Implemented Effect library for functional error handling and type safety.
   * Created utility functions for effect-based API interactions.
   * Integrated Effect Schema for robust validation.
+  * **Added Effect.Cache implementation** for optimizing AI operations with the hybrid CAG/RAG strategy.
 * **Crawl4AI Integration**:
   * Implemented Crawl4AIClient with Effect-based error handling.
   * Created API endpoints for web scraping with JavaScript support.
@@ -40,6 +43,10 @@
   * Implemented TwitterRSSService for fetching from Nitter instances.
   * Created instance cycling and fallback mechanisms.
   * Added basic RSS parsing functionality.
+* **AI Performance Optimization**:
+  * Designed and implemented hybrid CAG/RAG strategy with Effect.Cache.
+  * Created database schema extensions for cached AI results.
+  * Implemented context retrieval based on article metadata.
 
 ## 3. Next Steps
 
@@ -105,3 +112,6 @@
 * Implementing secure key management and derivation for encrypted profiles.
 * Developing and testing the custom, per-profile database migration logic.
 * Developing the `Crawl4AI` MCP server interface.
+* Balancing cache invalidation strategies with freshness requirements in the hybrid CAG/RAG approach.
+* Optimizing database queries for efficient context retrieval in the RAG component.
+* Implementing user-friendly controls for cache TTL configuration.

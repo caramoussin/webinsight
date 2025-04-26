@@ -1,3 +1,7 @@
+# Project Rules
+
+- NEVER try to fix markdown lint errors.
+
 ## Documentation Structure
 
 The documentation resides in the `documentation/` folder, containing required core files and optional context files, all in Markdown format. Files follow a hierarchical structure, with `requirements.md` defining requirements and `technical-specs.md`/`architecture.md` providing specifications:

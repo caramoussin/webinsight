@@ -1,4 +1,4 @@
-import { describe, beforeEach, vi, expect, type Mock } from 'vitest';
+import { describe, beforeEach, vi, expect } from 'vitest';
 import * as Effect from '@effect/io/Effect';
 import { pipe } from '@effect/data/Function';
 import { test } from '@effect/vitest';
@@ -8,7 +8,7 @@ import * as Errors from '../../../../../lib/server/mcp/crawl4ai/errors';
 import * as EffectUtils from '../../../../../lib/utils/effect';
 
 // Mock effectFetch and validateWithSchema
-vi.mock('../../../../../../lib/utils/effect', () => ({
+vi.mock('../../../../../lib/utils/effect', () => ({
 	effectFetch: vi.fn(),
 	validateWithSchema: vi.fn((schema, data) => Effect.succeed(data)),
 	ServiceError: vi.fn().mockImplementation((code, message, cause) => ({
@@ -19,6 +19,10 @@ vi.mock('../../../../../../lib/utils/effect', () => ({
 	})),
 	createServiceTag: vi.fn().mockImplementation((name) => Symbol.for(name))
 }));
+
+// Get the mocked functions
+const mockedEffectFetch = vi.mocked(EffectUtils.effectFetch);
+const mockedValidateWithSchema = vi.mocked(EffectUtils.validateWithSchema);
 
 // Mock API responses
 const mockExtractContentResponse = {
@@ -48,7 +52,7 @@ describe('Crawl4AI MCP Provider', () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
-		(EffectUtils.effectFetch as Mock).mockImplementation(() =>
+		mockedEffectFetch.mockImplementation(() =>
 			Effect.succeed(mockExtractContentResponse)
 		);
 	});
@@ -93,7 +97,7 @@ describe('Crawl4AI MCP Provider', () => {
 					};
 
 					// Mock validation to throw for invalid params
-					(EffectUtils.validateWithSchema as Mock).mockImplementationOnce(() =>
+					mockedValidateWithSchema.mockImplementationOnce(() =>
 						Effect.fail(new EffectUtils.ServiceError('VALIDATION_ERROR', 'Validation failed'))
 					);
 
@@ -106,7 +110,7 @@ describe('Crawl4AI MCP Provider', () => {
 					}
 
 					// Reset mock for other tests
-					(EffectUtils.validateWithSchema as Mock).mockImplementation((schema, data) =>
+					mockedValidateWithSchema.mockImplementation((schema, data) =>
 						Effect.succeed(data)
 					);
 				})
@@ -116,7 +120,7 @@ describe('Crawl4AI MCP Provider', () => {
 			pipe(
 				Effect.gen(function* (_) {
 					// Mock fetch to fail
-					(EffectUtils.effectFetch as Mock).mockImplementationOnce(() =>
+					mockedEffectFetch.mockImplementationOnce(() =>
 						Effect.fail(new EffectUtils.ServiceError('FETCH_ERROR', 'Failed to fetch data'))
 					);
 
@@ -141,7 +145,7 @@ describe('Crawl4AI MCP Provider', () => {
 			pipe(
 				Effect.gen(function* (_) {
 					// Override the mock for this specific test
-					(EffectUtils.effectFetch as Mock).mockImplementationOnce(() =>
+					mockedEffectFetch.mockImplementationOnce(() =>
 						Effect.succeed(mockCheckRobotsTxtResponse)
 					);
 
@@ -165,7 +169,7 @@ describe('Crawl4AI MCP Provider', () => {
 		test('should include user agent when provided', () =>
 			pipe(
 				Effect.gen(function* (_) {
-					(EffectUtils.effectFetch as Mock).mockImplementationOnce(() =>
+					mockedEffectFetch.mockImplementationOnce(() =>
 						Effect.succeed(mockCheckRobotsTxtResponse)
 					);
 
@@ -187,7 +191,7 @@ describe('Crawl4AI MCP Provider', () => {
 			pipe(
 				Effect.gen(function* (_) {
 					// Mock fetch to fail
-					(EffectUtils.effectFetch as Mock).mockImplementationOnce(() =>
+					mockedEffectFetch.mockImplementationOnce(() =>
 						Effect.fail(
 							new EffectUtils.ServiceError('ROBOTS_CHECK_ERROR', 'Failed to check robots.txt')
 						)
@@ -247,7 +251,7 @@ describe('Crawl4AI MCP Provider', () => {
 		test('should call checkRobotsTxt tool successfully', () =>
 			pipe(
 				Effect.gen(function* (_) {
-					(EffectUtils.effectFetch as Mock).mockImplementationOnce(() =>
+					mockedEffectFetch.mockImplementationOnce(() =>
 						Effect.succeed(mockCheckRobotsTxtResponse)
 					);
 

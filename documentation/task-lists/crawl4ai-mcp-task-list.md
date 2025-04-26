@@ -12,12 +12,12 @@ Refactor the existing `Crawl4AIClient.ts` integration to align with the Model Co
 - [x] **Define MCP Capabilities**:
   - [x] Decide on `extractContent` (Tool) vs. `checkRobotsTxt` (Tool or Resource) based on MCP host patterns.
   - [x] Define precise input and output schemas using Effect Schema for chosen capabilities.
-- [x] **Implement MCP Server Logic**: Create the provider in `src/lib/server/mcp/providers/crawl4ai`.
+- [x] **Implement MCP Server Logic**: Create the provider in `src/lib/server/mcp/crawl4ai`.
   - [x] Implement required MCP methods (`listTools`, `callTool`).
   - [x] Integrate with Effect TS: Use `effectFetch`, manage dependencies, handle configuration (service URL), implement robust, typed error handling mapping Python service errors.
   - [x] Use defined Effect Schemas for input validation and output shaping.
   - [x] Finalize service implementation and fix type issues.
-- [x] **Add Unit Tests**: Add unit tests for provider logic (including Effect error channels) in `src/tests/unit/server/mcp/providers/crawl4ai/`.
+- [x] **Add Unit Tests**: Add unit tests for provider logic (including Effect error channels) in `src/tests/unit/server/mcp/crawl4ai/`.
 
 ## In Progress Tasks (Integration & Testing)
 

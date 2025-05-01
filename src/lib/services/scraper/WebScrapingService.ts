@@ -1,7 +1,7 @@
 import * as Effect from '@effect/io/Effect';
 import * as Duration from '@effect/data/Duration';
 import { ServiceError, validateWithSchema } from '../../utils/effect';
-import { Crawl4AIClient } from './Crawl4AIClient';
+import { MCPCrawl4AIClient } from './MCPCrawl4AIClient';
 import * as cheerio from 'cheerio';
 import * as S from '@effect/schema/Schema';
 
@@ -94,9 +94,8 @@ export class WebScrapingService {
     });
   }
 
-  private static async createSelectorConfig(selector: string) {
-    const result = await Effect.runPromise(Crawl4AIClient.createSelectorConfig(selector));
-    return result;
+  private static createSelectorConfig(selector: string) {
+    return MCPCrawl4AIClient.createSelectorConfig(selector);
   }
 
   /**
@@ -107,45 +106,47 @@ export class WebScrapingService {
   ): Effect.Effect<never, ServiceError, ScraperResult> {
     return Effect.gen(function* (_) {
       const selectorConfig = config.selector
-        ? yield* _(
-            Effect.promise(() => WebScrapingService.createSelectorConfig(config.selector!)).pipe(
-              Effect.orElse(() => Effect.succeed(undefined))
-            )
-          )
+        ? WebScrapingService.createSelectorConfig(config.selector)
         : undefined;
 
-      const crawl4AIResult = yield* _(
-        Crawl4AIClient.extractContent({
+      const crawl4AIOptions = config.crawl4AIOptions || {
+        useCache: true,
+        checkRobotsTxt: true,
+        respectRateLimits: true
+      };
+
+      const extractionResult = yield* _(
+        MCPCrawl4AIClient.extractContent({
           url: config.url,
           selectors: selectorConfig,
-          filter_type: config.crawl4AIOptions?.filterType,
-          threshold: config.crawl4AIOptions?.threshold,
-          query: config.crawl4AIOptions?.query,
-          use_cache: config.crawl4AIOptions?.useCache ?? true,
-          check_robots_txt: config.crawl4AIOptions?.checkRobotsTxt ?? true,
-          respect_rate_limits: config.crawl4AIOptions?.respectRateLimits ?? true,
           headless: true,
           verbose: false,
-          user_agent: config.userAgent || WebScrapingService.getRandomUserAgent()
+          use_cache: crawl4AIOptions.useCache,
+          check_robots_txt: crawl4AIOptions.checkRobotsTxt,
+          respect_rate_limits: crawl4AIOptions.respectRateLimits,
+          ...(crawl4AIOptions.filterType && { filter_type: crawl4AIOptions.filterType }),
+          ...(crawl4AIOptions.threshold !== undefined && { threshold: crawl4AIOptions.threshold }),
+          ...(crawl4AIOptions.query && { query: crawl4AIOptions.query }),
+          ...(config.userAgent && { user_agent: config.userAgent })
         })
       );
 
       // Extract links from markdown content if available
       const extractedLinks = WebScrapingService.extractLinksFromMarkdown(
-        crawl4AIResult.content.markdown
+        extractionResult.content.markdown
       );
 
       return yield* _(
         validateWithSchema(ScraperResultSchema, {
           url: config.url,
-          content: crawl4AIResult.content.html || crawl4AIResult.content.markdown,
+          content: extractionResult.content.html || extractionResult.content.markdown,
           contentType: 'text/html',
-          extractedText: [crawl4AIResult.content.markdown],
+          extractedText: [extractionResult.content.markdown],
           extractedLinks,
-          metadata: crawl4AIResult.metadata,
-          markdown: crawl4AIResult.content.markdown,
-          rawMarkdown: crawl4AIResult.content.raw_markdown,
-          extractedData: crawl4AIResult.extracted_data
+          metadata: extractionResult.metadata,
+          markdown: extractionResult.content.markdown,
+          rawMarkdown: extractionResult.content.raw_markdown,
+          extractedData: extractionResult.extracted_data
         })
       );
     });
@@ -276,7 +277,7 @@ export class WebScrapingService {
     userAgent?: string
   ): Effect.Effect<never, ServiceError, boolean> {
     return Effect.gen(function* (_) {
-      const result = yield* _(Crawl4AIClient.checkRobotsTxt(url, userAgent));
+      const result = yield* _(MCPCrawl4AIClient.checkRobotsTxt(url, userAgent));
       return result.allowed;
     });
   }

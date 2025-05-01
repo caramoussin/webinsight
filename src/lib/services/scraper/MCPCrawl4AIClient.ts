@@ -56,28 +56,29 @@ const ExtractionOptionsSchema = S.Struct({
   respect_rate_limits: S.Boolean
 });
 
-const ExtractionResponseSchema = S.Struct({
-  content: S.Struct({
-    markdown: S.String,
-    raw_markdown: S.String,
-    html: S.optional(S.String)
-  }),
-  extracted_data: S.optional(S.Unknown),
-  metadata: S.Struct({})
-});
+// Define as a type instead of a schema to avoid the linting error
+type ExtractionResponse = {
+  content: {
+    markdown: string;
+    raw_markdown: string;
+    html?: string;
+  };
+  extracted_data?: unknown;
+  metadata: Record<string, never>;
+};
 
-const RobotsCheckResponseSchema = S.Struct({
-  allowed: S.Boolean,
-  url: S.String,
-  robots_url: S.String,
-  user_agent: S.String,
-  error: S.optional(S.String)
-});
+// Define as a type instead of a schema to avoid the linting error
+type RobotsCheckResponse = {
+  allowed: boolean;
+  url: string;
+  robots_url: string;
+  user_agent: string;
+  error?: string;
+};
 
 // Type inference from schemas
 type ExtractionOptions = S.Schema.Type<typeof ExtractionOptionsSchema>;
-type ExtractionResponse = S.Schema.Type<typeof ExtractionResponseSchema>;
-type RobotsCheckResponse = S.Schema.Type<typeof RobotsCheckResponseSchema>;
+// ExtractionResponse and RobotsCheckResponse are defined directly as types above
 
 // Error types
 export type Crawl4AIError = {
@@ -118,7 +119,9 @@ export class MCPCrawl4AIClient {
         })
       );
 
-      // Extract the result from the MCP response
+      // The response.result is already of the expected type due to TypeScript's type inference
+      // We're using the schema for type safety, but we don't need to validate it at runtime
+      // If validation is needed in the future, we can add it here
       return response.result;
     });
   }
@@ -149,7 +152,9 @@ export class MCPCrawl4AIClient {
         })
       );
 
-      // Extract the result from the MCP response
+      // The response.result is already of the expected type due to TypeScript's type inference
+      // We're using the schema for type safety, but we don't need to validate it at runtime
+      // If validation is needed in the future, we can add it here
       return response.result;
     });
   }

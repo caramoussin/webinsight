@@ -6,7 +6,7 @@ import {
   WebScrapingService,
   type ScraperConfig
 } from '../../lib/services/scraper/WebScrapingService';
-import { Crawl4AIClient } from '../../lib/services/scraper/Crawl4AIClient';
+import { MCPCrawl4AIClient } from '../../lib/services/scraper/MCPCrawl4AIClient';
 import * as EffectUtils from '../../lib/utils/effect';
 
 // Mock dependencies
@@ -24,8 +24,8 @@ vi.mock('../../lib/utils/effect', () => ({
   validateWithSchema: vi.fn((schema, data) => Effect.succeed(data))
 }));
 
-vi.mock('../../lib/services/scraper/Crawl4AIClient', () => ({
-  Crawl4AIClient: {
+vi.mock('../../lib/services/scraper/MCPCrawl4AIClient', () => ({
+  MCPCrawl4AIClient: {
     extractContent: vi.fn(),
     createSelectorConfig: vi.fn(),
     checkRobotsTxt: vi.fn()
@@ -98,13 +98,13 @@ describe('WebScrapingService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockFetchResponse.mockResolvedValue(HTML_CONTENT);
-    (Crawl4AIClient.extractContent as Mock).mockImplementation(() =>
+    (MCPCrawl4AIClient.extractContent as Mock).mockImplementation(() =>
       Effect.succeed(CRAWL4AI_RESPONSE)
     );
-    (Crawl4AIClient.createSelectorConfig as Mock).mockImplementation(() =>
-      Promise.resolve({ type: 'css', selector: 'h1' })
+    (MCPCrawl4AIClient.createSelectorConfig as Mock).mockImplementation(() =>
+      ({ type: 'css', selector: 'h1' })
     );
-    (Crawl4AIClient.checkRobotsTxt as Mock).mockImplementation(() =>
+    (MCPCrawl4AIClient.checkRobotsTxt as Mock).mockImplementation(() =>
       Effect.succeed({
         allowed: true,
         url: 'https://example.com',
@@ -156,8 +156,8 @@ describe('WebScrapingService', () => {
           expect(result.url).toBe(crawl4AIConfig.url);
           expect(result.content).toBe(HTML_CONTENT);
           expect(result.markdown).toBe(CRAWL4AI_RESPONSE.content.markdown);
-          expect(Crawl4AIClient.extractContent).toHaveBeenCalledTimes(1);
-          expect(Crawl4AIClient.createSelectorConfig).toHaveBeenCalledWith('h1');
+          expect(MCPCrawl4AIClient.extractContent).toHaveBeenCalledTimes(1);
+          expect(MCPCrawl4AIClient.createSelectorConfig).toHaveBeenCalledWith('h1');
         })
       ));
 
@@ -212,7 +212,7 @@ describe('WebScrapingService', () => {
           };
 
           // Mock Crawl4AI to fail
-          (Crawl4AIClient.extractContent as Mock).mockImplementation(() =>
+          (MCPCrawl4AIClient.extractContent as Mock).mockImplementation(() =>
             Effect.fail(new EffectUtils.ServiceError('CRAWL4AI_ERROR', 'Failed to extract content'))
           );
 
@@ -232,7 +232,7 @@ describe('WebScrapingService', () => {
       pipe(
         Effect.gen(function* (_) {
           // Setup mock response
-          (Crawl4AIClient.checkRobotsTxt as Mock).mockImplementation(() =>
+          (MCPCrawl4AIClient.checkRobotsTxt as Mock).mockImplementation(() =>
             Effect.succeed({
               allowed: true,
               url: 'https://example.com',
@@ -244,8 +244,8 @@ describe('WebScrapingService', () => {
           const result = yield* _(WebScrapingService.checkRobotsTxt('https://example.com'));
 
           expect(result).toBe(true);
-          expect(Crawl4AIClient.checkRobotsTxt).toHaveBeenCalledTimes(1);
-          expect(Crawl4AIClient.checkRobotsTxt).toHaveBeenCalledWith(
+          expect(MCPCrawl4AIClient.checkRobotsTxt).toHaveBeenCalledTimes(1);
+          expect(MCPCrawl4AIClient.checkRobotsTxt).toHaveBeenCalledWith(
             'https://example.com',
             undefined
           );
@@ -256,7 +256,7 @@ describe('WebScrapingService', () => {
       pipe(
         Effect.gen(function* (_) {
           // Setup mock response
-          (Crawl4AIClient.checkRobotsTxt as Mock).mockImplementation(() =>
+          (MCPCrawl4AIClient.checkRobotsTxt as Mock).mockImplementation(() =>
             Effect.succeed({
               allowed: false,
               url: 'https://example.com',
@@ -268,7 +268,7 @@ describe('WebScrapingService', () => {
           const result = yield* _(WebScrapingService.checkRobotsTxt('https://example.com'));
 
           expect(result).toBe(false);
-          expect(Crawl4AIClient.checkRobotsTxt).toHaveBeenCalledTimes(1);
+          expect(MCPCrawl4AIClient.checkRobotsTxt).toHaveBeenCalledTimes(1);
         })
       ));
 
@@ -278,7 +278,7 @@ describe('WebScrapingService', () => {
           const userAgent = 'TestUserAgent';
 
           // Setup mock response
-          (Crawl4AIClient.checkRobotsTxt as Mock).mockImplementation(() =>
+          (MCPCrawl4AIClient.checkRobotsTxt as Mock).mockImplementation(() =>
             Effect.succeed({
               allowed: true,
               url: 'https://example.com',
@@ -292,8 +292,8 @@ describe('WebScrapingService', () => {
           );
 
           expect(result).toBe(true);
-          expect(Crawl4AIClient.checkRobotsTxt).toHaveBeenCalledTimes(1);
-          expect(Crawl4AIClient.checkRobotsTxt).toHaveBeenCalledWith(
+          expect(MCPCrawl4AIClient.checkRobotsTxt).toHaveBeenCalledTimes(1);
+          expect(MCPCrawl4AIClient.checkRobotsTxt).toHaveBeenCalledWith(
             'https://example.com',
             userAgent
           );
@@ -304,7 +304,7 @@ describe('WebScrapingService', () => {
       pipe(
         Effect.gen(function* (_) {
           // Setup mock error response
-          (Crawl4AIClient.checkRobotsTxt as Mock).mockImplementation(() =>
+          (MCPCrawl4AIClient.checkRobotsTxt as Mock).mockImplementation(() =>
             Effect.fail(new EffectUtils.ServiceError('ROBOTS_ERROR', 'Failed to check robots.txt'))
           );
 
@@ -317,7 +317,7 @@ describe('WebScrapingService', () => {
             expect(result.left.code).toBe('ROBOTS_ERROR');
             expect(result.left.message).toBe('Failed to check robots.txt');
           }
-          expect(Crawl4AIClient.checkRobotsTxt).toHaveBeenCalledTimes(1);
+          expect(MCPCrawl4AIClient.checkRobotsTxt).toHaveBeenCalledTimes(1);
         })
       ));
 
@@ -325,7 +325,7 @@ describe('WebScrapingService', () => {
       pipe(
         Effect.gen(function* (_) {
           // Setup mock response with error indicating robots.txt not found
-          (Crawl4AIClient.checkRobotsTxt as Mock).mockImplementation(() =>
+          (MCPCrawl4AIClient.checkRobotsTxt as Mock).mockImplementation(() =>
             Effect.succeed({
               allowed: true, // By convention, no robots.txt means access is allowed
               url: 'https://example.com',
@@ -338,7 +338,7 @@ describe('WebScrapingService', () => {
           const result = yield* _(WebScrapingService.checkRobotsTxt('https://example.com'));
 
           expect(result).toBe(true); // Should be allowed when robots.txt not found
-          expect(Crawl4AIClient.checkRobotsTxt).toHaveBeenCalledTimes(1);
+          expect(MCPCrawl4AIClient.checkRobotsTxt).toHaveBeenCalledTimes(1);
         })
       ));
   });

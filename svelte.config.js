@@ -11,7 +11,18 @@ const config = {
     // adapter-auto only supports some environments, see https://svelte.dev/docs/kit/adapter-auto for a list.
     // If your environment is not supported, or you settled on a specific environment, switch out the adapter.
     // See https://svelte.dev/docs/kit/adapters for more information about adapters.
-    adapter: adapter()
+    adapter: adapter(),
+    alias: {
+      '@': './src',
+      '@static': './static',
+      '@lib': './src/lib',
+      '@core': './src/lib/core',
+      '@components': './src/lib/components',
+      '@server': './src/server',
+      '@services': './src/lib/services',
+      '@stores': './src/lib/stores',
+      '@utils': './src/lib/utils'
+    }
   }
 };
 

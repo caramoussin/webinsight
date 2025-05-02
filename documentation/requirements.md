@@ -33,21 +33,26 @@ This document outlines the core functional requirements for WebInsight. It defin
 - **FR1.8**: Provide a UI mechanism for users to manually input a URL (RSS, HTML, JSON) and trigger immediate content fetching and optional AI processing.
   - **FR1.8.1**: Display the fetched content directly in the UI.
 
-### 4.2 Content Processing & AI Analysis (Leveraging Fabric AI & MCP)
+### 4.2 Content Processing & AI Analysis (Leveraging Fabric Pattern Library, Transformers, @effect/ai & MCP)
 
-- **FR2.1**: Process extracted content using configurable AI patterns (from Fabric AI library).
-  - **FR2.1.1**: Summarize content.
-  - **FR2.1.2**: Extract key insights/wisdom.
-  - **FR2.1.3**: Analyze claims or sentiment.
-  - **FR2.1.4**: Extract metadata (tags, entities).
+- **FR2.1**: Process extracted content using configurable AI patterns (from Fabric pattern library).
+  - **FR2.1.1**: Summarize content using transformer models for text generation.
+  - **FR2.1.2**: Extract key insights/wisdom using Fabric patterns.
+  - **FR2.1.3**: Analyze claims or sentiment using transformer-based understanding.
+  - **FR2.1.4**: Extract metadata (tags, entities) using transformer models.
+  - **FR2.1.5**: Generate embeddings using transformer models for semantic representation.
 - **FR2.2**: Allow sequencing of AI patterns for multi-step processing (e.g., extract then summarize).
-- **FR2.3**: Provide AI-driven content recommendations and organization suggestions (Librarian agent).
-- **FR2.4**: Configure and manage connections to LLMs (local like Ollama, external like OpenAI) via the MCP UI.
-  - **FR2.4.1**: Install/setup local LLM servers (if applicable).
-  - **FR2.4.2**: Assign specific LLMs/configurations to different AI agents/tasks.
+- **FR2.3**: Provide AI-driven content recommendations and organization suggestions (Librarian agent) using semantic similarity search.
+  - **FR2.3.1**: Use transformer-generated embeddings stored in Milvus Lite for finding similar content.
+  - **FR2.3.2**: Support configurable similarity thresholds and result counts for recommendations.
+- **FR2.4**: Configure and manage connections to LLMs and transformer models (local like Ollama, external like OpenAI) via the @effect/ai-based UI.
+  - **FR2.4.1**: Install/setup local LLM and transformer model servers (if applicable).
+  - **FR2.4.2**: Assign specific models/configurations to different AI agents/tasks.
+  - **FR2.4.3**: Configure embedding models for vector generation (e.g., sentence-transformers/all-MiniLM-L6-v2).
 - **FR2.5**: (Optional) Integrate with Brave Search API for enhanced content enrichment and real-time web context.
 - **FR2.6**: Allow users to configure AI processing pipelines with customizable patterns and sequences.
   - **FR2.6.1**: Support routines that can be scheduled and executed periodically.
+  - **FR2.6.2**: Allow configuration of transformer operations in processing pipelines.
 
 ### 4.3 User Interface & Experience
 
@@ -72,19 +77,42 @@ This document outlines the core functional requirements for WebInsight. It defin
 
 ### 4.5 Data Management & Privacy
 
-- **FR5.1**: Store all user data (feeds, articles, collections, configurations) locally within the context of the currently active profile.
-- **FR5.2**: Use a local SQLite database for primary data persistence for each profile.
-- **FR5.3**: Ensure user privacy by defaulting to local processing and local LLMs where possible.
+- **FR5.1**: Store all user data (feeds, articles, collections, configurations, embeddings) locally within the context of the currently active profile.
+- **FR5.2**: Use a local SQLite database for structured data persistence and Milvus Lite for vector storage for each profile.
+  - **FR5.2.1**: Ensure Milvus Lite operates entirely locally without external dependencies.
+  - **FR5.2.2**: Implement efficient vector indexing (HNSW) for fast similarity searches.
+  - **FR5.2.3**: Maintain references between SQLite records and Milvus Lite vectors.
+- **FR5.3**: Ensure user privacy by defaulting to local processing, local LLMs, and local transformer models where possible.
+  - **FR5.3.1**: Run transformer models locally via Ollama for privacy-preserving embedding generation.
+  - **FR5.3.2**: Ensure no embedding data is sent to external services without explicit consent.
 - **FR5.4**: Apply SQLCipher encryption to the entire database file for profiles marked as private.
+  - **FR5.4.1**: Ensure vector data in Milvus Lite is also protected for private profiles.
 - **FR5.5**: Provide options for data import/export (scope to be defined, likely per-profile).
+  - **FR5.5.1**: Include options for exporting and importing embeddings along with content.
 - **FR5.6**: Securely store any necessary API keys or credentials (potentially within the profile database if encrypted, or a separate secure store).
 - **FR5.7**: Implement basic data backup mechanisms (potentially per-profile).
+  - **FR5.7.1**: Include vector data in backups for complete profile preservation.
 
 ## 5. Non-Functional Requirements
 
-- **NFR1**: **Performance**: The application should be responsive, especially the UI. Background tasks (fetching, AI processing) should not block the UI.
-- **NFR2**: **Reliability**: Fetching and processing should be robust, with appropriate error handling and retries.
+- **NFR1**: **Performance**: The application should be responsive, especially the UI. Background tasks (fetching, AI processing, vector operations) should not block the UI.
+  - **NFR1.1**: Vector similarity searches in Milvus Lite should complete in under 100ms for collections up to 10,000 vectors.
+  - **NFR1.2**: Embedding generation should process text at a rate of at least 5 articles per second on recommended hardware.
+  - **NFR1.3**: The application should remain responsive with vector collections of up to 100,000 embeddings.
+  - **NFR1.4**: Memory usage should not exceed 2GB for Milvus Lite operations on standard collections.
+- **NFR2**: **Reliability**: Fetching, processing, and vector operations should be robust, with appropriate error handling and retries.
+  - **NFR2.1**: Embedding generation failures should not block content processing; fallback to metadata-based retrieval when necessary.
+  - **NFR2.2**: Vector database operations should be transactional to prevent data corruption.
 - **NFR3**: **Privacy**: Prioritize local data storage and processing. Provide robust optional encryption for sensitive profiles.
-- **NFR4**: **Usability**: The interface should be intuitive for managing feeds, content, AI configurations, and profiles.
-- **NFR5**: **Modularity**: The architecture should allow for adding new content sources, AI patterns, or features relatively easily.
-- **NFR6**: **Security**: Protect user data and credentials stored locally. Implement strong encryption (SQLCipher) for private profiles and secure key handling.
+  - **NFR3.1**: Transformer models should run locally via Ollama for privacy-preserving embedding generation.
+  - **NFR3.2**: No embedding data should be sent to external services without explicit user consent.
+  - **NFR3.3**: Vector operations should be performed entirely locally without external dependencies.
+- **NFR4**: **Usability**: The interface should be intuitive for managing feeds, content, AI configurations, transformer models, and profiles.
+  - **NFR4.1**: Provide clear visualizations of embedding-based similarity for content exploration.
+  - **NFR4.2**: Allow easy configuration of vector search parameters (similarity threshold, result count).
+- **NFR5**: **Modularity**: The architecture should allow for adding new content sources, AI patterns, transformer models, or features relatively easily.
+  - **NFR5.1**: Support pluggable embedding models with standardized interfaces.
+  - **NFR5.2**: Allow for future upgrades from Milvus Lite to full Milvus if needed.
+- **NFR6**: **Security**: Protect user data, embeddings, and credentials stored locally. Implement strong encryption (SQLCipher) for private profiles and secure key handling.
+  - **NFR6.1**: Ensure vector data is protected with the same level of security as structured data.
+  - **NFR6.2**: Implement secure handling of embedding model parameters and weights.

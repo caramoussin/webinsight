@@ -2,7 +2,7 @@
 
 ## Overview
 
-WebInsight leverages Fabric AI with the Model Context Protocol (MCP) for intelligent content processing, transforming aggregated web content into actionable insights. It integrates Fabric's pattern library and uses a direct Effect-based LLMProviderService powered by **@effect/ai** for LLM interactions, while specialized tools like Crawl4AI are exposed via MCP. The application implements a central MCP host that serves as a registry for providers, with the Crawl4AI MCP provider offering standardized access to web content extraction capabilities. Built with Bun and SvelteKit, this local-first application prioritizes privacy and user control while following functional programming principles (pure functions, immutable data structures, declarative patterns) to create a robust platform for insight generation. Its core architecture is deeply rooted in functional programming principles, utilizing **Effect TS** extensively for managing complexity, ensuring type safety, handling side effects, and composing business logic in a declarative and robust manner.
+WebInsight leverages the [Fabric pattern library](https://github.com/danielmiessler/fabric/tree/main/patterns) with the Model Context Protocol (MCP) for intelligent content processing, transforming aggregated web content into actionable insights. It integrates transformer models for embedding generation and text processing, managed by **@effect/ai** for LLM interactions, while specialized tools like Crawl4AI are exposed via MCP. The application implements a central MCP host that serves as a registry for providers, with the Crawl4AI MCP provider offering standardized access to web content extraction capabilities. For vector storage and similarity search, WebInsight uses Milvus Lite, a lightweight vector database that complements SQLite for efficient embedding operations. Built with Bun and SvelteKit, this local-first application prioritizes privacy and user control while following functional programming principles (pure functions, immutable data structures, declarative patterns) to create a robust platform for insight generation. Its core architecture is deeply rooted in functional programming principles, utilizing **Effect TS** extensively for managing complexity, ensuring type safety, handling side effects, and composing business logic in a declarative and robust manner.
 
 ## Programming Paradigm
 
@@ -98,19 +98,19 @@ const addArticleToCollection = (collection, article) => ({
 
 ### Core Principles
 
-- **Pure Functions**: Functions with no side effects, now leveraging @effect/ai-based LLMProviderService for consistent LLM outputs
-- **Immutability**: Data structures remain unchanged, with MCP configurations immutable
-- **Function Composition**: Complex operations built with MCP pipelines
-- **Higher-Order Functions**: Enhanced by MCP for dynamic pattern execution
-- **Declarative Style**: Expressing intent with Fabric patterns via MCP
+- **Pure Functions**: Side-effect free functions, utilizing Effect for managing and isolating effects
+- **Immutability**: Unchanging data structures, with Effect ensuring immutability in state transformations
+- **Function Composition**: Complex operations built by composing Effect-based pipelines
+- **Higher-Order Functions**: Leveraging Effect's combinators for advanced control flow and error handling
+- **Declarative Style**: Expressing intent through Effect's declarative API and combinators
 
 ### Effect TS Core Principles Applied
 
-- **Pure Functions**: Functions with no side effects, now leveraging @effect/ai-based LLMProviderService for consistent LLM outputs
-- **Immutability**: Data structures remain unchanged, with MCP configurations immutable
-- **Function Composition**: Complex operations built with MCP pipelines
-- **Higher-Order Functions**: Enhanced by MCP for dynamic pattern execution
-- **Declarative Style**: Expressing intent with Fabric patterns via MCP
+- **Type-Safe Error Handling**: Using Effect's typed error channel for comprehensive error management
+- **Resource Safety**: Employing Effect's Scope and Layer for safe resource acquisition and release
+- **Dependency Injection**: Utilizing Effect's Context and Layer for modular and testable code structure
+- **Concurrency Management**: Harnessing Effect's Fiber system for efficient asynchronous operations
+- **Testability**: Leveraging Effect's pure nature for easier unit testing and mocking of dependencies
 
 ## Core Architecture Layers
 
@@ -348,7 +348,7 @@ src/
    - Context retrieval optimization
    - **Dependency Injection**: Provided as a `Layer`, orchestrates other service layers.
 
-### 3. AI Layer (Fabric AI + MCP)
+### 3. AI Layer (Fabric Pattern Library + Transformers + @effect/ai + MCP)
 
 #### Agent Architecture
 
@@ -357,7 +357,9 @@ src/
    - Responsible for content collection and metadata extraction.
    - **Uses the Feed Service for RSS/Atom feeds.**
    - **Uses the Crawl4AI MCP Server (via the backend MCP client) for scraping web pages.**
-   - Executes Fabric patterns (e.g., `extract_metadata`) via MCP to enrich content.
+   - Executes Fabric pattern library operations (e.g., `extract_metadata`) via MCP to enrich content.
+   - Uses transformer models (e.g., sentence-transformers/all-MiniLM-L6-v2) for embedding generation, managed by @effect/ai.
+   - Stores embeddings in Milvus Lite for efficient similarity search.
    - May trigger Brave Search Integration for additional context.
 
    ```typescript
@@ -370,8 +372,10 @@ src/
 
 2. **The Scribe**:
 
-   - Executes Fabric patterns (e.g., `summarize`) via MCP
-   - Analyzes content for insights
+   - Executes Fabric pattern library operations (e.g., `summarize`) via MCP
+   - Uses transformer models for text generation tasks like summarization and metadata extraction
+   - Managed by @effect/ai as pure functions with type safety and error handling
+   - Analyzes content for insights using transformer-based semantic understanding
 
    ```typescript
    interface ScribeAgent {
@@ -387,6 +391,8 @@ src/
    - Generates recommendations based on user preferences and content analysis
    - Creates cross-references between content pieces
    - Suggests organization for collections
+   - Leverages transformer-generated embeddings stored in Milvus Lite for semantic similarity search
+   - Implements advanced recommendation algorithms using @effect/ai for functional composition
 
    ```typescript
    interface LibrarianAgent {
@@ -398,7 +404,7 @@ src/
 
 ### 4. Data Layer
 
-#### Database Schema (SQLite + Drizzle ORM)
+#### Database Schema (SQLite + Milvus Lite + Drizzle ORM)
 
 #### Profile-Specific Database Architecture
 
@@ -446,6 +452,7 @@ interface Article {
   metadata: ArticleMetadata;
   aiAnalysis: AIAnalysis;
   originalSource: string;
+  embeddingId: string; // Reference to embedding vector in Milvus Lite
 }
 
 // Collection Table
@@ -791,12 +798,15 @@ graph TB
             APIC[API Client]
             BSI[Brave Search Integration]
             DB[(SQLite DB)]
+            MDB[(Milvus Lite DB)]
             MCP_Client["MCP Client Logic"]
             LLM_Service["LLM Provider Service"]
+            EffectAI["@effect/ai"]
         end
         subgraph AI["AI Layer"]
-            FA[Fabric AI Patterns]
+            FP["Fabric Pattern Library"]
             Agents["AI Agents"]
+            Transformers["Transformer Models"]
         end
         subgraph ExternalMCP["External MCP Servers"]
             direction LR
@@ -818,12 +828,89 @@ graph TB
     BG --> Agents
     Core -- uses --> MCP_Client
     Core -- uses --> LLM_Service
+    Core -- uses --> EffectAI
     Agents -- uses --> MCP_Client
     Agents -- uses --> LLM_Service
+    Agents -- uses --> EffectAI
+    Agents -- uses --> Transformers
+    EffectAI -- manages --> Transformers
     MCP_Client -- "calls" --> ExternalMCP
     LLM_Service -- "calls" --> ExternalLLM
     BSI -- uses --> MCP_Client
     BSI --> DB
+    Agents --> MDB
+    EffectAI --> MDB
+```
+
+### AI Agent Interaction with @effect/ai
+
+```mermaid
+graph TD
+    subgraph UserInterface["User Interface Layer"]
+        UI[SvelteKit UI]
+        Query[User Query]
+    end
+    
+    subgraph AgentLayer["AI Agent Layer"]
+        Archivist[Archivist Agent]
+        Scribe[Scribe Agent]
+        Librarian[Librarian Agent]
+    end
+    
+    subgraph EffectAILayer["@effect/ai Layer"]
+        LLMProvider[LLMProviderService]
+        SemanticSearcher[SemanticSearcher]
+        Summarizer[Summarizer]
+        MetadataExtractor[MetadataExtractor]
+        EmbeddingGenerator[EmbeddingGenerator]
+        EffectCache[Effect.Cache]
+    end
+    
+    subgraph PatternLayer["Fabric Pattern Library"]
+        Summarize[summarize]
+        ExtractWisdom[extract_wisdom]
+        ExtractMetadata[extract_metadata]
+        Organize[organize]
+    end
+    
+    subgraph StorageLayer["Storage Layer"]
+        SQLite[(SQLite)]
+        MilvusLite[(Milvus Lite)]
+    end
+    
+    subgraph TransformerLayer["Transformer Models"]
+        EmbeddingModel["sentence-transformers/all-MiniLM-L6-v2"]
+        TextGeneration["Text Generation Models"]
+    end
+    
+    Query --> UI
+    UI --> AgentLayer
+    
+    Archivist --> EmbeddingGenerator
+    Archivist --> MetadataExtractor
+    Scribe --> Summarizer
+    Librarian --> SemanticSearcher
+    
+    EmbeddingGenerator --> EmbeddingModel
+    Summarizer --> TextGeneration
+    MetadataExtractor --> TextGeneration
+    SemanticSearcher --> MilvusLite
+    
+    EmbeddingGenerator --> EffectCache
+    Summarizer --> EffectCache
+    MetadataExtractor --> EffectCache
+    
+    Summarizer --> Summarize
+    MetadataExtractor --> ExtractMetadata
+    MetadataExtractor --> ExtractWisdom
+    Librarian --> Organize
+    
+    EmbeddingGenerator -- stores vectors --> MilvusLite
+    AgentLayer -- stores data --> SQLite
+    EffectCache -- caches results --> SQLite
+    
+    LLMProvider -- manages --> TextGeneration
+    LLMProvider -- manages --> EmbeddingModel
 ```
 
 **Note on Diagram:**
@@ -833,7 +920,3 @@ graph TB
 - **LLM Provider Service**: Represents the @effect/ai-based service for interacting with LLM providers in a provider-agnostic way.
 - **External MCP Servers**: Represents the standalone MCP servers for specialized tools, including the refactored Crawl4AI MCP Server and Fabric.
 - **External LLM Providers**: Represents the LLM providers (OpenAI, Anthropic, Ollama) that the LLM Service connects to through @effect/ai adapters.
-
-### Optional Brave Search Integration Flow
-
-{{ ... }}

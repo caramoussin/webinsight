@@ -2,7 +2,7 @@
 
 ## Overview
 
-WebInsight integrates Fabric AI with the Model Context Protocol (MCP) for specialized tools like Crawl4AI, while using a direct Effect-based LLMProviderService for LLM interactions. This specification details the technical foundation, including the use of Fabric's pattern library, the LLMProviderService for LLM integration, and the UI for managing these AI capabilities.
+WebInsight integrates the Fabric pattern library ([Fabric Patterns](https://github.com/danielmiessler/fabric/tree/main/patterns)) with the Model Context Protocol (MCP) for specialized tools like Crawl4AI, while using transformer models managed by @effect/ai for embedding generation and text processing. This specification details the technical foundation, including transformer integration, Milvus Lite for vector operations, the @effect/ai library for LLM and transformer management, and the UI for configuring these AI capabilities.
 
 ## Features
 
@@ -17,35 +17,42 @@ WebInsight integrates Fabric AI with the Model Context Protocol (MCP) for specia
 
 ### 2. AI-Powered Analysis
 
-#### Hybrid CAG/RAG Strategy
+#### Hybrid CAG/RAG Strategy with Transformers and Milvus Lite
 
 - **Cache-Augmented Generation (CAG)**: Caches AI outputs to reduce redundant computations and improve response times.
-- **Retrieval-Augmented Generation (RAG)**: Enhances AI generation with relevant context from the local database.
+- **Retrieval-Augmented Generation (RAG)**: Enhances AI generation with relevant context from the local database using transformer-generated embeddings.
+- **Transformer Integration**: Uses models like sentence-transformers/all-MiniLM-L6-v2 for embedding generation, managed by @effect/ai.
+- **Milvus Lite**: Lightweight vector database for efficient storage and similarity search of embeddings.
 - **Effect.Cache Integration**: Provides type-safe, efficient caching with configurable TTL.
 - **Performance Benefits**: Reduces LLM usage, improves response times, and enhances reliability.
-- **Quality Improvements**: Context retrieval improves relevance and accuracy of AI-generated content.
+- **Quality Improvements**: Semantic similarity search improves relevance and accuracy of AI-generated content.
 
 #### The Archivist Agent
 
-- Uses MCP to pipe content through pattern sequences (e.g., `extract_wisdom` → `organize`).
+- Uses MCP to pipe content through Fabric pattern library sequences (e.g., `extract_wisdom` → `organize`).
+- Generates embeddings using transformer models via @effect/ai.
+- Stores embeddings in Milvus Lite for efficient similarity search.
 - Leverages the RAG component to enrich metadata extraction with contextual information.
 
 #### The Scribe Agent
 
-- Executes Fabric patterns via MCP for summarization and key point extraction.
+- Executes Fabric pattern library operations via MCP for summarization and key point extraction.
+- Uses transformer models for text generation tasks like summarization and metadata extraction.
 - Uses cached results when available via the CAG component.
-- Enhances summaries with context from similar articles via the RAG component.
+- Enhances summaries with context from semantically similar articles via transformer-powered RAG.
 
 #### The Librarian Agent
 
 - Leverages MCP for dynamic recommendation workflows.
-- Uses metadata-based retrieval to find relevant articles for recommendations.
+- Uses transformer-generated embeddings stored in Milvus Lite for semantic similarity search.
+- Implements advanced recommendation algorithms using @effect/ai for functional composition.
 - Caches recommendation results to improve performance.
 
 ### 3. User Interface and Experience
 
-- LLM Provider UI: SvelteKit component to install and configure LLM providers (local like Ollama, external like OpenAI).
-  - Example: Select "Ollama/llama2," configure temperature, assign to Scribe.
+- LLM Provider UI: SvelteKit component to install and configure LLM providers (local like Ollama, external like OpenAI) and transformer models.
+  - Example: Select "Ollama/llama2" for text generation, configure temperature, assign to Scribe.
+  - Example: Configure "sentence-transformers/all-MiniLM-L6-v2" for embedding generation via Ollama.
 - Server-rendered SvelteKit application
 - Responsive Tailwind CSS design
 - shadcn-svelte components
@@ -57,15 +64,16 @@ WebInsight integrates Fabric AI with the Model Context Protocol (MCP) for specia
 
 ### 4. Data Management and Privacy
 
-- Local SQLite database with MCP connection table
-- Efficient data querying
-- Automatic backups
+- Local SQLite database for structured data storage
+- Milvus Lite for vector storage and similarity search
+- Efficient data and vector querying
+- Automatic backups including vector data
 - Import/export capabilities
-- Privacy-preserving design with local MCP servers
+- Privacy-preserving design with local MCP servers and transformer models
 - User data control
 - Secure configuration
 - Encrypted storage for API credentials
-- No reliance on external services for content processing beyond optional LLM providers
+- No reliance on external services for content processing or embedding generation beyond optional LLM providers
 
 ### 5. API Integration
 
@@ -116,31 +124,31 @@ WebInsight integrates Fabric AI with the Model Context Protocol (MCP) for specia
 #### Fallback Architecture
 
 ```typescript
-interface BraveSearchFallback {
-  mode: 'automatic' | 'manual';
-  triggers: {
-    quotaExceeded: boolean;
-    apiTimeout: number;
-    errorThreshold: number;
-  };
-  strategy: {
-    localOnly: boolean;
-    hybridProcessing: boolean;
-    cacheExtension: number;
-  };
+interface HealthCheck {
+  checkDatabase(): Promise<HealthStatus>;
+  checkVectorDatabase(): Promise<HealthStatus>; // Added for Milvus Lite monitoring
+  checkAIServices(): Promise<HealthStatus>;
+  checkTransformerModels(): Promise<HealthStatus>; // Added for transformer monitoring
+  checkNetworkServices(): Promise<HealthStatus>;
+  checkFileSystem(): Promise<HealthStatus>;
+  checkMCPServers(): Promise<HealthStatus>; // Added for MCP monitoring
 }
 ```
 
 ## Technical Architecture
 
-### Performance Optimization with Hybrid CAG/RAG
+### Performance Optimization with Hybrid CAG/RAG and Milvus Lite
 
 - **Cache Implementation**: Uses `Effect.Cache` with a capacity of 1000 entries and configurable TTL.
 - **Cache Keys**: Structured as `{ articleId, queryType }` for type-safe lookups.
-- **Context Retrieval**: Uses metadata-based queries to find relevant articles for context.
-- **Database Schema**: Extended with `cached_results` table to persist cached outputs.
+- **Transformer Integration**: Uses sentence-transformers/all-MiniLM-L6-v2 for generating 384-dimensional embeddings.
+- **Vector Storage**: Milvus Lite with HNSW indexing for fast similarity search.
+- **Context Retrieval**: Uses vector similarity search in Milvus Lite to find semantically relevant articles.
+- **Database Schema**:
+  - Extended SQLite with `cached_results` table and `embeddingId` field in articles.
+  - Milvus Lite collection for storing and indexing embeddings.
 - **Invalidation Strategy**: Time-based (TTL) and content-based (article updates) invalidation.
-- **User Configuration**: Adjustable TTL settings via preferences UI.
+- **User Configuration**: Adjustable TTL settings for both cache and embeddings via preferences UI.
 
 ```typescript
 // Example cache configuration
@@ -155,12 +163,17 @@ const cache = Cache.make({
 
 - Runtime: Bun for high-performance operations
 - Application Server: SvelteKit for frontend and backend logic
-- Database: SQLite with Drizzle ORM for type-safe data management
+- Databases:
+  - SQLite with Drizzle ORM for type-safe structured data management
+  - Milvus Lite for vector storage and similarity search
 - **Crawl4AI MCP Provider**: Logic within the backend implements the MCP provider interface for the Crawl4AI service, exposing web content extraction capabilities as standardized MCP tools.
 - **MCP Host**: Central registry for MCP providers that routes tool calls to the appropriate provider and provides a unified API for clients.
 - RSS & Nitter: Feed Service with Nitter instance management
 - API Integration: Configurable API client service with MCP
-- AI Integration: Fabric AI with MCP for pattern execution and direct Effect-based LLMProviderService for LLM management
+- AI Integration:
+  - Fabric pattern library with MCP for structured AI tasks
+  - Transformer models for embedding generation and text processing
+  - @effect/ai for managing LLM interactions and transformer operations
 - Real-Time Updates: WebSocket for live notifications including MCP updates
 - Background Jobs: Custom scheduler for periodic tasks and API rate limit management
 - Programming Paradigm: Functional programming with pure functions and immutable data structures
@@ -168,8 +181,9 @@ const cache = Cache.make({
 ### External Services / Servers
 
 - **Crawl4AI Service**: Backend service that provides web scraping capabilities, now exposed through the MCP infrastructure for standardized access.
-- **Fabric MCP Server(s)**: Servers exposing Fabric AI patterns.
+- **Fabric MCP Server(s)**: Servers exposing Fabric pattern library operations.
 - **LLM Provider Service**: Direct Effect-based service using @effect/ai for interacting with LLM providers (local like Ollama or external like OpenAI).
+- **Transformer Service**: Managed by @effect/ai for embedding generation and text processing using local models via Ollama.
 
 ### Frontend Stack
 
@@ -182,10 +196,14 @@ const cache = Cache.make({
 
 ### Data Layer
 
-- SQLite for persistence with MCP connection schema
-- Extended schema for CAG/RAG strategy:
+- SQLite for structured data persistence with MCP connection schema
+- Milvus Lite for vector storage and similarity search
+- Extended schema for CAG/RAG strategy with transformer integration:
 - **Profile Databases**: Uses the "one profile, one database" model. Each profile's data resides in a dedicated SQLite file (e.g., `~/.config/webinsights/profiles/<profile_id>.db`).
-- **CAG/RAG Tables**: Each profile database includes a `cached_results` table with fields for `articleId`, `queryType`, `result`, `timestamp`, and `ttl`.
+- **CAG/RAG Tables**: Each profile database includes:
+  - A `cached_results` table with fields for `articleId`, `queryType`, `result`, `timestamp`, and `ttl`.
+  - An `embeddingId` field in the `articles` table referencing vectors in Milvus Lite.
+- **Vector Database**: Milvus Lite instance with an `article_embeddings` collection storing 384-dimensional vectors.
 - **Profile Metadata**: A central `profiles.json` file or `metadata.db` tracks profile names, database file paths, and encryption status.
 - **Optional Encryption**: Private profiles utilize SQLCipher for full database encryption.
   - **Dependency**: Requires the `better-sqlite3-sqlcipher` package (or equivalent Bun-compatible SQLCipher binding) instead of plain `better-sqlite3` for encrypted databases.
@@ -206,14 +224,16 @@ const cache = Cache.make({
 
 ### AI Integration
 
-- Direct Fabric AI integration with MCP
+- Fabric pattern library integration with MCP
+- Transformer models for embedding generation and text processing
+- @effect/ai for managing LLM interactions and transformer operations
 - Shared resource management
 - Efficient data passing via MCP servers
-- Performance optimization with hybrid CAG/RAG strategy
-- Context-enhanced AI generation via metadata-based retrieval
-- Result caching for pattern outputs
+- Performance optimization with hybrid CAG/RAG strategy and Milvus Lite
+- Context-enhanced AI generation via transformer-powered semantic similarity search
+- Result caching for pattern outputs and embeddings
 - Background processing of MCP requests
-- Model management through MCP UI
+- Model management for both LLMs and transformers through UI
 
 ## System Architecture Diagrams
 
@@ -234,21 +254,28 @@ graph TB
             WS[Web Scraper]
             APIC[API Client]
             DB[(SQLite DB)]
+            MDB[(Milvus Lite DB)]
             MCP[MCP Servers]
+            EffectAI["@effect/ai"]
         end
         subgraph AI["AI Layer"]
-            FA[Fabric AI]
+            FP["Fabric Pattern Library"]
             MCP_C[MCP Clients]
+            TF["Transformer Models"]
         end
     end
     UI --> API
     SW --> API
     API --> Core
     Core --> MCP
-    MCP --> FA
-    FA --> MCP_C
+    Core --> MDB
+    Core --> EffectAI
+    EffectAI --> TF
+    MCP --> FP
+    FP --> MCP_C
     BG --> Core
     BG --> AI
+    TF --> MDB
 ```
 
 ### Data Flow Architecture
@@ -269,9 +296,12 @@ flowchart LR
         P4[API Client]
         P5[Nitter Service]
         MCP[MCP Servers]
+        TF[Transformer Models]
+        EA["@effect/ai"]
     end
     subgraph Storage["Storage Layer"]
         DB[(SQLite DB)]
+        MDB[(Milvus Lite DB)]
         Cache[Local Cache]
         SecStore[Encrypted Storage]
     end
@@ -279,6 +309,7 @@ flowchart LR
         A[Archivist]
         S[Scribe]
         L[Librarian]
+        FP[Fabric Pattern Library]
     end
     RSS --> P1
     HTML --> P2
@@ -286,13 +317,19 @@ flowchart LR
     P1 --> MCP
     P2 --> MCP
     P3 --> MCP
+    MCP --> FP
     MCP --> DB
     DB --> Cache
     DB --> A
+    A --> EA
+    EA --> TF
+    TF --> MDB
     A --> MCP
     MCP --> S
-    S --> MCP
+    S --> EA
+    EA --> MCP
     MCP --> L
+    L --> MDB
     L --> DB
 ```
 
@@ -361,10 +398,12 @@ graph TD
 ### Data Privacy and User Control
 
 - All data processing happens locally with MCP servers
+- Transformer models run locally via Ollama for privacy-preserving embedding generation
+- Milvus Lite operates entirely locally without external dependencies
 - No data sharing without explicit consent
-- User control over AI agent behavior and MCP configurations
+- User control over AI agent behavior, transformer models, and MCP configurations
 - Transparent data collection and usage
-- Option to disable AI features or external MCP connections
+- Option to disable AI features, transformer operations, or external MCP connections
 
 ### Web Scraping Ethics
 
@@ -376,27 +415,29 @@ graph TD
 
 ### AI Transparency
 
-- Clear indication of AI-generated content from Fabric patterns
-- Explainable AI recommendations via MCP outputs
-- User control over AI personalization through MCP UI
-- Bias detection and mitigation
-- Regular AI model updates manageable via MCP
+- Clear indication of AI-generated content from Fabric pattern library operations
+- Explainable AI recommendations via transformer-based similarity search
+- User control over AI personalization through MCP and transformer configuration UI
+- Bias detection and mitigation in both LLM outputs and embeddings
+- Regular AI model updates manageable via MCP and @effect/ai
 
 ## Testing and Validation
 
 ### Unit Testing
 
-- Component-level tests including MCP UI
-- Service integration tests with MCP servers
-- AI agent behavior validation with Fabric patterns
-- Data management verification
-- Error handling scenarios for MCP connections
+- Component-level tests including MCP and transformer UI
+- Service integration tests with MCP servers and Milvus Lite
+- AI agent behavior validation with Fabric pattern library operations
+- Transformer and embedding validation tests
+- Data management verification for both SQLite and Milvus Lite
+- Error handling scenarios for MCP connections and vector operations
 
 ### Integration Testing
 
-- End-to-end workflow testing with MCP pipelines
-- AI agent interaction testing via MCP
-- Performance benchmarking
+- End-to-end workflow testing with MCP pipelines and transformer operations
+- AI agent interaction testing via MCP and @effect/ai
+- Performance benchmarking for both SQL and vector operations
+- Vector similarity search accuracy testing
 - Cross-browser compatibility
 - Offline functionality validation
 
@@ -432,12 +473,14 @@ graph TD
 
 ### Configuration
 
-- Initial setup wizard with LLM provider selection
-- LLM provider selection and configuration via UI
-- API key management for external MCP connections
-- Port configuration for MCP servers
-- Resource limits
-- Backup settings
+- Configure MCP servers in the settings panel
+- Set up LLM providers (Ollama, OpenAI, etc.)
+- Configure transformer models for embedding generation
+- Set up Milvus Lite connection parameters
+- Configure feed sources and update frequencies
+- Set privacy preferences
+- Customize UI appearance
+- Configure vector search parameters (similarity threshold, result count)
 
 ### Security
 
@@ -528,11 +571,20 @@ graph TD
 
 WebInsight aims to revolutionize content aggregation and analysis, transforming raw web data into meaningful insights through intelligent, user-centric design and advanced AI technologies integrated via MCP.
 
+## Development Resources
+
+### Documentation
+
+- [Architecture Overview](./architecture.md)
+- [Project Overview](./project-overview.md)
+- [Requirements](./requirements.md)
+- [Work in Progress](./work-in-progress.md)
+- [CAG/RAG Strategy](./integrations/cag-rag-strategy.md)
+- [Transformer & Milvus Code Examples](./integrations/transformer-milvus-code-examples.md)
+
 ## Project Roadmap
 
 ### Phase 1: Core Infrastructure (Current)
-
-✅ Completed:
 
 - Basic SvelteKit + Tailwind + shadcn setup
 - Database schema and migrations with Drizzle ORM

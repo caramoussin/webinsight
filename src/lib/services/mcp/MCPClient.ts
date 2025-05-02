@@ -1,5 +1,4 @@
-import * as Effect from '@effect/io/Effect';
-import * as S from '@effect/schema/Schema';
+import { Effect as E, Schema as S } from 'effect';
 import { ServiceError, validateWithSchema, effectFetch } from '../../utils/effect';
 
 // Define schemas for MCP configuration and responses
@@ -59,8 +58,8 @@ export class MCPClient {
     input: string,
     connectionConfig: MCPConnectionConfig,
     patternConfig?: MCPPatternConfig
-  ): Effect.Effect<never, ServiceError, MCPResponse> {
-    return Effect.gen(function* ($) {
+  ): E.Effect<MCPResponse, ServiceError> {
+    return E.gen(function* ($) {
       // Validate connection config
       const validatedConnection = yield* $(
         validateWithSchema(MCPConnectionConfigSchema, connectionConfig)
@@ -117,8 +116,8 @@ export class MCPClient {
     input: string,
     connectionConfig: MCPConnectionConfig,
     patternConfigs?: Record<string, MCPPatternConfig>
-  ): Effect.Effect<never, ServiceError, MCPResponse> {
-    return Effect.gen(function* ($) {
+  ): E.Effect<MCPResponse, ServiceError> {
+    return E.gen(function* ($) {
       let currentInput = input;
       let finalResult: MCPResponse | null = null;
 
@@ -134,12 +133,12 @@ export class MCPClient {
 
       if (!finalResult) {
         return yield* $(
-          Effect.fail(
-            new ServiceError(
-              'SEQUENCE_ERROR',
-              'Pattern sequence execution failed: no patterns executed',
-              { patterns }
-            )
+          E.fail(
+            new ServiceError({
+              code: 'SEQUENCE_ERROR',
+              message: 'Pattern sequence execution failed: no patterns executed',
+              cause: { patterns }
+            })
           )
         );
       }
@@ -153,14 +152,14 @@ export class MCPClient {
    */
   static checkServerAvailability(
     connectionConfig: MCPConnectionConfig
-  ): Effect.Effect<never, ServiceError, boolean> {
-    return Effect.gen(function* ($) {
+  ): E.Effect<boolean, ServiceError> {
+    return E.gen(function* ($) {
       const validatedConnection = yield* $(
         validateWithSchema(MCPConnectionConfigSchema, connectionConfig)
       );
 
       return yield* $(
-        Effect.tryPromise({
+        E.tryPromise({
           try: async () => {
             const response = await fetch(`${validatedConnection.url}/health`, {
               method: 'GET',
@@ -174,11 +173,12 @@ export class MCPClient {
             return response.ok;
           },
           catch: (error) =>
-            new ServiceError(
-              'AVAILABILITY_CHECK_ERROR',
-              error instanceof Error ? error.message : 'Failed to check server availability',
-              error
-            )
+            new ServiceError({
+              code: 'AVAILABILITY_CHECK_ERROR',
+              message:
+                error instanceof Error ? error.message : 'Failed to check server availability',
+              cause: error
+            })
         })
       );
     });
@@ -187,10 +187,8 @@ export class MCPClient {
   /**
    * List available patterns on an MCP server
    */
-  static listPatterns(
-    connectionConfig: MCPConnectionConfig
-  ): Effect.Effect<never, ServiceError, string[]> {
-    return Effect.gen(function* ($) {
+  static listPatterns(connectionConfig: MCPConnectionConfig): E.Effect<string[], ServiceError> {
+    return E.gen(function* ($) {
       const validatedConnection = yield* $(
         validateWithSchema(MCPConnectionConfigSchema, connectionConfig)
       );
@@ -230,5 +228,5 @@ export const exampleMCPPatternExecution = () => {
     }
   );
 
-  return Effect.runPromise(program);
+  return E.runPromise(program);
 };

@@ -3,11 +3,11 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import * as Effect from '@effect/io/Effect';
+import { Effect as E } from 'effect';
 // Import Effect types for proper type checking
 import { ServiceError } from '../../../../lib/utils/effect';
 
-import { MCPHostService, makeMCPHostService } from '../../../../lib/server/mcp/host';
+import { type MCPHostService, makeMCPHostService } from '../../../../lib/server/mcp/host';
 
 import type { MCPProvider, MCPTool } from '../../../../lib/server/mcp/host';
 
@@ -16,13 +16,15 @@ describe('MCP Host', () => {
   const createMockProvider = (name: string, tools: MCPTool[] = []): MCPProvider => {
     return {
       name,
-      listTools: vi.fn().mockImplementation(() => Effect.succeed(tools)),
+      listTools: vi.fn().mockImplementation(() => E.succeed(tools)),
       callTool: vi.fn().mockImplementation((toolName, params) => {
         const tool = tools.find((t) => t.name === toolName);
         if (tool) {
-          return Effect.succeed({ result: 'success', params });
+          return E.succeed({ result: 'success', params });
         }
-        return Effect.fail(new ServiceError('TOOL_NOT_FOUND', `Tool ${toolName} not found`));
+        return E.fail(
+          new ServiceError({ code: 'TOOL_NOT_FOUND', message: `Tool ${toolName} not found` })
+        );
       })
     };
   };
@@ -71,20 +73,20 @@ describe('MCP Host', () => {
   describe('registerProvider', () => {
     it('should register a provider', async () => {
       // Register the provider
-      await Effect.runPromise(host.registerProvider(mockProvider1));
+      await E.runPromise(host.registerProvider(mockProvider1));
 
       // Check if the provider is registered by listing providers
-      const providers = await Effect.runPromise(host.listProviders());
+      const providers = await E.runPromise(host.listProviders());
       expect(providers).toContain('provider1');
     });
 
     it('should register multiple providers', async () => {
       // Register the providers
-      await Effect.runPromise(host.registerProvider(mockProvider1));
-      await Effect.runPromise(host.registerProvider(mockProvider2));
+      await E.runPromise(host.registerProvider(mockProvider1));
+      await E.runPromise(host.registerProvider(mockProvider2));
 
       // Check if both providers are registered
-      const providers = await Effect.runPromise(host.listProviders());
+      const providers = await E.runPromise(host.listProviders());
       expect(providers).toContain('provider1');
       expect(providers).toContain('provider2');
       expect(providers.length).toBe(2);
@@ -93,34 +95,34 @@ describe('MCP Host', () => {
 
   describe('listProviders', () => {
     it('should return an empty array when no providers are registered', async () => {
-      const providers = await Effect.runPromise(host.listProviders());
+      const providers = await E.runPromise(host.listProviders());
       expect(providers).toEqual([]);
     });
 
     it('should return all registered providers', async () => {
       // Register the providers
-      await Effect.runPromise(host.registerProvider(mockProvider1));
-      await Effect.runPromise(host.registerProvider(mockProvider2));
+      await E.runPromise(host.registerProvider(mockProvider1));
+      await E.runPromise(host.registerProvider(mockProvider2));
 
       // List providers
-      const providers = await Effect.runPromise(host.listProviders());
+      const providers = await E.runPromise(host.listProviders());
       expect(providers).toEqual(['provider1', 'provider2']);
     });
   });
 
   describe('listAllTools', () => {
     it('should return an empty array when no providers are registered', async () => {
-      const tools = await Effect.runPromise(host.listAllTools());
+      const tools = await E.runPromise(host.listAllTools());
       expect(tools).toEqual([]);
     });
 
     it('should return all tools from all providers', async () => {
       // Register the providers
-      await Effect.runPromise(host.registerProvider(mockProvider1));
-      await Effect.runPromise(host.registerProvider(mockProvider2));
+      await E.runPromise(host.registerProvider(mockProvider1));
+      await E.runPromise(host.registerProvider(mockProvider2));
 
       // List all tools
-      const tools = await Effect.runPromise(host.listAllTools());
+      const tools = await E.runPromise(host.listAllTools());
       expect(tools.length).toBe(3);
       expect(tools.map((t) => t.name)).toContain('testTool1');
       expect(tools.map((t) => t.name)).toContain('testTool2');
@@ -134,17 +136,17 @@ describe('MCP Host', () => {
         listTools: vi
           .fn()
           .mockImplementation(() =>
-            Effect.fail(new ServiceError('LIST_ERROR', 'Failed to list tools'))
+            E.fail(new ServiceError({ code: 'LIST_ERROR', message: 'Failed to list tools' }))
           ),
         callTool: vi.fn()
       };
 
       // Register the providers
-      await Effect.runPromise(host.registerProvider(mockProvider1));
-      await Effect.runPromise(host.registerProvider(failingProvider));
+      await E.runPromise(host.registerProvider(mockProvider1));
+      await E.runPromise(host.registerProvider(failingProvider));
 
       // List all tools - should still return tools from working providers
-      const tools = await Effect.runPromise(host.listAllTools());
+      const tools = await E.runPromise(host.listAllTools());
       expect(tools.length).toBe(2); // Only tools from mockProvider1
       expect(failingProvider.listTools).toHaveBeenCalled();
     });
@@ -154,7 +156,7 @@ describe('MCP Host', () => {
     it('should fail when provider is not found', async () => {
       // Try to list tools from a non-existent provider
       try {
-        await Effect.runPromise(host.listProviderTools('nonExistentProvider'));
+        await E.runPromise(host.listProviderTools('nonExistentProvider'));
         // If we get here, the test should fail because we expected an error
         expect(true).toBe(false);
       } catch (error) {
@@ -165,11 +167,11 @@ describe('MCP Host', () => {
 
     it('should return tools from a specific provider', async () => {
       // Register the providers
-      await Effect.runPromise(host.registerProvider(mockProvider1));
-      await Effect.runPromise(host.registerProvider(mockProvider2));
+      await E.runPromise(host.registerProvider(mockProvider1));
+      await E.runPromise(host.registerProvider(mockProvider2));
 
       // List tools from provider1
-      const tools = await Effect.runPromise(host.listProviderTools('provider1'));
+      const tools = await E.runPromise(host.listProviderTools('provider1'));
       expect(tools.length).toBe(2);
       expect(tools.map((t) => t.name)).toContain('testTool1');
       expect(tools.map((t) => t.name)).toContain('testTool2');
@@ -181,7 +183,7 @@ describe('MCP Host', () => {
     it('should fail when provider is not found', async () => {
       // Try to call a tool from a non-existent provider
       try {
-        await Effect.runPromise(host.callTool('testTool1', 'nonExistentProvider', {}));
+        await E.runPromise(host.callTool('testTool1', 'nonExistentProvider', {}));
         // If we get here, the test should fail because we expected an error
         expect(true).toBe(false);
       } catch (error) {
@@ -192,10 +194,10 @@ describe('MCP Host', () => {
 
     it('should call a tool from a specific provider', async () => {
       // Register the provider
-      await Effect.runPromise(host.registerProvider(mockProvider1));
+      await E.runPromise(host.registerProvider(mockProvider1));
 
       // Call a tool
-      const result = await Effect.runPromise(
+      const result = await E.runPromise(
         host.callTool('testTool1', 'provider1', { param1: 'test', param2: 42 })
       );
 
@@ -210,20 +212,20 @@ describe('MCP Host', () => {
       // Create a provider that fails when calling a tool
       const failingProvider: MCPProvider = {
         name: 'failingProvider',
-        listTools: vi.fn().mockImplementation(() => Effect.succeed([])),
+        listTools: vi.fn().mockImplementation(() => E.succeed([])),
         callTool: vi
           .fn()
           .mockImplementation(() =>
-            Effect.fail(new ServiceError('CALL_ERROR', 'Failed to call tool'))
+            E.fail(new ServiceError({ code: 'CALL_ERROR', message: 'Failed to call tool' }))
           )
       };
 
       // Register the provider
-      await Effect.runPromise(host.registerProvider(failingProvider));
+      await E.runPromise(host.registerProvider(failingProvider));
 
       // Call a tool - should fail
       try {
-        await Effect.runPromise(host.callTool('testTool', 'failingProvider', {}));
+        await E.runPromise(host.callTool('testTool', 'failingProvider', {}));
         // If we get here, the test should fail because we expected an error
         expect(true).toBe(false);
       } catch (error) {
@@ -236,12 +238,12 @@ describe('MCP Host', () => {
   describe('callToolAcrossProviders', () => {
     it('should fail when tool is not found in any provider', async () => {
       // Register the providers
-      await Effect.runPromise(host.registerProvider(mockProvider1));
-      await Effect.runPromise(host.registerProvider(mockProvider2));
+      await E.runPromise(host.registerProvider(mockProvider1));
+      await E.runPromise(host.registerProvider(mockProvider2));
 
       // Try to call a non-existent tool
       try {
-        await Effect.runPromise(host.callToolAcrossProviders('nonExistentTool', {}));
+        await E.runPromise(host.callToolAcrossProviders('nonExistentTool', {}));
         // If we get here, the test should fail because we expected an error
         expect(true).toBe(false);
       } catch (error) {
@@ -252,11 +254,11 @@ describe('MCP Host', () => {
 
     it('should call a tool from the first provider that has it', async () => {
       // Register the providers
-      await Effect.runPromise(host.registerProvider(mockProvider1));
-      await Effect.runPromise(host.registerProvider(mockProvider2));
+      await E.runPromise(host.registerProvider(mockProvider1));
+      await E.runPromise(host.registerProvider(mockProvider2));
 
       // Call a tool that exists in provider1
-      const result = await Effect.runPromise(
+      const result = await E.runPromise(
         host.callToolAcrossProviders('testTool1', { param1: 'test', param2: 42 })
       );
 
@@ -270,11 +272,11 @@ describe('MCP Host', () => {
 
     it("should call a tool from the second provider if first doesn't have it", async () => {
       // Register the providers
-      await Effect.runPromise(host.registerProvider(mockProvider1));
-      await Effect.runPromise(host.registerProvider(mockProvider2));
+      await E.runPromise(host.registerProvider(mockProvider1));
+      await E.runPromise(host.registerProvider(mockProvider2));
 
       // Call a tool that exists only in provider2
-      const result = await Effect.runPromise(
+      const result = await E.runPromise(
         host.callToolAcrossProviders('testTool3', { param1: true })
       );
 

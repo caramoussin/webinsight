@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import * as Effect from '@effect/io/Effect';
+import { Effect as E } from 'effect';
 import { ServiceError } from '../../../../lib/utils/effect';
 import { MCPCrawl4AIClient } from '../../../../lib/services/scraper/MCPCrawl4AIClient';
 
@@ -54,10 +54,10 @@ describe('MCPCrawl4AIClient', () => {
 
     it('should successfully extract content from a URL', async () => {
       // Mock the effectFetch response
-      vi.mocked(effectFetch).mockReturnValue(Effect.succeed(mockExtractResponse));
+      vi.mocked(effectFetch).mockReturnValue(E.succeed(mockExtractResponse));
 
       // Call the extractContent method
-      const result = await Effect.runPromise(MCPCrawl4AIClient.extractContent(mockExtractOptions));
+      const result = await E.runPromise(MCPCrawl4AIClient.extractContent(mockExtractOptions));
 
       // Verify the result
       expect(result).toEqual(mockExtractResponse.result);
@@ -76,11 +76,13 @@ describe('MCPCrawl4AIClient', () => {
     it('should handle errors when extracting content', async () => {
       // Mock the effectFetch to throw an error
       vi.mocked(effectFetch).mockImplementation(() => {
-        return Effect.fail(new ServiceError('EXTRACT_CONTENT_ERROR', 'Failed to extract content'));
+        return E.fail(
+          new ServiceError({ code: 'EXTRACT_CONTENT_ERROR', message: 'Failed to extract content' })
+        );
       });
 
       try {
-        await Effect.runPromise(
+        await E.runPromise(
           MCPCrawl4AIClient.extractContent({
             url: 'https://example.com',
             selectors: {
@@ -104,11 +106,13 @@ describe('MCPCrawl4AIClient', () => {
     it('should handle network timeouts', async () => {
       // Mock the effectFetch to throw a timeout error
       vi.mocked(effectFetch).mockImplementation(() => {
-        return Effect.fail(new ServiceError('TIMEOUT_ERROR', 'Request timed out after 30000ms'));
+        return E.fail(
+          new ServiceError({ code: 'TIMEOUT_ERROR', message: 'Request timed out after 30000ms' })
+        );
       });
 
       try {
-        await Effect.runPromise(
+        await E.runPromise(
           MCPCrawl4AIClient.extractContent({
             url: 'https://example.com',
             selectors: {
@@ -133,13 +137,16 @@ describe('MCPCrawl4AIClient', () => {
     it('should handle specific MCP service errors', async () => {
       // Mock the effectFetch to throw an MCP service error
       vi.mocked(effectFetch).mockImplementation(() => {
-        return Effect.fail(
-          new ServiceError('MCP_SERVICE_ERROR', 'The MCP service encountered an error')
+        return E.fail(
+          new ServiceError({
+            code: 'MCP_SERVICE_ERROR',
+            message: 'The MCP service encountered an error'
+          })
         );
       });
 
       try {
-        await Effect.runPromise(
+        await E.runPromise(
           MCPCrawl4AIClient.extractContent({
             url: 'https://example.com',
             selectors: {
@@ -162,7 +169,7 @@ describe('MCPCrawl4AIClient', () => {
           expect(error.code).toBe('MCP_SERVICE_ERROR');
         } else {
           // If it's stringified, just check that it contains the expected message
-          expect(error.toString()).toContain('MCP_SERVICE_ERROR');
+          expect(error.toString()).toContain('The MCP service encountered an error');
         }
       }
     });
@@ -177,7 +184,7 @@ describe('MCPCrawl4AIClient', () => {
 
       try {
         // @ts-expect-error - Intentionally passing invalid options for testing
-        await Effect.runPromise(MCPCrawl4AIClient.extractContent(invalidOptions));
+        await E.runPromise(MCPCrawl4AIClient.extractContent(invalidOptions));
         // If we get here, the test should fail because we expected an error
         expect(true).toBe(false);
       } catch (error) {
@@ -203,10 +210,10 @@ describe('MCPCrawl4AIClient', () => {
 
     it('should successfully check robots.txt for a URL', async () => {
       // Mock the effectFetch response
-      vi.mocked(effectFetch).mockReturnValue(Effect.succeed(mockRobotsResponse));
+      vi.mocked(effectFetch).mockReturnValue(E.succeed(mockRobotsResponse));
 
       // Call the checkRobotsTxt method
-      const result = await Effect.runPromise(
+      const result = await E.runPromise(
         MCPCrawl4AIClient.checkRobotsTxt('https://example.com', 'Mozilla/5.0')
       );
 
@@ -229,10 +236,10 @@ describe('MCPCrawl4AIClient', () => {
 
     it('should handle missing user agent', async () => {
       // Mock the effectFetch response
-      vi.mocked(effectFetch).mockReturnValue(Effect.succeed(mockRobotsResponse));
+      vi.mocked(effectFetch).mockReturnValue(E.succeed(mockRobotsResponse));
 
       // Call the checkRobotsTxt method without a user agent
-      await Effect.runPromise(MCPCrawl4AIClient.checkRobotsTxt('https://example.com'));
+      await E.runPromise(MCPCrawl4AIClient.checkRobotsTxt('https://example.com'));
 
       // Verify that effectFetch was called with the correct arguments (no user_agent)
       expect(effectFetch).toHaveBeenCalledWith('/api/mcp/crawl4ai', {
@@ -250,13 +257,16 @@ describe('MCPCrawl4AIClient', () => {
     it('should handle errors when checking robots.txt', async () => {
       // Mock the effectFetch to throw an error
       vi.mocked(effectFetch).mockImplementation(() => {
-        return Effect.fail(
-          new ServiceError('CHECK_ROBOTS_TXT_ERROR', 'Failed to check robots.txt')
+        return E.fail(
+          new ServiceError({
+            code: 'CHECK_ROBOTS_TXT_ERROR',
+            message: 'Failed to check robots.txt'
+          })
         );
       });
 
       try {
-        await Effect.runPromise(MCPCrawl4AIClient.checkRobotsTxt('https://example.com'));
+        await E.runPromise(MCPCrawl4AIClient.checkRobotsTxt('https://example.com'));
         // If we get here, the test should fail because we expected an error
         expect(true).toBe(false);
       } catch (error: any) {
@@ -267,7 +277,7 @@ describe('MCPCrawl4AIClient', () => {
           expect(error.code).toBe('CHECK_ROBOTS_TXT_ERROR');
         } else {
           // If it's stringified, just check that it contains the expected message
-          expect(error.toString()).toContain('CHECK_ROBOTS_TXT_ERROR');
+          expect(error.toString()).toContain('Failed to check robots.txt');
         }
       }
     });
@@ -275,11 +285,16 @@ describe('MCPCrawl4AIClient', () => {
     it('should handle network timeouts when checking robots.txt', async () => {
       // Mock the effectFetch to throw a timeout error
       vi.mocked(effectFetch).mockImplementation(() => {
-        return Effect.fail(new ServiceError('TIMEOUT_ERROR', 'Request timed out after 30000ms'));
+        return E.fail(
+          new ServiceError({
+            code: 'TIMEOUT_ERROR',
+            message: 'Request timed out after 30000ms'
+          })
+        );
       });
 
       try {
-        await Effect.runPromise(MCPCrawl4AIClient.checkRobotsTxt('https://example.com'));
+        await E.runPromise(MCPCrawl4AIClient.checkRobotsTxt('https://example.com'));
         // If we get here, the test should fail because we expected an error
         expect(true).toBe(false);
       } catch (error: any) {

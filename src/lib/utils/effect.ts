@@ -1,26 +1,18 @@
-import * as Effect from '@effect/io/Effect';
-import * as Schedule from '@effect/io/Schedule';
-import * as Duration from '@effect/data/Duration';
-import { Tag } from '@effect/data/Context';
-import * as Option from '@effect/data/Option';
-import * as Schema from '@effect/schema/Schema';
+import { Effect as E, Schedule, Duration, Schema, Data } from 'effect';
 
 // Base error type for all services
-export class ServiceError {
-  readonly _tag = 'ServiceError';
-  constructor(
-    readonly code: string,
-    readonly message: string,
-    readonly cause?: unknown
-  ) {}
-}
+export class ServiceError extends Data.TaggedError('ServiceError')<{
+  code: string;
+  message: string;
+  cause?: unknown;
+}> {}
 
 // Helper to convert Promise-based functions to Effect
 export const tryCatchPromise = <A>(
   promise: () => Promise<A>,
   onError: (error: unknown) => ServiceError
-): Effect.Effect<never, ServiceError, A> =>
-  Effect.tryPromise({
+): E.Effect<A, ServiceError> =>
+  E.tryPromise({
     try: promise,
     catch: onError
   });
@@ -29,10 +21,15 @@ export const tryCatchPromise = <A>(
 export const validateWithSchema = <I, A>(
   schema: Schema.Schema<A, I>,
   data: I
-): Effect.Effect<never, ServiceError, A> =>
-  Effect.try({
+): E.Effect<A, ServiceError> =>
+  E.try({
     try: () => Schema.decodeSync(schema)(data),
-    catch: (error) => new ServiceError('VALIDATION_ERROR', 'Validation failed', error)
+    catch: (error) =>
+      new ServiceError({
+        code: 'VALIDATION_ERROR',
+        message: 'Validation failed',
+        cause: error
+      })
   });
 
 // Helper for HTTP requests
@@ -40,11 +37,11 @@ export const fetchJSON = async <T>(input: RequestInfo | URL, init?: RequestInit)
   const response = await fetch(input, init);
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
-    throw new ServiceError(
-      `HTTP_${response.status}`,
-      errorData.detail || `HTTP error ${response.status}`,
-      errorData
-    );
+    throw new ServiceError({
+      code: `HTTP_${response.status}`,
+      message: errorData.detail || `HTTP error ${response.status}`,
+      cause: errorData
+    });
   }
   return response.json();
 };
@@ -55,49 +52,49 @@ export const effectFetch = <T>(
   init?: RequestInit,
   retryCount = 3,
   timeoutMs = 10000
-): Effect.Effect<never, ServiceError, T> => {
+): E.Effect<T, ServiceError> => {
   // Create the fetch effect
   const fetchEffect = tryCatchPromise(
     () => fetchJSON<T>(input, init),
     (error) =>
       error instanceof ServiceError
         ? error
-        : new ServiceError('FETCH_ERROR', 'Failed to fetch data', error)
+        : new ServiceError({
+            code: 'FETCH_ERROR',
+            message: 'Failed to fetch data',
+            cause: error
+          })
   );
 
   // Add timeout
-  const withTimeout = Effect.flatMap(
-    Effect.timeout(fetchEffect, Duration.millis(timeoutMs)),
-    Option.match({
-      onNone: () =>
-        Effect.fail(new ServiceError('TIMEOUT', `Request timed out after ${timeoutMs}ms`)),
-      onSome: Effect.succeed
-    })
+  const withTimeout = E.timeout(fetchEffect, Duration.millis(timeoutMs)).pipe(
+    E.catchTag('TimeoutException', () =>
+      E.fail(
+        new ServiceError({
+          code: 'TIMEOUT',
+          message: `Request timed out after ${timeoutMs}ms`
+        })
+      )
+    )
   );
 
   // Add retry with exponential backoff
-  const withRetry = Effect.retry(
+  const withRetry = E.retry(
     withTimeout,
     Schedule.exponential(Duration.seconds(1)).pipe(Schedule.compose(Schedule.recurs(retryCount)))
   );
 
   // Add tracing
-  return Effect.withSpan('effectFetch', {
+  return E.withSpan('effectFetch', {
     attributes: { url: input.toString() }
   })(withRetry);
 };
 
 // Helper for running Effects
-export const runEffect = <E, A>(
-  effect: Effect.Effect<never, E, A>,
+export const runEffect = <A, E>(
+  effect: E.Effect<A, E>,
   onSuccess: (a: A) => void,
   onError: (e: E) => void
 ): void => {
-  Effect.runPromise(effect).then(onSuccess).catch(onError);
+  E.runPromise(effect).then(onSuccess).catch(onError);
 };
-
-// Type helper for service layers
-export type ServiceTag<T> = Tag<T, T>;
-
-// Helper for creating service tags
-export const createServiceTag = <T>(name: string): ServiceTag<T> => Tag<T, T>(Symbol.for(name));

@@ -81,16 +81,14 @@ Refactor the existing `Crawl4AIClient.ts` integration to align with the Model Co
   - [x] Updated all tests to use the new MCP-based client
   - [x] Ensured backward compatibility with existing code patterns
 
-- [ ] **Effect Library Migration**: Migrate from deprecated `@effect/*` packages to the unified core `effect` library.
-  - [ ] Update all imports from `@effect/io/Effect` to `effect/Effect`
-  - [ ] Update all imports from `@effect/data/Function` to `effect/Function`
-  - [ ] Update all imports from `@effect/schema/Schema` to `effect/Schema`
-  - [ ] Update all imports from `@effect/data/Duration` to `effect/Duration`
-  - [ ] Update all imports from `@effect/data/Context` to `effect/Context`
-  - [ ] Update all imports from `@effect/data/Option` to `effect/Option`
-  - [ ] Keep imports from `@effect/vitest` as they are still valid
-  - [ ] Update package.json to remove deprecated `@effect/*` dependencies
-  - [ ] Move `effect` from devDependencies to dependencies in package.json
+- [x] **Effect Library Migration**: Migrate from deprecated `@effect/*` packages to the unified core `effect` library.
+  - [x] Update all imports from `@effect/io/Effect` to `effect/Effect`
+  - [x] Update all imports from `@effect/data/Function` to `effect/Function`
+  - [x] Update all imports from `@effect/schema/Schema` to `effect/Schema`
+  - [x] Fix type parameter order in `Effect<R, E, A>` to match new `Effect<A, E, R>` format
+  - [x] Update ServiceError constructor to use object parameter instead of positional parameters
+  - [x] Keep imports from `@effect/vitest` as they are still valid
+  - [x] Update all test files to use the new Effect API and error handling
 
 - [ ] **Official MCP TypeScript SDK Integration**: Implement a new MCP solution from scratch using the official SDK with Effect integration.
   - [ ] **Setup Phase**:
@@ -143,15 +141,15 @@ Refactor the existing `Crawl4AIClient.ts` integration to align with the Model Co
 
 ### Phase 2: Effect Library Migration
 
-1. **Update Dependencies**: Move from multiple `@effect/*` packages to the unified `effect` package.
-   - Update package.json to remove deprecated dependencies.
-   - Move `effect` from devDependencies to dependencies.
-2. **Update Imports**: Refactor all imports to use the new package structure.
-   - Update all import paths across the codebase.
-   - Keep `@effect/vitest` imports as they are still valid.
-3. **Test & Verify**: Ensure all functionality works correctly with the new imports.
-   - Run unit and integration tests to verify functionality.
-   - Fix any issues that arise from the migration.
+1. **Update Dependencies**: Move from multiple `@effect/*` packages to the unified `effect` package. ✅
+   - Update package.json to remove deprecated dependencies. ✅
+   - Move `effect` from devDependencies to dependencies. ✅
+2. **Update Imports**: Refactor all imports to use the new package structure. ✅
+   - Update all import paths across the codebase. ✅
+   - Keep `@effect/vitest` imports as they are still valid. ✅
+3. **Test & Verify**: Ensure all functionality works correctly with the new imports. ✅
+   - Run unit and integration tests to verify functionality. ✅
+   - Fix any issues that arise from the migration. ✅
 
 ### Phase 3: Official MCP TypeScript SDK Implementation (From Scratch)
 

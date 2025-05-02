@@ -1,9 +1,7 @@
-import * as Effect from '@effect/io/Effect';
-import * as Duration from '@effect/data/Duration';
+import { Effect as E, Duration, Schema as S } from 'effect';
 import { ServiceError, validateWithSchema } from '../../utils/effect';
 import { MCPCrawl4AIClient } from './MCPCrawl4AIClient';
 import * as cheerio from 'cheerio';
-import * as S from '@effect/schema/Schema';
 
 // Define schemas for scraping configuration
 const ScraperConfigSchema = S.Struct({
@@ -80,8 +78,8 @@ export class WebScrapingService {
   /**
    * Fetch and scrape web content with intelligent handling
    */
-  static scrape(config: ScraperConfig): Effect.Effect<never, ServiceError, ScraperResult> {
-    return Effect.gen(function* (_) {
+  static scrape(config: ScraperConfig): E.Effect<ScraperResult, ServiceError> {
+    return E.gen(function* (_) {
       const validatedConfig = yield* _(validateWithSchema(ScraperConfigSchema, config));
 
       // If Crawl4AI is enabled, use it for content extraction
@@ -101,10 +99,8 @@ export class WebScrapingService {
   /**
    * Scrape content using Crawl4AI
    */
-  private static scrapeWithCrawl4AI(
-    config: ScraperConfig
-  ): Effect.Effect<never, ServiceError, ScraperResult> {
-    return Effect.gen(function* (_) {
+  private static scrapeWithCrawl4AI(config: ScraperConfig): E.Effect<ScraperResult, ServiceError> {
+    return E.gen(function* (_) {
       const selectorConfig = config.selector
         ? WebScrapingService.createSelectorConfig(config.selector)
         : undefined;
@@ -155,17 +151,15 @@ export class WebScrapingService {
   /**
    * Scrape content using the default method
    */
-  private static scrapeWithDefault(
-    config: ScraperConfig
-  ): Effect.Effect<never, ServiceError, ScraperResult> {
-    return Effect.gen(function* (_) {
+  private static scrapeWithDefault(config: ScraperConfig): E.Effect<ScraperResult, ServiceError> {
+    return E.gen(function* (_) {
       const url = new URL(config.url);
 
       // Optional delay to mimic human-like behavior
-      yield* _(Effect.sleep(Duration.millis(Math.random() * 1000)));
+      yield* _(E.sleep(Duration.millis(Math.random() * 1000)));
 
       const response = yield* _(
-        Effect.tryPromise({
+        E.tryPromise({
           try: () =>
             fetch(config.url, {
               method: 'GET',
@@ -176,27 +170,36 @@ export class WebScrapingService {
               },
               signal: AbortSignal.timeout(config.timeout)
             }),
-          catch: (error) => new ServiceError('FETCH_ERROR', 'Failed to fetch content', error)
+          catch: (error) =>
+            new ServiceError({
+              code: 'FETCH_ERROR',
+              message: 'Failed to fetch content',
+              cause: error
+            })
         })
       );
 
       if (!response.ok) {
         return yield* _(
-          Effect.fail(
-            new ServiceError(
-              `HTTP_${response.status}`,
-              `HTTP error! status: ${response.status}, url: ${config.url}`
-            )
+          E.fail(
+            new ServiceError({
+              code: `HTTP_${response.status}`,
+              message: `HTTP error! status: ${response.status}, url: ${config.url}`
+            })
           )
         );
       }
 
       const contentType = response.headers.get('content-type') || 'text/html';
       const content = yield* _(
-        Effect.tryPromise({
+        E.tryPromise({
           try: () => response.text(),
           catch: (error) =>
-            new ServiceError('CONTENT_ERROR', 'Failed to read response content', error)
+            new ServiceError({
+              code: 'CONTENT_ERROR',
+              message: 'Failed to read response content',
+              cause: error
+            })
         })
       );
 
@@ -233,7 +236,7 @@ export class WebScrapingService {
     });
   }
 
-  // private static scrapWithPuppeteer(config: ScraperConfig): Effect.Effect<never, ServiceError, ScraperResult> {
+  // private static scrapWithPuppeteer(config: ScraperConfig): E.Effect<never, ServiceError, ScraperResult> {
 
   // }
 
@@ -272,11 +275,8 @@ export class WebScrapingService {
   /**
    * Check robots.txt rules
    */
-  static checkRobotsTxt(
-    url: string,
-    userAgent?: string
-  ): Effect.Effect<never, ServiceError, boolean> {
-    return Effect.gen(function* (_) {
+  static checkRobotsTxt(url: string, userAgent?: string): E.Effect<boolean, ServiceError> {
+    return E.gen(function* (_) {
       const result = yield* _(MCPCrawl4AIClient.checkRobotsTxt(url, userAgent));
       return result.allowed;
     });
@@ -293,7 +293,7 @@ export class WebScrapingService {
 }
 
 // Example usage with Effect
-export const exampleScrape = Effect.gen(function* (_) {
+export const exampleScrape = E.gen(function* (_) {
   const result = yield* _(
     WebScrapingService.scrape({
       url: 'https://nitter.poast.org/soushi888/rss',
@@ -308,7 +308,7 @@ export const exampleScrape = Effect.gen(function* (_) {
 });
 
 // Example usage with Crawl4AI
-export const exampleCrawl4AIScrape = Effect.gen(function* (_) {
+export const exampleCrawl4AIScrape = E.gen(function* (_) {
   const result = yield* _(
     WebScrapingService.scrape({
       url: 'https://example.com/article',

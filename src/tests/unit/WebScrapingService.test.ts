@@ -1,6 +1,5 @@
 import { describe, beforeEach, vi, expect, type Mock } from 'vitest';
-import * as Effect from '@effect/io/Effect';
-import { pipe } from '@effect/data/Function';
+import { Effect as E, pipe } from 'effect';
 import { test } from '@effect/vitest';
 import {
   WebScrapingService,
@@ -21,7 +20,7 @@ vi.mock('../../lib/utils/effect', () => ({
       this.name = 'ServiceError';
     }
   },
-  validateWithSchema: vi.fn((schema, data) => Effect.succeed(data))
+  validateWithSchema: vi.fn((schema, data) => E.succeed(data))
 }));
 
 vi.mock('../../lib/services/scraper/MCPCrawl4AIClient', () => ({
@@ -99,13 +98,14 @@ describe('WebScrapingService', () => {
     vi.clearAllMocks();
     mockFetchResponse.mockResolvedValue(HTML_CONTENT);
     (MCPCrawl4AIClient.extractContent as Mock).mockImplementation(() =>
-      Effect.succeed(CRAWL4AI_RESPONSE)
+      E.succeed(CRAWL4AI_RESPONSE)
     );
-    (MCPCrawl4AIClient.createSelectorConfig as Mock).mockImplementation(() =>
-      ({ type: 'css', selector: 'h1' })
-    );
+    (MCPCrawl4AIClient.createSelectorConfig as Mock).mockImplementation(() => ({
+      type: 'css',
+      selector: 'h1'
+    }));
     (MCPCrawl4AIClient.checkRobotsTxt as Mock).mockImplementation(() =>
-      Effect.succeed({
+      E.succeed({
         allowed: true,
         url: 'https://example.com',
         robots_url: 'https://example.com/robots.txt',
@@ -117,7 +117,7 @@ describe('WebScrapingService', () => {
   describe('scrape', () => {
     test('should scrape content with default method when useCrawl4AI is false', () =>
       pipe(
-        Effect.gen(function* (_) {
+        E.gen(function* (_) {
           const result = yield* _(WebScrapingService.scrape(TEST_CONFIG));
 
           expect(result).toBeDefined();
@@ -138,7 +138,7 @@ describe('WebScrapingService', () => {
 
     test('should scrape content with Crawl4AI when useCrawl4AI is true', () =>
       pipe(
-        Effect.gen(function* (_) {
+        E.gen(function* (_) {
           const crawl4AIConfig = {
             ...TEST_CONFIG,
             useCrawl4AI: true,
@@ -163,13 +163,13 @@ describe('WebScrapingService', () => {
 
     test('should handle fetch errors properly', () =>
       pipe(
-        Effect.gen(function* (_) {
+        E.gen(function* (_) {
           // Mock fetch to throw an error
           global.fetch = vi.fn(() =>
             Promise.reject(new Error('Network error'))
           ) as unknown as typeof fetch;
 
-          const result = yield* _(Effect.either(WebScrapingService.scrape(TEST_CONFIG)));
+          const result = yield* _(E.either(WebScrapingService.scrape(TEST_CONFIG)));
 
           expect(result._tag).toBe('Left');
           if (result._tag === 'Left') {
@@ -181,7 +181,7 @@ describe('WebScrapingService', () => {
 
     test('should handle HTTP error responses', () =>
       pipe(
-        Effect.gen(function* (_) {
+        E.gen(function* (_) {
           // Mock fetch to return a 404
           global.fetch = vi.fn(() =>
             Promise.resolve({
@@ -193,7 +193,7 @@ describe('WebScrapingService', () => {
             })
           ) as unknown as typeof fetch;
 
-          const result = yield* _(Effect.either(WebScrapingService.scrape(TEST_CONFIG)));
+          const result = yield* _(E.either(WebScrapingService.scrape(TEST_CONFIG)));
 
           expect(result._tag).toBe('Left');
           if (result._tag === 'Left') {
@@ -205,7 +205,7 @@ describe('WebScrapingService', () => {
 
     test('should handle Crawl4AI errors', () =>
       pipe(
-        Effect.gen(function* (_) {
+        E.gen(function* (_) {
           const crawl4AIConfig = {
             ...TEST_CONFIG,
             useCrawl4AI: true
@@ -213,10 +213,15 @@ describe('WebScrapingService', () => {
 
           // Mock Crawl4AI to fail
           (MCPCrawl4AIClient.extractContent as Mock).mockImplementation(() =>
-            Effect.fail(new EffectUtils.ServiceError('CRAWL4AI_ERROR', 'Failed to extract content'))
+            E.fail(
+              new EffectUtils.ServiceError({
+                code: 'CRAWL4AI_ERROR',
+                message: 'Failed to extract content'
+              })
+            )
           );
 
-          const result = yield* _(Effect.either(WebScrapingService.scrape(crawl4AIConfig)));
+          const result = yield* _(E.either(WebScrapingService.scrape(crawl4AIConfig)));
 
           expect(result._tag).toBe('Left');
           if (result._tag === 'Left') {
@@ -230,10 +235,10 @@ describe('WebScrapingService', () => {
   describe('checkRobotsTxt', () => {
     test('should return true when robots.txt allows access for default user agent', () =>
       pipe(
-        Effect.gen(function* (_) {
+        E.gen(function* (_) {
           // Setup mock response
           (MCPCrawl4AIClient.checkRobotsTxt as Mock).mockImplementation(() =>
-            Effect.succeed({
+            E.succeed({
               allowed: true,
               url: 'https://example.com',
               robots_url: 'https://example.com/robots.txt',
@@ -254,10 +259,10 @@ describe('WebScrapingService', () => {
 
     test('should return false when robots.txt disallows access for default user agent', () =>
       pipe(
-        Effect.gen(function* (_) {
+        E.gen(function* (_) {
           // Setup mock response
           (MCPCrawl4AIClient.checkRobotsTxt as Mock).mockImplementation(() =>
-            Effect.succeed({
+            E.succeed({
               allowed: false,
               url: 'https://example.com',
               robots_url: 'https://example.com/robots.txt',
@@ -274,12 +279,12 @@ describe('WebScrapingService', () => {
 
     test('should respect specific user agent', () =>
       pipe(
-        Effect.gen(function* (_) {
+        E.gen(function* (_) {
           const userAgent = 'TestUserAgent';
 
           // Setup mock response
           (MCPCrawl4AIClient.checkRobotsTxt as Mock).mockImplementation(() =>
-            Effect.succeed({
+            E.succeed({
               allowed: true,
               url: 'https://example.com',
               robots_url: 'https://example.com/robots.txt',
@@ -302,14 +307,19 @@ describe('WebScrapingService', () => {
 
     test('should handle service errors', () =>
       pipe(
-        Effect.gen(function* (_) {
+        E.gen(function* (_) {
           // Setup mock error response
           (MCPCrawl4AIClient.checkRobotsTxt as Mock).mockImplementation(() =>
-            Effect.fail(new EffectUtils.ServiceError('ROBOTS_ERROR', 'Failed to check robots.txt'))
+            E.fail(
+              new EffectUtils.ServiceError({
+                code: 'ROBOTS_ERROR',
+                message: 'Failed to check robots.txt'
+              })
+            )
           );
 
           const result = yield* _(
-            Effect.either(WebScrapingService.checkRobotsTxt('https://example.com'))
+            E.either(WebScrapingService.checkRobotsTxt('https://example.com'))
           );
 
           expect(result._tag).toBe('Left');
@@ -323,10 +333,10 @@ describe('WebScrapingService', () => {
 
     test('should handle robots.txt not found', () =>
       pipe(
-        Effect.gen(function* (_) {
+        E.gen(function* (_) {
           // Setup mock response with error indicating robots.txt not found
           (MCPCrawl4AIClient.checkRobotsTxt as Mock).mockImplementation(() =>
-            Effect.succeed({
+            E.succeed({
               allowed: true, // By convention, no robots.txt means access is allowed
               url: 'https://example.com',
               robots_url: 'https://example.com/robots.txt',

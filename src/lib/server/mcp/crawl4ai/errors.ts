@@ -10,7 +10,7 @@ import { ServiceError } from '../../../utils/effect';
 // Base error class for Crawl4AI MCP errors
 export class Crawl4AIMCPError extends ServiceError {
   constructor(code: string, message: string, cause?: unknown) {
-    super(`CRAWL4AI_MCP_${code}`, message, cause);
+    super({ code: `CRAWL4AI_MCP_${code}`, message, cause });
   }
 }
 

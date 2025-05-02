@@ -1,6 +1,5 @@
 import { describe, beforeEach, vi, expect, type Mock } from 'vitest';
-import * as Effect from '@effect/io/Effect';
-import { pipe } from '@effect/data/Function';
+import { Effect as E, pipe } from 'effect';
 import { test } from '@effect/vitest';
 import { MCPClient, type MCPConnectionConfig } from '../../lib/services/mcp/MCPClient';
 import * as EffectUtils from '../../lib/utils/effect';
@@ -8,7 +7,7 @@ import * as EffectUtils from '../../lib/utils/effect';
 // Mock effectFetch
 vi.mock('../../lib/utils/effect', () => ({
   effectFetch: vi.fn(),
-  validateWithSchema: vi.fn((schema, data) => Effect.succeed(data))
+  validateWithSchema: vi.fn((schema, data) => E.succeed(data))
 }));
 
 // Test configuration
@@ -35,13 +34,13 @@ const mockSuccessResponse = {
 describe('MCPClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (EffectUtils.effectFetch as Mock).mockImplementation(() => Effect.succeed(mockSuccessResponse));
+    (EffectUtils.effectFetch as Mock).mockImplementation(() => E.succeed(mockSuccessResponse));
   });
 
   describe('executePattern', () => {
     test('should successfully execute a single pattern', () =>
       pipe(
-        Effect.gen(function* (_) {
+        E.gen(function* (_) {
           const result = yield* _(
             MCPClient.executePattern('summarize', 'Test content', TEST_CONFIG)
           );
@@ -52,14 +51,14 @@ describe('MCPClient', () => {
 
     test('should handle validation errors for invalid config', () =>
       pipe(
-        Effect.gen(function* (_) {
+        E.gen(function* (_) {
           const invalidConfig = {
             ...TEST_CONFIG,
             url: 'invalid-url'
           };
 
           const result = yield* _(
-            Effect.either(MCPClient.executePattern('summarize', 'Test content', invalidConfig))
+            E.either(MCPClient.executePattern('summarize', 'Test content', invalidConfig))
           );
 
           expect(result._tag).toBe('Left');
@@ -73,7 +72,7 @@ describe('MCPClient', () => {
   describe('executePatternSequence', () => {
     test('should execute multiple patterns in sequence', () =>
       pipe(
-        Effect.gen(function* (_) {
+        E.gen(function* (_) {
           const patterns = ['summarize', 'extract-entities'];
 
           const result = yield* _(
@@ -87,9 +86,9 @@ describe('MCPClient', () => {
 
     test('should handle empty pattern sequence', () =>
       pipe(
-        Effect.gen(function* (_) {
+        E.gen(function* (_) {
           const result = yield* _(
-            Effect.either(MCPClient.executePatternSequence([], 'Test content', TEST_CONFIG))
+            E.either(MCPClient.executePatternSequence([], 'Test content', TEST_CONFIG))
           );
 
           expect(result._tag).toBe('Left');
@@ -103,8 +102,8 @@ describe('MCPClient', () => {
   describe('checkServerAvailability', () => {
     test('should return true when server is available', () =>
       pipe(
-        Effect.gen(function* (_) {
-          (EffectUtils.effectFetch as Mock).mockImplementation(() => Effect.succeed({ ok: true }));
+        E.gen(function* (_) {
+          (EffectUtils.effectFetch as Mock).mockImplementation(() => E.succeed({ ok: true }));
 
           const result = yield* _(MCPClient.checkServerAvailability(TEST_CONFIG));
 
@@ -115,17 +114,17 @@ describe('MCPClient', () => {
 
     test('should handle server unavailability', () =>
       pipe(
-        Effect.gen(function* (_) {
+        E.gen(function* (_) {
           (EffectUtils.effectFetch as Mock).mockImplementation(() =>
-            Effect.fail(
-              new EffectUtils.ServiceError(
-                'AVAILABILITY_CHECK_ERROR',
-                'Failed to check server availability'
-              )
+            E.fail(
+              new EffectUtils.ServiceError({
+                code: 'AVAILABILITY_CHECK_ERROR',
+                message: 'Failed to check server availability'
+              })
             )
           );
 
-          const result = yield* _(Effect.either(MCPClient.checkServerAvailability(TEST_CONFIG)));
+          const result = yield* _(E.either(MCPClient.checkServerAvailability(TEST_CONFIG)));
 
           expect(result._tag).toBe('Left');
           if (result._tag === 'Left') {

@@ -6,9 +6,8 @@
  * for accessing MCP capabilities throughout the application.
  */
 
-import * as Effect from '@effect/io/Effect';
-import { pipe } from '@effect/data/Function';
-import { ServiceError, createServiceTag } from '../../utils/effect';
+import { Effect, Context, pipe } from 'effect';
+import { ServiceError } from '../../utils/effect';
 
 // Generic tool type that all providers must implement
 export type MCPTool = {
@@ -21,7 +20,7 @@ export type MCPTool = {
 // Error types for the MCP host
 export class MCPHostError extends ServiceError {
   constructor(message: string, cause?: unknown) {
-    super('MCP_HOST_ERROR', message, cause);
+    super({ code: 'MCP_HOST_ERROR', message, cause });
   }
 }
 
@@ -46,42 +45,47 @@ export interface MCPProvider {
   readonly name: string;
 
   // List all tools offered by this provider
-  listTools(): Effect.Effect<never, ServiceError, Array<MCPTool>>;
+  listTools(): Effect.Effect<Array<MCPTool>, ServiceError>;
 
   // Call a specific tool by name with parameters
-  callTool<P, R>(name: string, params: P): Effect.Effect<never, ServiceError, R>;
+  callTool<P, R>(name: string, params: P): Effect.Effect<R, ServiceError>;
 }
 
 // MCP Host service interface
 export interface MCPHostService {
   // Register a new provider with the host
-  registerProvider(provider: MCPProvider): Effect.Effect<never, MCPHostError, void>;
+  registerProvider(provider: MCPProvider): Effect.Effect<void, MCPHostError>;
 
   // List all registered providers
-  listProviders(): Effect.Effect<never, MCPHostError, Array<string>>;
+  listProviders(): Effect.Effect<Array<string>, MCPHostError>;
 
   // List all tools from all providers
-  listAllTools(): Effect.Effect<never, MCPHostError, Array<MCPTool>>;
+  listAllTools(): Effect.Effect<Array<MCPTool>, MCPHostError>;
 
   // List tools from a specific provider
-  listProviderTools(providerName: string): Effect.Effect<never, MCPHostError, Array<MCPTool>>;
+  listProviderTools(providerName: string): Effect.Effect<Array<MCPTool>, MCPHostError>;
 
   // Call a tool by name and provider
   callTool<P = unknown, R = unknown>(
     toolName: string,
     providerName: string,
     params: P
-  ): Effect.Effect<never, MCPHostError | ServiceError, R>;
+  ): Effect.Effect<R, MCPHostError | ServiceError>;
 
   // Call a tool by name (will search across all providers)
   callToolAcrossProviders<P = unknown, R = unknown>(
     toolName: string,
     params: P
-  ): Effect.Effect<never, MCPHostError | ServiceError, R>;
+  ): Effect.Effect<R, MCPHostError | ServiceError>;
 }
 
 // Service tag for dependency injection
-export const MCPHostService = createServiceTag<MCPHostService>('MCPHostService');
+// export const MCPHostService = createServiceTag<MCPHostService>('MCPHostService');
+
+export class MCPHostServiceTag extends Context.Tag('MCPHostService')<
+  MCPHostServiceTag,
+  MCPHostService
+>() {}
 
 // Implementation of the MCP Host service
 export const makeMCPHostService = (): MCPHostService => {

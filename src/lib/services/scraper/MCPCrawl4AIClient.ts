@@ -6,8 +6,7 @@
  * the standardized MCP architecture.
  */
 
-import * as E from '@effect/io/Effect';
-import * as S from '@effect/schema/Schema';
+import { Effect as E, Schema as S } from 'effect';
 import { ServiceError, validateWithSchema, effectFetch } from '../../utils/effect';
 
 // Re-export schemas from the original client for compatibility
@@ -100,9 +99,7 @@ export class MCPCrawl4AIClient {
    * @param options Extraction options
    * @returns Either an error or the extraction response
    */
-  static extractContent(
-    options: ExtractionOptions
-  ): E.Effect<never, ServiceError, ExtractionResponse> {
+  static extractContent(options: ExtractionOptions): E.Effect<ExtractionResponse, ServiceError> {
     return E.gen(function* ($) {
       // Validate options
       const validatedOptions = yield* $(validateWithSchema(ExtractionOptionsSchema, options));
@@ -119,9 +116,7 @@ export class MCPCrawl4AIClient {
         })
       );
 
-      // The response.result is already of the expected type due to TypeScript's type inference
-      // We're using the schema for type safety, but we don't need to validate it at runtime
-      // If validation is needed in the future, we can add it here
+      // Return the extraction response from the API result
       return response.result;
     });
   }
@@ -135,7 +130,7 @@ export class MCPCrawl4AIClient {
   static checkRobotsTxt(
     url: string,
     userAgent?: string
-  ): E.Effect<never, ServiceError, RobotsCheckResponse> {
+  ): E.Effect<RobotsCheckResponse, ServiceError> {
     return E.gen(function* ($) {
       // Make request to MCP API
       const response = yield* $(
@@ -152,9 +147,7 @@ export class MCPCrawl4AIClient {
         })
       );
 
-      // The response.result is already of the expected type due to TypeScript's type inference
-      // We're using the schema for type safety, but we don't need to validate it at runtime
-      // If validation is needed in the future, we can add it here
+      // Return the robots check response from the API result
       return response.result;
     });
   }

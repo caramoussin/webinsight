@@ -1,6 +1,4 @@
-import type { Effect } from '@effect/io/Effect';
-import * as E from '@effect/io/Effect';
-import * as S from '@effect/schema/Schema';
+import { Effect as E, Schema as S } from 'effect';
 import { WebScrapingService } from './WebScrapingService';
 import { MCPClient } from '../mcp/MCPClient';
 import { validateWithSchema } from '../../utils/effect';
@@ -109,7 +107,7 @@ export class FabricAIScrapingService {
    */
   static scrapeAndAnalyze(
     config: FabricAIScrapingConfig
-  ): Effect<never, FabricAIScrapingError, FabricAIScrapingResult> {
+  ): E.Effect<FabricAIScrapingResult, FabricAIScrapingError> {
     return E.flatten(
       E.gen(function* ($) {
         try {
@@ -194,7 +192,7 @@ export class FabricAIScrapingService {
     content: string,
     baseResult: FabricAIScrapingResult,
     mcpOptions: NonNullable<FabricAIScrapingConfig['mcpOptions']>
-  ): Effect<never, FabricAIScrapingError, FabricAIScrapingResult> {
+  ): E.Effect<FabricAIScrapingResult, FabricAIScrapingError> {
     return E.flatten(
       E.gen(function* ($) {
         try {
@@ -233,16 +231,18 @@ export class FabricAIScrapingService {
               | undefined
           };
 
+          // Use the correct type parameter order for the new Effect library
           return E.succeed({
             ...baseResult,
             fabricAnalysis
-          });
+          }) as E.Effect<FabricAIScrapingResult, FabricAIScrapingError>;
         } catch (error) {
-          return E.fail<FabricAIScrapingError>({
+          // Use the correct type parameter order for the new Effect library
+          return E.fail({
             code: 'FABRIC_AI_ERROR',
             message: error instanceof Error ? error.message : 'Fabric AI analysis failed',
             details: error instanceof Error ? error.stack : String(error)
-          });
+          }) as E.Effect<FabricAIScrapingResult, FabricAIScrapingError>;
         }
       })
     );

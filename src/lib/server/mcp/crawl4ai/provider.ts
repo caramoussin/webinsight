@@ -5,9 +5,8 @@
  * required by the MCP Host.
  */
 
-import * as Effect from '@effect/io/Effect';
-import { pipe } from '@effect/data/Function';
-import { ServiceError } from '../../../utils/effect';
+import { Effect as E, pipe } from 'effect';
+import { ServiceError } from '$lib/utils/effect';
 
 import type { MCPProvider } from '../host';
 import * as Service from './service';
@@ -24,7 +23,7 @@ export const createCrawl4AIProvider = (
     listTools: () =>
       pipe(
         service.listTools(),
-        Effect.map((tools) =>
+        E.map((tools) =>
           tools.map((tool) => ({
             name: tool.name,
             description: tool.description,
@@ -32,20 +31,28 @@ export const createCrawl4AIProvider = (
             provider: 'crawl4ai'
           }))
         ),
-        Effect.mapError((error) =>
+        E.mapError((error) =>
           error instanceof ServiceError
             ? error
-            : new ServiceError('PROVIDER_ERROR', 'Error listing Crawl4AI tools', error)
+            : new ServiceError({
+                code: 'PROVIDER_ERROR',
+                message: 'Error listing Crawl4AI tools',
+                cause: error
+              })
         )
       ),
 
     callTool: <P, R>(name: string, params: P) =>
       pipe(
         service.callTool<string, P, R>(name, params),
-        Effect.mapError((error) =>
+        E.mapError((error) =>
           error instanceof ServiceError
             ? error
-            : new ServiceError('PROVIDER_ERROR', `Error calling Crawl4AI tool '${name}'`, error)
+            : new ServiceError({
+                code: 'PROVIDER_ERROR',
+                message: `Error calling Crawl4AI tool '${name}'`,
+                cause: error
+              })
         )
       )
   };

@@ -24,6 +24,8 @@ This document tracks the implementation status of WebInsight, highlighting compl
 - ✅ Crawl4AI client implementation with Effect-based error handling
 - ✅ MCP host implementation with provider registration and tool execution
 - ✅ Crawl4AI MCP provider with standardized tool interface
+- ✅ RSSParsingService with Effect-based error handling for fetching and parsing RSS feeds
+- ✅ FeedItemProcessingService for validating, processing, and storing RSS feed items with AI analysis integration
 
 ### 2.3 AI Integration
 

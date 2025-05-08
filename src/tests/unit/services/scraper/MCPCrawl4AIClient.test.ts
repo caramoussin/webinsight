@@ -5,19 +5,19 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Effect as E } from 'effect';
-import { ServiceError } from '../../../../lib/utils/effect';
-import { MCPCrawl4AIClient } from '../../../../lib/services/scraper/MCPCrawl4AIClient';
+import { ServiceError } from '$lib/utils/effect';
+import { MCPCrawl4AIClient } from '$lib/services/scraper/MCPCrawl4AIClient';
 
 // Mock the effectFetch function
-vi.mock('../../../../lib/utils/effect', async () => {
-  const actual = await vi.importActual('../../../../lib/utils/effect');
+vi.mock('$lib/utils/effect', async () => {
+  const actual = await vi.importActual('$lib/utils/effect');
   return {
     ...(actual as object),
     effectFetch: vi.fn()
   };
 });
 
-import { effectFetch } from '../../../../lib/utils/effect';
+import { effectFetch } from '$lib/utils/effect';
 
 describe('MCPCrawl4AIClient', () => {
   // Reset mocks before each test

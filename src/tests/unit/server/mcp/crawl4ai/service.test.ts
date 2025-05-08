@@ -3,12 +3,13 @@ import * as Effect from '@effect/io/Effect';
 import { pipe } from '@effect/data/Function';
 import { test } from '@effect/vitest';
 
-import { makeLiveService } from '../../../../../lib/server/mcp/crawl4ai/service';
-import * as Errors from '../../../../../lib/server/mcp/crawl4ai/errors';
-import * as EffectUtils from '../../../../../lib/utils/effect';
+import { makeLiveService } from '$lib/server/mcp/crawl4ai/service';
+import * as Errors from '$lib/server/mcp/crawl4ai/errors';
+import * as EffectUtils from '$lib/utils/effect';
+import type { ServiceError } from '$lib/utils/effect';
 
 // Mock effectFetch and validateWithSchema
-vi.mock('../../../../../lib/utils/effect', () => ({
+vi.mock('$lib/utils/effect', () => ({
   effectFetch: vi.fn(),
   validateWithSchema: vi.fn((schema, data) => Effect.succeed(data)),
   ServiceError: vi.fn().mockImplementation((code, message, cause) => ({
@@ -52,7 +53,14 @@ describe('Crawl4AI MCP Provider', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockedEffectFetch.mockImplementation(() => Effect.succeed(mockExtractContentResponse));
+    mockedEffectFetch.mockImplementation(
+      () =>
+        Effect.succeed(mockExtractContentResponse) as Effect<
+          never,
+          ServiceError,
+          typeof mockExtractContentResponse
+        >
+    );
   });
 
   describe('extractContent', () => {
@@ -141,8 +149,13 @@ describe('Crawl4AI MCP Provider', () => {
       pipe(
         Effect.gen(function* (_) {
           // Override the mock for this specific test
-          mockedEffectFetch.mockImplementationOnce(() =>
-            Effect.succeed(mockCheckRobotsTxtResponse)
+          mockedEffectFetch.mockImplementationOnce(
+            () =>
+              Effect.succeed(mockCheckRobotsTxtResponse) as Effect<
+                never,
+                ServiceError,
+                typeof mockCheckRobotsTxtResponse
+              >
           );
 
           const params = {
@@ -165,8 +178,13 @@ describe('Crawl4AI MCP Provider', () => {
     test('should include user agent when provided', () =>
       pipe(
         Effect.gen(function* (_) {
-          mockedEffectFetch.mockImplementationOnce(() =>
-            Effect.succeed(mockCheckRobotsTxtResponse)
+          mockedEffectFetch.mockImplementationOnce(
+            () =>
+              Effect.succeed(mockCheckRobotsTxtResponse) as Effect<
+                never,
+                ServiceError,
+                typeof mockCheckRobotsTxtResponse
+              >
           );
 
           const params = {
@@ -247,8 +265,13 @@ describe('Crawl4AI MCP Provider', () => {
     test('should call checkRobotsTxt tool successfully', () =>
       pipe(
         Effect.gen(function* (_) {
-          mockedEffectFetch.mockImplementationOnce(() =>
-            Effect.succeed(mockCheckRobotsTxtResponse)
+          mockedEffectFetch.mockImplementationOnce(
+            () =>
+              Effect.succeed(mockCheckRobotsTxtResponse) as Effect<
+                never,
+                ServiceError,
+                typeof mockCheckRobotsTxtResponse
+              >
           );
 
           const params = {

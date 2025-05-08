@@ -1,11 +1,11 @@
 import { describe, beforeEach, vi, expect, type Mock } from 'vitest';
 import { Effect as E, pipe } from 'effect';
-import { test } from '@effect/vitest';
-import { MCPClient, type MCPConnectionConfig } from '../../lib/services/mcp/MCPClient';
-import * as EffectUtils from '../../lib/utils/effect';
+import { it } from '@effect/vitest';
+import { MCPClient, type MCPConnectionConfig } from '$lib/services/mcp/MCPClient';
+import * as EffectUtils from '$lib/utils/effect';
 
 // Mock effectFetch
-vi.mock('../../lib/utils/effect', () => ({
+vi.mock('$lib/utils/effect', () => ({
   effectFetch: vi.fn(),
   validateWithSchema: vi.fn((schema, data) => E.succeed(data))
 }));
@@ -38,7 +38,7 @@ describe('MCPClient', () => {
   });
 
   describe('executePattern', () => {
-    test('should successfully execute a single pattern', () =>
+    it('should successfully execute a single pattern', () =>
       pipe(
         E.gen(function* (_) {
           const result = yield* _(
@@ -49,7 +49,7 @@ describe('MCPClient', () => {
         })
       ));
 
-    test('should handle validation errors for invalid config', () =>
+    it('should handle validation errors for invalid config', () =>
       pipe(
         E.gen(function* (_) {
           const invalidConfig = {
@@ -70,7 +70,7 @@ describe('MCPClient', () => {
   });
 
   describe('executePatternSequence', () => {
-    test('should execute multiple patterns in sequence', () =>
+    it('should execute multiple patterns in sequence', () =>
       pipe(
         E.gen(function* (_) {
           const patterns = ['summarize', 'extract-entities'];
@@ -84,7 +84,7 @@ describe('MCPClient', () => {
         })
       ));
 
-    test('should handle empty pattern sequence', () =>
+    it('should handle empty pattern sequence', () =>
       pipe(
         E.gen(function* (_) {
           const result = yield* _(
@@ -100,7 +100,7 @@ describe('MCPClient', () => {
   });
 
   describe('checkServerAvailability', () => {
-    test('should return true when server is available', () =>
+    it('should return true when server is available', () =>
       pipe(
         E.gen(function* (_) {
           (EffectUtils.effectFetch as Mock).mockImplementation(() => E.succeed({ ok: true }));
@@ -112,7 +112,7 @@ describe('MCPClient', () => {
         })
       ));
 
-    test('should handle server unavailability', () =>
+    it('should handle server unavailability', () =>
       pipe(
         E.gen(function* (_) {
           (EffectUtils.effectFetch as Mock).mockImplementation(() =>

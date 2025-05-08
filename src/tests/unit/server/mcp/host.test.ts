@@ -5,11 +5,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Effect as E } from 'effect';
 // Import Effect types for proper type checking
-import { ServiceError } from '../../../../lib/utils/effect';
+import { ServiceError } from '$lib/utils/effect';
 
-import { type MCPHostService, makeMCPHostService } from '../../../../lib/server/mcp/host';
+import { type MCPHostService, makeMCPHostService } from '$lib/server/mcp/host';
 
-import type { MCPProvider, MCPTool } from '../../../../lib/server/mcp/host';
+import type { MCPProvider, MCPTool } from '$lib/server/mcp/host';
 
 describe('MCP Host', () => {
   // Create a mock provider for testing

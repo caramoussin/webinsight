@@ -5,6 +5,9 @@ export default defineConfig({
     include: ['src/tests/unit/**/*.test.ts'],
     environment: 'node',
     globals: true,
-    setupFiles: ['src/tests/setup.ts']
+    setupFiles: ['src/tests/setup.ts'],
+    alias: {
+      $lib: '/src/lib'
+    }
   }
 });

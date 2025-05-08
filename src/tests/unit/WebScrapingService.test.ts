@@ -1,15 +1,12 @@
 import { describe, beforeEach, vi, expect, type Mock } from 'vitest';
 import { Effect as E, pipe } from 'effect';
-import { test } from '@effect/vitest';
-import {
-  WebScrapingService,
-  type ScraperConfig
-} from '../../lib/services/scraper/WebScrapingService';
-import { MCPCrawl4AIClient } from '../../lib/services/scraper/MCPCrawl4AIClient';
-import * as EffectUtils from '../../lib/utils/effect';
+import { it } from '@effect/vitest';
+import { WebScrapingService, type ScraperConfig } from '$lib/services/scraper/WebScrapingService';
+import { MCPCrawl4AIClient } from '$lib/services/scraper/MCPCrawl4AIClient';
+import * as EffectUtils from '$lib/utils/effect';
 
 // Mock dependencies
-vi.mock('../../lib/utils/effect', () => ({
+vi.mock('$lib/utils/effect', () => ({
   ServiceError: class ServiceError extends Error {
     constructor(
       readonly code: string,
@@ -23,7 +20,7 @@ vi.mock('../../lib/utils/effect', () => ({
   validateWithSchema: vi.fn((schema, data) => E.succeed(data))
 }));
 
-vi.mock('../../lib/services/scraper/MCPCrawl4AIClient', () => ({
+vi.mock('$lib/services/scraper/MCPCrawl4AIClient', () => ({
   MCPCrawl4AIClient: {
     extractContent: vi.fn(),
     createSelectorConfig: vi.fn(),
@@ -115,7 +112,7 @@ describe('WebScrapingService', () => {
   });
 
   describe('scrape', () => {
-    test('should scrape content with default method when useCrawl4AI is false', () =>
+    it('should scrape content with default method when useCrawl4AI is false', () =>
       pipe(
         E.gen(function* (_) {
           const result = yield* _(WebScrapingService.scrape(TEST_CONFIG));
@@ -136,7 +133,7 @@ describe('WebScrapingService', () => {
         })
       ));
 
-    test('should scrape content with Crawl4AI when useCrawl4AI is true', () =>
+    it('should scrape content with Crawl4AI when useCrawl4AI is true', () =>
       pipe(
         E.gen(function* (_) {
           const crawl4AIConfig = {
@@ -161,7 +158,7 @@ describe('WebScrapingService', () => {
         })
       ));
 
-    test('should handle fetch errors properly', () =>
+    it('should handle fetch errors properly', () =>
       pipe(
         E.gen(function* (_) {
           // Mock fetch to throw an error
@@ -179,7 +176,7 @@ describe('WebScrapingService', () => {
         })
       ));
 
-    test('should handle HTTP error responses', () =>
+    it('should handle HTTP error responses', () =>
       pipe(
         E.gen(function* (_) {
           // Mock fetch to return a 404
@@ -203,7 +200,7 @@ describe('WebScrapingService', () => {
         })
       ));
 
-    test('should handle Crawl4AI errors', () =>
+    it('should handle Crawl4AI errors', () =>
       pipe(
         E.gen(function* (_) {
           const crawl4AIConfig = {
@@ -233,7 +230,7 @@ describe('WebScrapingService', () => {
   });
 
   describe('checkRobotsTxt', () => {
-    test('should return true when robots.txt allows access for default user agent', () =>
+    it('should return true when robots.txt allows access for default user agent', () =>
       pipe(
         E.gen(function* (_) {
           // Setup mock response
@@ -257,7 +254,7 @@ describe('WebScrapingService', () => {
         })
       ));
 
-    test('should return false when robots.txt disallows access for default user agent', () =>
+    it('should return false when robots.txt disallows access for default user agent', () =>
       pipe(
         E.gen(function* (_) {
           // Setup mock response
@@ -277,7 +274,7 @@ describe('WebScrapingService', () => {
         })
       ));
 
-    test('should respect specific user agent', () =>
+    it('should respect specific user agent', () =>
       pipe(
         E.gen(function* (_) {
           const userAgent = 'TestUserAgent';
@@ -305,7 +302,7 @@ describe('WebScrapingService', () => {
         })
       ));
 
-    test('should handle service errors', () =>
+    it('should handle service errors', () =>
       pipe(
         E.gen(function* (_) {
           // Setup mock error response
@@ -331,7 +328,7 @@ describe('WebScrapingService', () => {
         })
       ));
 
-    test('should handle robots.txt not found', () =>
+    it('should handle robots.txt not found', () =>
       pipe(
         E.gen(function* (_) {
           // Setup mock response with error indicating robots.txt not found

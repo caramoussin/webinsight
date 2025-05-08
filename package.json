@@ -34,7 +34,7 @@
     "bits-ui": "^0.22.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "effect": "^3.14.17",
+    "effect": "^3.14.18",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-svelte": "^2.46.1",

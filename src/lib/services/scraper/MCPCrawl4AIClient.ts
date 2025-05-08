@@ -7,10 +7,10 @@
  */
 
 import { Effect as E, Schema as S } from 'effect';
-import { ServiceError, validateWithSchema, effectFetch } from '../../utils/effect';
+import { ServiceError, validateWithSchema, effectFetch } from '$lib/utils/effect';
 
 // Re-export schemas from the original client for compatibility
-// Define schemas using Effect Schema
+// Define schemas using Effect Schema#
 const SelectorConfigSchema = S.Struct({
   base_selector: S.optional(S.String),
   include_selectors: S.optional(S.Array(S.String)),

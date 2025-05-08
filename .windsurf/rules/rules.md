@@ -1,15 +1,16 @@
 ---
 trigger: model_decision
-description: How to add or edit Cursor rules in our project
-globs: 
+description: How to add or edit rules in our project
 ---
+
 # Cursor Rules Location
 
-How to add new cursor rules to the project
+How to add new rules to the project
 
-1. Always place rule files in PROJECT_ROOT/.cursor/rules/:
+1. Always place rule files in PROJECT_ROOT/.windsurf/rules/:
+
     ```
-    .cursor/rules/
+    .windsurf/rules/
     ├── your-rule-name.mdc
     ├── another-rule.mdc
     └── ...
@@ -21,9 +22,10 @@ How to add new cursor rules to the project
     - Make names descriptive of the rule's purpose
 
 3. Directory structure:
+
     ```
     PROJECT_ROOT/
-    ├── .cursor/
+    ├── .windsurf/
     │   └── rules/
     │       ├── your-rule-name.mdc
     │       └── ...
@@ -32,7 +34,7 @@ How to add new cursor rules to the project
 
 4. Never place rule files:
     - In the project root
-    - In subdirectories outside .cursor/rules
+    - In subdirectories outside .windsurf/rules
     - In any other location
 
 5. Cursor rules have the following structure:

@@ -90,12 +90,18 @@ Refactor the existing `Crawl4AIClient.ts` integration to align with the Model Co
   - [x] Keep imports from `@effect/vitest` as they are still valid
   - [x] Update all test files to use the new Effect API and error handling
 
-- [ ] **Official MCP TypeScript SDK Integration**: Implement a new MCP solution from scratch using the official SDK with Effect integration.
-  - [ ] **Setup Phase**:
-    - [ ] Install the official SDK: `bun install @modelcontextprotocol/sdk`
-    - [ ] Set up project structure for SDK-first approach
-    - [ ] Create core Effect wrappers for MCP server and transport
-    - [ ] Implement dependency injection using Effect Context
+- [ ] **Official MCP TypeScript SDK Integration**: Implement a new MCP solution from scratch using the official SDK with Effect integration. **(In Progress)**
+  - [x] **Setup Phase**:
+    - [x] Install the official SDK: `bun install @modelcontextprotocol/sdk`
+    - [x] Set up project structure for SDK-first approach
+    - [x] Create core MCP server with Effect integration (`src/lib/server/mcp/sdk/server.ts`)
+    - [x] Implement transport layer using SDK's HTTP transport (`src/lib/server/mcp/sdk/transport.ts`)
+    - [x] Create provider registry with dependency injection (`src/lib/server/mcp/sdk/registry.ts`)
+  - [ ] **Crawl4AI Provider Implementation**:
+    - [x] Implement tool definitions with Effect integration (`src/lib/server/mcp/sdk/crawl4ai/tools.ts`)
+    - [x] Implement resource definitions (new capability) (`src/lib/server/mcp/sdk/crawl4ai/resources.ts`)
+    - [x] Create provider registration module (`src/lib/server/mcp/sdk/crawl4ai/provider.ts`)
+    - [x] Resolve SDK integration issues - SDK doesn't have expected exports for server.tool() and server.resource(), researched documentation on GitHub
   - [ ] **Core Implementation Phase**:
     - [ ] Create McpServer with Effect integration (`src/lib/server/mcp/sdk/server.ts`)
     - [ ] Implement transport layer with Effect integration (`src/lib/server/mcp/sdk/transport.ts`)
@@ -106,6 +112,10 @@ Refactor the existing `Crawl4AIClient.ts` integration to align with the Model Co
     - [ ] Add resource definitions for new capabilities (`src/lib/server/mcp/sdk/crawl4ai/resources.ts`)
     - [ ] Create provider registration module (`src/lib/server/mcp/sdk/crawl4ai/provider.ts`)
     - [ ] Implement Effect-based MCP client (`src/lib/services/scraper/MCPCrawl4AIClient.ts`)
+  - [ ] **API & Client Integration**:
+    - [x] Set up SvelteKit API endpoints using the SDK (`src/routes/api/mcp-sdk/+server.ts`)
+    - [x] Implement Effect-based MCP client that leverages the official SDK client (`src/lib/services/scraper/MCPCrawl4AIClient.ts`)
+    - [ ] Create type-safe interfaces for all operations
   - [ ] **Testing & Documentation**:
     - [ ] Create unit tests with Effect Vitest (`src/tests/unit/server/mcp/sdk/`)
     - [ ] Implement integration tests (`src/tests/integration/server/mcp/sdk/`)
@@ -120,36 +130,36 @@ Refactor the existing `Crawl4AIClient.ts` integration to align with the Model Co
 
 ### Phase 1: Current Custom MCP Implementation (Completed)
 
-1. **Analysis & Definition**: Complete the initial analysis tasks. ✅
-2. **Implement Provider**: Create the MCP server logic within SvelteKit backend. ✅
-   - Use Effect TS extensively for HTTP calls, error handling, schema validation (`effectFetch`, `validateWithSchema`). ✅
-   - Manage configuration (e.g., `CRAWL4AI_URL` via env vars) within the Effect context. ✅
-3. **Unit Test Provider**: Add unit tests for the provider logic. ✅
-4. **Integration Test**: Implement comprehensive integration tests. ✅
-   - Create mock Express server to simulate Python backend. ✅
-   - Test happy paths and error cases for all MCP tools. ✅
-   - Verify end-to-end workflows with proper error handling. ✅
-5. **Implement MCP Host**: Create the central MCP host that will manage all providers. ✅
-   - Design the host interface based on MCP protocol standards. ✅
-   - Implement provider registration and discovery mechanisms. ✅
-   - Create API endpoints for tool execution. ✅
-6. **Integrate & Refactor**: Wire up the provider and update client code. ✅
-   - Create MCP-based client with the same API as the original. ✅
-   - Implement adapter for gradual migration. ✅
-7. **Fix Linter Errors**: Clean up any related linter issues. ✅
-8. **Document**: Update project documentation reflecting the changes and decisions made. ✅
+1. **Analysis & Definition**: Complete the initial analysis tasks.
+2. **Implement Provider**: Create the MCP server logic within SvelteKit backend.
+   - Use Effect TS extensively for HTTP calls, error handling, schema validation (`effectFetch`, `validateWithSchema`).
+   - Manage configuration (e.g., `CRAWL4AI_URL` via env vars) within the Effect context.
+3. **Unit Test Provider**: Add unit tests for the provider logic.
+4. **Integration Test**: Implement comprehensive integration tests.
+   - Create mock Express server to simulate Python backend.
+   - Test happy paths and error cases for all MCP tools.
+   - Verify end-to-end workflows with proper error handling.
+5. **Implement MCP Host**: Create the central MCP host that will manage all providers.
+   - Design the host interface based on MCP protocol standards.
+   - Implement provider registration and discovery mechanisms.
+   - Create API endpoints for tool execution.
+6. **Integrate & Refactor**: Wire up the provider and update client code.
+   - Create MCP-based client with the same API as the original.
+   - Implement adapter for gradual migration.
+7. **Fix Linter Errors**: Clean up any related linter issues.
+8. **Document**: Update project documentation reflecting the changes and decisions made.
 
 ### Phase 2: Effect Library Migration
 
-1. **Update Dependencies**: Move from multiple `@effect/*` packages to the unified `effect` package. ✅
-   - Update package.json to remove deprecated dependencies. ✅
-   - Move `effect` from devDependencies to dependencies. ✅
-2. **Update Imports**: Refactor all imports to use the new package structure. ✅
-   - Update all import paths across the codebase. ✅
-   - Keep `@effect/vitest` imports as they are still valid. ✅
-3. **Test & Verify**: Ensure all functionality works correctly with the new imports. ✅
-   - Run unit and integration tests to verify functionality. ✅
-   - Fix any issues that arise from the migration. ✅
+1. **Update Dependencies**: Move from multiple `@effect/*` packages to the unified `effect` package.
+   - Update package.json to remove deprecated dependencies.
+   - Move `effect` from devDependencies to dependencies.
+2. **Update Imports**: Refactor all imports to use the new package structure.
+   - Update all import paths across the codebase.
+   - Keep `@effect/vitest` imports as they are still valid.
+3. **Test & Verify**: Ensure all functionality works correctly with the new imports.
+   - Run unit and integration tests to verify functionality.
+   - Fix any issues that arise from the migration.
 
 ### Phase 3: Official MCP TypeScript SDK Implementation (From Scratch)
 

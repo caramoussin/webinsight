@@ -42,6 +42,10 @@ Guidelines for creating and managing task lists in markdown files to track proje
    ## Implementation Plan
    
    Detailed description of how the feature will be implemented.
+
+   ## Update Documentation
+
+   List of files in the documentation to create and update.
    
    ### Relevant Files
    

@@ -1,6 +1,5 @@
-import { describe, beforeEach, vi, expect, type Mock } from 'vitest';
+import { describe, beforeEach, vi, expect, type Mock, it } from 'vitest';
 import { Effect as E, pipe } from 'effect';
-import { it } from '@effect/vitest';
 import { WebScrapingService, type ScraperConfig } from '$lib/services/scraper/WebScrapingService';
 import { MCPCrawl4AIClient } from '$lib/services/scraper/MCPCrawl4AIClient';
 import * as EffectUtils from '$lib/utils/effect';

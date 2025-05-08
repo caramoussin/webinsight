@@ -1,214 +1,359 @@
 /**
  * MCP-based Crawl4AI client for web content extraction
  *
- * This client uses the MCP infrastructure to access Crawl4AI capabilities,
+ * This client uses the MCP infrastructure to access Crawl4AI capabilities via API routes,
  * providing the same API as the original Crawl4AIClient but leveraging
  * the standardized MCP architecture.
+ *
+ * This implementation follows WebInsight's layered architecture principles:
+ * - Uses API routes as an interface to the MCP host
+ * - Leverages Effect TS for functional programming patterns
+ * - Maintains local-first and profile-based principles
  */
 
-import { Effect as E, Schema as S } from 'effect';
-import { ServiceError, validateWithSchema, effectFetch } from '$lib/utils/effect';
+import { Effect, Schema as S, pipe } from 'effect';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { ServiceError, effectFetch } from '$lib/utils/effect';
+import type {
+  ExtractContentInput,
+  ExtractContentOutput,
+  CheckRobotsTxtOutput
+} from '$lib/server/mcp/crawl4ai/schemas';
 
-// Re-export schemas from the original client for compatibility
-// Define schemas using Effect Schema#
-const SelectorConfigSchema = S.Struct({
-  base_selector: S.optional(S.String),
-  include_selectors: S.optional(S.Array(S.String)),
-  exclude_selectors: S.optional(S.Array(S.String))
-});
-
-const ExtractionSchemaFieldSchema = S.Struct({
-  name: S.String,
-  selector: S.String,
-  type: S.Union(S.Literal('text'), S.Literal('attribute'), S.Literal('html')),
-  attribute: S.optional(S.String)
-});
-
-const ExtractionSchemaSchema = S.Struct({
-  name: S.String,
-  base_selector: S.String,
-  fields: S.Array(ExtractionSchemaFieldSchema)
-});
-
-const ExtractionOptionsSchema = S.Struct({
-  url: S.String.pipe(S.pattern(/^https?:\/\/.+/)),
-  selectors: S.optional(SelectorConfigSchema),
-  extraction_schema: S.optional(ExtractionSchemaSchema),
-
-  // Browser configuration
-  headless: S.Boolean,
-  verbose: S.Boolean,
-  user_agent: S.optional(S.String),
-
-  // Content filtering
-  filter_type: S.optional(S.Union(S.Literal('pruning'), S.Literal('bm25'))),
-  threshold: S.optional(S.Number),
-  query: S.optional(S.String),
-
-  // Caching and performance
-  use_cache: S.Boolean,
-  js_scripts: S.optional(S.Array(S.String)),
-  wait_selectors: S.optional(S.Array(S.String)),
-
-  // Ethical scraping
-  check_robots_txt: S.Boolean,
-  respect_rate_limits: S.Boolean
-});
-
-// Define as a type instead of a schema to avoid the linting error
-type ExtractionResponse = {
-  content: {
-    markdown: string;
-    raw_markdown: string;
-    html?: string;
-  };
-  extracted_data?: unknown;
-  metadata: Record<string, never>;
-};
-
-// Define as a type instead of a schema to avoid the linting error
-type RobotsCheckResponse = {
-  allowed: boolean;
-  url: string;
-  robots_url: string;
-  user_agent: string;
-  error?: string;
-};
-
-// Type inference from schemas
-type ExtractionOptions = S.Schema.Type<typeof ExtractionOptionsSchema>;
-// ExtractionResponse and RobotsCheckResponse are defined directly as types above
-
-// Error types
-export type Crawl4AIError = {
-  code: string;
-  message: string;
-  details?: unknown;
-};
+// Define client-facing schemas using Effect Schema
 
 /**
- * MCP-based Crawl4AI client for web content extraction
- * Provides the same API as the original Crawl4AIClient but uses the MCP infrastructure
+ * Schema for extraction options in the client API
+ */
+export const ExtractionOptionsSchema = S.Struct({
+  url: S.String.pipe(S.pattern(/^https?:\/\/.+/)),
+  mode: S.Union(S.Literal('raw'), S.Literal('markdown'), S.Literal('text')).pipe(
+    S.propertySignature,
+    S.withConstructorDefault(() => 'markdown' as const)
+  ),
+  includeMetadata: S.Boolean.pipe(
+    S.propertySignature,
+    S.withConstructorDefault(() => true)
+  )
+});
+
+export type ExtractionOptions = S.Schema.Type<typeof ExtractionOptionsSchema>;
+
+/**
+ * Schema for robots check options in the client API
+ */
+export const RobotsCheckOptionsSchema = S.Struct({
+  url: S.String.pipe(S.pattern(/^https?:\/\/.+/)),
+  userAgent: S.optional(S.String)
+});
+
+export type RobotsCheckOptions = S.Schema.Type<typeof RobotsCheckOptionsSchema>;
+
+/**
+ * Schema for extraction response in the client API
+ */
+export const ExtractionResponseSchema = S.Struct({
+  content: S.String,
+  metadata: S.optional(S.Record({ key: S.String, value: S.String }))
+});
+
+export type ExtractionResponse = S.Schema.Type<typeof ExtractionResponseSchema>;
+
+/**
+ * Schema for robots check response in the client API
+ */
+export const RobotsCheckResponseSchema = S.Struct({
+  allowed: S.Boolean,
+  message: S.optional(S.String)
+});
+
+export type RobotsCheckResponse = S.Schema.Type<typeof RobotsCheckResponseSchema>;
+
+/**
+ * MCP-based implementation of Crawl4AI client
+ *
+ * This class provides access to the Crawl4AI MCP provider capabilities
+ * using the unified MCP structure and Effect Schema for validation.
  */
 export class MCPCrawl4AIClient {
-  private static readonly MCP_API_URL = '/api/mcp/crawl4ai';
-  private static readonly PROVIDER = 'crawl4ai';
+  // Use the main MCP API route instead of the Crawl4AI-specific route
+  private static readonly MCP_API_URL = '/api/mcp';
+  private static readonly MCP_SERVER_URL = 'http://localhost:3000/api/mcp'; // For SDK client
+
+  // No constructor needed as we're using static methods with Effect TS patterns
 
   /**
-   * Extract content from a URL using Crawl4AI via MCP
-   * @param options Extraction options
-   * @returns Either an error or the extraction response
+   * Create an SDK-based MCP client for official MCP connections
+   * @returns Effect with the MCP client
    */
-  static extractContent(options: ExtractionOptions): E.Effect<ExtractionResponse, ServiceError> {
-    return E.gen(function* ($) {
-      // Validate options
-      const validatedOptions = yield* $(validateWithSchema(ExtractionOptionsSchema, options));
+  static createSDKClient(): Effect.Effect<Client, ServiceError> {
+    return Effect.try({
+      try: () => {
+        return new Client({
+          name: 'WebInsight Crawl4AI Client',
+          version: '1.0.0',
+          serverUrl: this.MCP_SERVER_URL
+        });
+      },
+      catch: (error) =>
+        new ServiceError({
+          code: 'MCP_CLIENT_ERROR',
+          message: 'Failed to create MCP SDK client',
+          cause: error
+        })
+    });
+  }
+
+  /**
+   * Extract content from a URL using Crawl4AI via MCP API route
+   *
+   * This method calls the MCP API route, which interfaces with the MCP host
+   * to access the Crawl4AI provider. This maintains the layered architecture
+   * while leveraging the unified MCP structure.
+   *
+   * @param options The extraction options
+   * @returns Effect with extraction response or error
+   */
+  static extractContent(
+    options: ExtractionOptions
+  ): Effect.Effect<ExtractionResponse, ServiceError> {
+    return pipe(
+      // Parse and validate options with Effect Schema
+      S.decode(ExtractionOptionsSchema)(options),
+      Effect.mapError(
+        (error) =>
+          new ServiceError({
+            code: 'INVALID_PARAMETERS',
+            message: 'Invalid extraction options',
+            cause: error
+          })
+      ),
+
+      // Map client options to MCP service options
+      Effect.map(
+        (validOptions) =>
+          ({
+            url: validOptions.url,
+            selectors: validOptions.mode === 'raw' ? { include_html: true } : undefined
+          }) as ExtractContentInput
+      ),
 
       // Make request to MCP API
-      const response = yield* $(
-        effectFetch<{ result: ExtractionResponse }>(`${MCPCrawl4AIClient.MCP_API_URL}`, {
+      Effect.flatMap((serviceParams) =>
+        effectFetch<{ result: ExtractContentOutput }>(`${MCPCrawl4AIClient.MCP_API_URL}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             tool: 'extractContent',
-            params: validatedOptions
+            provider: 'crawl4ai', // Specify the provider for the main MCP API route
+            params: serviceParams
           })
         })
-      );
+      ),
 
-      // Return the extraction response from the API result
-      return response.result;
-    });
+      // Map service response to client response
+      Effect.map(
+        (response) =>
+          ({
+            content: response.result.content.markdown,
+            metadata: {}
+          }) as ExtractionResponse
+      )
+    );
   }
 
   /**
-   * Check if scraping is allowed by robots.txt for a given URL via MCP
-   * @param url URL to check
-   * @param userAgent User agent to check against
-   * @returns Either an error or the robots check response
+   * Check if a URL is allowed by robots.txt using Crawl4AI via MCP API route
+   *
+   * This method calls the MCP API route, which interfaces with the MCP host
+   * to access the Crawl4AI provider. This maintains the layered architecture
+   * while leveraging the unified MCP structure.
+   *
+   * @param url The URL to check
+   * @param userAgent Optional user agent string
+   * @returns Effect with robots check response or error
    */
   static checkRobotsTxt(
     url: string,
     userAgent?: string
-  ): E.Effect<RobotsCheckResponse, ServiceError> {
-    return E.gen(function* ($) {
+  ): Effect.Effect<RobotsCheckResponse, ServiceError> {
+    return pipe(
+      // Create and validate parameters
+      S.decode(RobotsCheckOptionsSchema)({
+        url,
+        userAgent
+      }),
+      Effect.mapError(
+        (error) =>
+          new ServiceError({
+            code: 'INVALID_PARAMETERS',
+            message: 'Invalid robots.txt check parameters',
+            cause: error
+          })
+      ),
+
       // Make request to MCP API
-      const response = yield* $(
-        effectFetch<{ result: RobotsCheckResponse }>(`${MCPCrawl4AIClient.MCP_API_URL}`, {
+      Effect.flatMap((params) =>
+        effectFetch<{ result: CheckRobotsTxtOutput }>(`${MCPCrawl4AIClient.MCP_API_URL}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             tool: 'checkRobotsTxt',
-            params: {
-              url,
-              ...(userAgent ? { user_agent: userAgent } : {})
-            }
+            provider: 'crawl4ai', // Specify the provider for the main MCP API route
+            params
           })
         })
-      );
+      ),
 
-      // Return the robots check response from the API result
-      return response.result;
-    });
+      // Map service response to client response and ensure type safety
+      Effect.map((response) => {
+        return {
+          allowed: response.result.allowed,
+          message: response.result.error
+        } as RobotsCheckResponse;
+      })
+    );
   }
 
-  /**
-   * Create a selector configuration object
-   * @param baseSelector Base CSS selector
-   * @param includeSelectors Additional selectors to include
-   * @param excludeSelectors Selectors to exclude
-   * @returns Selector configuration object
-   */
-  static createSelectorConfig(
-    baseSelector?: string,
-    includeSelectors?: string[],
-    excludeSelectors?: string[]
-  ): S.Schema.Type<typeof SelectorConfigSchema> {
-    return {
-      ...(baseSelector ? { base_selector: baseSelector } : {}),
-      ...(includeSelectors ? { include_selectors: includeSelectors } : {}),
-      ...(excludeSelectors ? { exclude_selectors: excludeSelectors } : {})
-    };
-  }
+  // Instance methods for direct MCP client usage with the official SDK
 
   /**
-   * Create an extraction schema field
-   * @param name Field name
-   * @param selector CSS selector
-   * @param type Extraction type
-   * @param attribute Attribute name (for attribute type)
-   * @returns Extraction schema field
+   * Extract content from a URL using MCP tool (API route approach)
+   * @param url The URL to extract content from
+   * @param mode The mode of content extraction
+   * @param includeMetadata Whether to include metadata in the response
+   * @returns Effect with the extracted content or error
    */
-  static createExtractionSchemaField(
-    name: string,
-    selector: string,
-    type: 'text' | 'attribute' | 'html',
-    attribute?: string
-  ): S.Schema.Type<typeof ExtractionSchemaFieldSchema> {
-    return {
-      name,
-      selector,
-      type,
-      ...(attribute ? { attribute } : {})
-    };
-  }
+  extractContent = (
+    url: string,
+    mode: 'raw' | 'markdown' | 'text' = 'markdown',
+    includeMetadata = true
+  ): Effect.Effect<ExtractionResponse, ServiceError> =>
+    pipe(
+      // Create options object
+      S.decode(ExtractionOptionsSchema)({ url, mode, includeMetadata }),
+      Effect.mapError(
+        (error) =>
+          new ServiceError({
+            code: 'INVALID_PARAMETERS',
+            message: 'Invalid extraction options',
+            cause: error
+          })
+      ),
+
+      // Call the static method to handle the request
+      Effect.flatMap((options) => MCPCrawl4AIClient.extractContent(options))
+    );
 
   /**
-   * Create an extraction schema
-   * @param name Schema name
-   * @param baseSelector Base CSS selector
-   * @param fields Array of extraction fields
-   * @returns Extraction schema
+   * Extract content from a URL using the official MCP SDK
+   * @param url The URL to extract content from
+   * @param mode The mode of content extraction
+   * @param includeMetadata Whether to include metadata in the response
+   * @returns Effect with the extracted content or error
    */
-  static createExtractionSchema(
-    name: string,
-    baseSelector: string,
-    fields: S.Schema.Type<typeof ExtractionSchemaFieldSchema>[]
-  ): S.Schema.Type<typeof ExtractionSchemaSchema> {
-    return {
-      name,
-      base_selector: baseSelector,
-      fields
-    };
-  }
+  extractContentWithSDK = (
+    url: string,
+    mode: 'raw' | 'markdown' | 'text' = 'markdown',
+    includeMetadata = true
+  ): Effect.Effect<ExtractionResponse, ServiceError> =>
+    pipe(
+      // Create options object
+      S.decode(ExtractionOptionsSchema)({ url, mode, includeMetadata }),
+      Effect.mapError(
+        (error) =>
+          new ServiceError({
+            code: 'INVALID_PARAMETERS',
+            message: 'Invalid extraction options',
+            cause: error
+          })
+      ),
+
+      // Create SDK client
+      Effect.flatMap(() => MCPCrawl4AIClient.createSDKClient()),
+
+      // Call the tool using the SDK client
+      Effect.flatMap((client) =>
+        Effect.tryPromise({
+          try: async () => {
+            const result = await client.callTool({
+              name: 'extractContent',
+              arguments: {
+                url,
+                mode,
+                includeMetadata
+              }
+            });
+
+            // Convert SDK response to ExtractionResponse
+            return {
+              content: result.content,
+              metadata: result.metadata || {}
+            } as ExtractionResponse;
+          },
+          catch: (error) =>
+            new ServiceError({
+              code: 'SDK_CALL_ERROR',
+              message: 'Error calling extractContent with MCP SDK',
+              cause: error
+            })
+        })
+      )
+    );
+
+  /**
+   * Check if URL is allowed by robots.txt (API route approach)
+   * @param url The URL to check
+   * @param userAgent Optional user agent string
+   * @returns Effect with the robots.txt check result or error
+   */
+  checkRobotsTxt = (
+    url: string,
+    userAgent?: string
+  ): Effect.Effect<RobotsCheckResponse, ServiceError> =>
+    MCPCrawl4AIClient.checkRobotsTxt(url, userAgent);
+
+  /**
+   * Check if URL is allowed by robots.txt using the official MCP SDK
+   * @param url The URL to check
+   * @param userAgent Optional user agent string
+   * @returns Effect with the robots.txt check result or error
+   */
+  checkRobotsTxtWithSDK = (
+    url: string,
+    userAgent?: string
+  ): Effect.Effect<RobotsCheckResponse, ServiceError> =>
+    pipe(
+      // Create SDK client
+      MCPCrawl4AIClient.createSDKClient(),
+
+      // Call the tool using the SDK client
+      Effect.flatMap((client) =>
+        Effect.tryPromise({
+          try: async () => {
+            const result = await client.callTool({
+              name: 'checkRobotsTxt',
+              arguments: {
+                url,
+                userAgent
+              }
+            });
+
+            // Convert SDK response to RobotsCheckResponse
+            return {
+              allowed: result.allowed,
+              message: result.message
+            } as RobotsCheckResponse;
+          },
+          catch: (error) =>
+            new ServiceError({
+              code: 'SDK_CALL_ERROR',
+              message: 'Error calling checkRobotsTxt with MCP SDK',
+              cause: error
+            })
+        })
+      )
+    );
 }
+
+export const createMCPCrawl4AIClient = () => new MCPCrawl4AIClient();

@@ -3,10 +3,14 @@
  *
  * This file provides dedicated API endpoints for the Crawl4AI MCP provider,
  * allowing direct access to web content extraction capabilities.
+ *
+ * This implementation supports both direct provider calls and SDK-based calls
+ * for official MCP connections.
  */
 
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { Effect as E, pipe, Option } from 'effect';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { ServiceError } from '$lib/utils/effect';
 
 import { Crawl4AIProvider } from '$lib/server/mcp/crawl4ai';
@@ -23,8 +27,11 @@ export const GET: RequestHandler = async () => {
     E.map((tools) => json({ tools })),
     E.catchAll((error) => {
       console.error('Error listing Crawl4AI tools:', error);
-      const status = error instanceof ServiceError && error.code.startsWith('CRAWL4AI_MCP_') ? 400 : 500;
-      return E.succeed(json({ error: 'Failed to list Crawl4AI tools', details: error.message }, { status }));
+      const status =
+        error instanceof ServiceError && error.code.startsWith('CRAWL4AI_MCP_') ? 400 : 500;
+      return E.succeed(
+        json({ error: 'Failed to list Crawl4AI tools', details: error.message }, { status })
+      );
     }),
     E.runPromise
   );
@@ -40,25 +47,84 @@ export const POST: RequestHandler = async ({ request }) => {
   const effect: E.Effect<Response, never> = pipe(
     // 1. Try to parse the request body
     E.tryPromise({
-      try: () => request.json() as Promise<{ tool?: string; params?: unknown }>,
-      catch: (unknown) => new ServiceError({ code: 'REQUEST_PARSE_ERROR', message: 'Failed to parse request body', cause: unknown })
+      try: () => request.json() as Promise<{ tool?: string; params?: unknown; useSDK?: boolean }>,
+      catch: (unknown) =>
+        new ServiceError({
+          code: 'REQUEST_PARSE_ERROR',
+          message: 'Failed to parse request body',
+          cause: unknown
+        })
     }),
     // 2. Validate that the 'tool' field is present
     E.flatMap((body) => {
       if (!body || typeof body.tool !== 'string' || body.tool.trim() === '') {
-        return E.fail(new ServiceError({ code: 'MISSING_TOOL_FIELD', message: 'Missing or invalid required field: tool' }));
+        return E.fail(
+          new ServiceError({
+            code: 'MISSING_TOOL_FIELD',
+            message: 'Missing or invalid required field: tool'
+          })
+        );
       }
-      return E.succeed({ tool: body.tool, params: body.params || {} });
+      return E.succeed({
+        tool: body.tool,
+        params: (body.params as Record<string, unknown>) || {},
+        useSDK: body.useSDK || false
+      });
     }),
-    // 3. Call the Crawl4AI provider tool
-    E.flatMap(({ tool, params }) => Crawl4AIProvider.callTool(tool, params)),
+    // 3. Call the Crawl4AI provider tool (either directly or via SDK)
+    E.flatMap(({ tool, params, useSDK }) => {
+      if (useSDK) {
+        // Use the official MCP SDK
+        return pipe(
+          // Create the SDK client
+          E.try({
+            try: () =>
+              new Client({
+                name: 'WebInsight Crawl4AI Server',
+                version: '1.0.0',
+                serverUrl: 'http://localhost:3000/api/mcp'
+              }),
+            catch: (error) =>
+              new ServiceError({
+                code: 'SDK_CLIENT_ERROR',
+                message: 'Failed to create MCP SDK client',
+                cause: error
+              })
+          }),
+          // Call the tool using the SDK
+          E.flatMap((client) =>
+            E.tryPromise({
+              try: async () => {
+                const result = await client.callTool({
+                  name: tool,
+                  arguments: params
+                });
+                return result;
+              },
+              catch: (error) =>
+                new ServiceError({
+                  code: 'SDK_CALL_ERROR',
+                  message: `Error calling tool '${tool}' with MCP SDK`,
+                  cause: error
+                })
+            })
+          )
+        );
+      }
+      // Use the direct provider call
+      return Crawl4AIProvider.callTool(tool, params);
+    }),
     // 4. Map success to a 200 JSON response
     E.map((result) => json({ result }, { status: 200 })),
     // 5. Catch specific Crawl4AI errors and map to 400/500 responses
     E.catchSome((error) => {
       if (error instanceof Crawl4AIMCPError) {
         console.error(`Crawl4AI MCP Error (${error.code}):`, error.message, error.cause);
-        const status = error.code === 'CRAWL4AI_MCP_NOT_FOUND' || error.code === 'CRAWL4AI_MCP_INVALID_PARAMETERS' ? 400 : 500;
+        const status =
+          error.code === 'CRAWL4AI_MCP_NOT_FOUND' ||
+          error.code === 'CRAWL4AI_MCP_INVALID_PARAMETERS'
+            ? 400
+            : 500;
         return Option.some(E.succeed(json({ error: error.message, code: error.code }, { status })));
       }
       return Option.none(); // Let other errors fall through
@@ -67,7 +133,8 @@ export const POST: RequestHandler = async ({ request }) => {
     E.catchSome((error) => {
       if (error instanceof ServiceError) {
         console.error(`Service Error (${error.code}):`, error.message, error.cause);
-        const status = error.code === 'MISSING_TOOL_FIELD' || error.code === 'REQUEST_PARSE_ERROR' ? 400 : 500;
+        const status =
+          error.code === 'MISSING_TOOL_FIELD' || error.code === 'REQUEST_PARSE_ERROR' ? 400 : 500;
         return Option.some(E.succeed(json({ error: error.message, code: error.code }, { status })));
       }
       return Option.none(); // Let other errors fall through
@@ -76,7 +143,9 @@ export const POST: RequestHandler = async ({ request }) => {
     E.catchAll((error) => {
       console.error('Unexpected error calling Crawl4AI tool:', error);
       const message = error instanceof Error ? error.message : String(error);
-      return E.succeed(json({ error: 'An unexpected error occurred', details: message }, { status: 500 }));
+      return E.succeed(
+        json({ error: 'An unexpected error occurred', details: message }, { status: 500 })
+      );
     })
   );
 

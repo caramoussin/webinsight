@@ -5,24 +5,25 @@
  * required by the MCP Host.
  */
 
-import { Effect as E, pipe } from 'effect';
+import { Effect as E } from 'effect';
 import { ServiceError } from '$lib/utils/effect';
 
 import type { MCPProvider } from '../host';
-import * as Service from './service';
+import { Crawl4AIServiceLive, Crawl4AIServiceTag } from './service';
 
 /**
  * Creates an MCP Provider adapter for the Crawl4AI service
  */
-export const createCrawl4AIProvider = (
-  service: Service.Crawl4AIService = Service.Crawl4AIServiceLive
-): MCPProvider => {
+
+export const createCrawl4AIProvider = (): MCPProvider => {
   return {
     name: 'crawl4ai',
 
     listTools: () =>
-      pipe(
-        service.listTools(),
+      E.gen(function* () {
+        const service = yield* Crawl4AIServiceTag;
+        return yield* service.listTools();
+      }).pipe(
         E.map((tools) =>
           tools.map((tool) => ({
             name: tool.name,
@@ -39,12 +40,15 @@ export const createCrawl4AIProvider = (
                 message: 'Error listing Crawl4AI tools',
                 cause: error
               })
-        )
+        ),
+        E.provide(Crawl4AIServiceLive)
       ),
 
     callTool: <P, R>(name: string, params: P) =>
-      pipe(
-        service.callTool<string, P, R>(name, params),
+      E.gen(function* () {
+        const service = yield* Crawl4AIServiceTag;
+        return yield* service.callTool<string, P, R>(name, params);
+      }).pipe(
         E.mapError((error) =>
           error instanceof ServiceError
             ? error
@@ -53,7 +57,8 @@ export const createCrawl4AIProvider = (
                 message: `Error calling Crawl4AI tool '${name}'`,
                 cause: error
               })
-        )
+        ),
+        E.provide(Crawl4AIServiceLive)
       )
   };
 };

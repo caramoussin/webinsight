@@ -1,5 +1,6 @@
-import { Effect as E, Duration, Schema as S } from 'effect';
+import { Effect as E, Duration, Schema as S, pipe } from 'effect';
 import { ServiceError, validateWithSchema } from '../../utils/effect';
+import type { ExtractionOptions } from './MCPCrawl4AIClient';
 import { MCPCrawl4AIClient } from './MCPCrawl4AIClient';
 import * as cheerio from 'cheerio';
 
@@ -12,6 +13,7 @@ const ScraperConfigSchema = S.Struct({
   userAgent: S.optional(S.String),
   // Crawl4AI specific options
   useCrawl4AI: S.Boolean,
+  useSDK: S.optional(S.Boolean), // Whether to use the official MCP SDK
   crawl4AIOptions: S.optional(
     S.Struct({
       filterType: S.optional(S.Union(S.Literal('pruning'), S.Literal('bm25'))),
@@ -92,60 +94,83 @@ export class WebScrapingService {
     });
   }
 
+  /**
+   * Create a selector configuration for content extraction
+   * @param selector CSS selector to extract content from
+   * @returns Selector configuration object
+   */
   private static createSelectorConfig(selector: string) {
-    return MCPCrawl4AIClient.createSelectorConfig(selector);
+    return {
+      base_selector: selector,
+      include_selectors: [],
+      exclude_selectors: []
+    };
   }
 
   /**
-   * Scrape content using Crawl4AI
+   * Scrape content using Crawl4AI with our unified MCP implementation
+   * @param config Scraper configuration
+   * @returns Effect with the scraped content result
    */
   private static scrapeWithCrawl4AI(config: ScraperConfig): E.Effect<ScraperResult, ServiceError> {
-    return E.gen(function* (_) {
-      const selectorConfig = config.selector
-        ? WebScrapingService.createSelectorConfig(config.selector)
-        : undefined;
+    // Create extraction options
+    const extractionOptions = {
+      url: config.url,
+      mode: 'markdown' as const,
+      includeMetadata: true
+    } as ExtractionOptions;
 
-      const crawl4AIOptions = config.crawl4AIOptions || {
-        useCache: true,
-        checkRobotsTxt: true,
-        respectRateLimits: true
-      };
+    // Create an instance of MCPCrawl4AIClient for instance methods
+    const client = new MCPCrawl4AIClient();
 
-      const extractionResult = yield* _(
-        MCPCrawl4AIClient.extractContent({
+    // Choose between SDK and API route approach based on config
+    const extractionEffect = config.useSDK
+      ? client.extractContentWithSDK(
+          extractionOptions.url,
+          extractionOptions.mode,
+          extractionOptions.includeMetadata
+        )
+      : MCPCrawl4AIClient.extractContent(extractionOptions);
+
+    return pipe(
+      extractionEffect,
+      E.flatMap((response) => {
+        // Extract links from markdown content
+        const extractedLinks = WebScrapingService.extractLinksFromMarkdown(response.content);
+
+        // Create the scraper result and validate it with the schema
+        return validateWithSchema(ScraperResultSchema, {
           url: config.url,
-          selectors: selectorConfig,
-          headless: true,
-          verbose: false,
-          use_cache: crawl4AIOptions.useCache,
-          check_robots_txt: crawl4AIOptions.checkRobotsTxt,
-          respect_rate_limits: crawl4AIOptions.respectRateLimits,
-          ...(crawl4AIOptions.filterType && { filter_type: crawl4AIOptions.filterType }),
-          ...(crawl4AIOptions.threshold !== undefined && { threshold: crawl4AIOptions.threshold }),
-          ...(crawl4AIOptions.query && { query: crawl4AIOptions.query }),
-          ...(config.userAgent && { user_agent: config.userAgent })
-        })
-      );
-
-      // Extract links from markdown content if available
-      const extractedLinks = WebScrapingService.extractLinksFromMarkdown(
-        extractionResult.content.markdown
-      );
-
-      return yield* _(
-        validateWithSchema(ScraperResultSchema, {
-          url: config.url,
-          content: extractionResult.content.html || extractionResult.content.markdown,
-          contentType: 'text/html',
-          extractedText: [extractionResult.content.markdown],
+          content: response.content,
+          contentType: config.contentType,
+          extractedText: [response.content], // The full content as a single text entry
           extractedLinks,
-          metadata: extractionResult.metadata,
-          markdown: extractionResult.content.markdown,
-          rawMarkdown: extractionResult.content.raw_markdown,
-          extractedData: extractionResult.extracted_data
-        })
-      );
-    });
+          metadata: response.metadata,
+          markdown: response.content, // Store the markdown content
+          rawMarkdown: response.content // Store the raw markdown as well
+        });
+      }),
+      E.mapError((error: unknown) => {
+        // Handle specific error cases
+        if (error instanceof ServiceError && error.code === 'FETCH_ERROR') {
+          return new ServiceError({
+            code: 'NETWORK_ERROR',
+            message: `Failed to fetch content from ${config.url}`,
+            cause: error
+          });
+        }
+        // If it's already a ServiceError, return it as is
+        if (error instanceof ServiceError) {
+          return error;
+        }
+        // Otherwise, wrap it in a ServiceError
+        return new ServiceError({
+          code: 'SCRAPING_ERROR',
+          message: `Error scraping content from ${config.url}`,
+          cause: error
+        });
+      })
+    );
   }
 
   /**
@@ -273,13 +298,47 @@ export class WebScrapingService {
   }
 
   /**
-   * Check robots.txt rules
+   * Check robots.txt rules using the unified MCPCrawl4AIClient
+   * @param url The URL to check
+   * @param userAgent Optional user agent string
+   * @returns Effect with boolean indicating if scraping is allowed
    */
-  static checkRobotsTxt(url: string, userAgent?: string): E.Effect<boolean, ServiceError> {
-    return E.gen(function* (_) {
-      const result = yield* _(MCPCrawl4AIClient.checkRobotsTxt(url, userAgent));
-      return result.allowed;
-    });
+  /**
+   * Check robots.txt rules using the unified MCPCrawl4AIClient
+   * @param url The URL to check
+   * @param userAgent Optional user agent string
+   * @param useSDK Whether to use the official MCP SDK (default: false)
+   * @returns Effect with boolean indicating if scraping is allowed
+   */
+  static checkRobotsTxt(
+    url: string,
+    userAgent?: string,
+    useSDK = false
+  ): E.Effect<boolean, ServiceError> {
+    // Create an instance of MCPCrawl4AIClient for instance methods if using SDK
+    const client = useSDK ? new MCPCrawl4AIClient() : null;
+
+    return pipe(
+      // Choose between SDK and API route approach
+      useSDK
+        ? client!.checkRobotsTxtWithSDK(url, userAgent)
+        : MCPCrawl4AIClient.checkRobotsTxt(url, userAgent),
+
+      // Extract the allowed property from the result
+      E.map((result) => result.allowed),
+
+      // Handle errors
+      E.mapError((error: unknown) => {
+        if (error instanceof ServiceError) {
+          return error;
+        }
+        return new ServiceError({
+          code: 'ROBOTS_CHECK_ERROR',
+          message: `Error checking robots.txt for ${url}`,
+          cause: error
+        });
+      })
+    );
   }
 
   // Helper method to normalize relative URLs

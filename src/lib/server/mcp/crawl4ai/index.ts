@@ -1,14 +1,11 @@
 /**
- * Crawl4AI MCP Provider
- *
- * This module provides an MCP interface to the Crawl4AI Python service,
- * exposing web content extraction capabilities as standardized MCP Tools.
+ * Unified Crawl4AI MCP Provider
+ * 
+ * This module exports both the core Crawl4AI MCP provider implementation
+ * and the SDK integration components.
  */
 
-// Export all schemas
-export * from './schemas';
-
-// Export error types
+// Core implementation exports
 export * from './errors';
 
 // Export service

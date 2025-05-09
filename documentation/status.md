@@ -103,8 +103,8 @@ This document tracks the implementation status of WebInsight, highlighting compl
 - 🐛 UI rendering issues in dark mode for some components
 - 🐛 Inconsistent metadata extraction for certain content types
 - 🐛 Feed refresh sometimes fails silently
-- 🐛 Nitter instances occasionally become unavailable
 - 🐛 Effect type inference can be verbose in complex scenarios
+- ✅ Fixed: MCPCrawl4AIClient unit tests failing due to improper Response mocking
 
 ## 6. Performance Metrics
 
@@ -117,4 +117,4 @@ This document tracks the implementation status of WebInsight, highlighting compl
 
 - **Version**: 0.1.0
 - **Target Date**: June 15, 2025
-- **Focus**: **Complete Crawl4AI MCP refactor (Server & Client)**, complete AI agent implementation, finalize MCP configuration UI, implement scheduled data fetching, and create AI processing pipeline configuration UI.
+- **Focus**: ✅ **Completed Crawl4AI MCP refactor (Server & Client)**, complete AI agent implementation, finalize MCP configuration UI, implement scheduled data fetching, and create AI processing pipeline configuration UI.

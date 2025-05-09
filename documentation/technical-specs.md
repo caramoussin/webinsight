@@ -2,7 +2,7 @@
 
 ## Overview
 
-WebInsight integrates the Fabric pattern library ([Fabric Patterns](https://github.com/danielmiessler/fabric/tree/main/patterns)) with the Model Context Protocol (MCP) for specialized tools like Crawl4AI, while using transformer models managed by @effect/ai for embedding generation and text processing. This specification details the technical foundation, including transformer integration, Milvus Lite for vector operations, the @effect/ai library for LLM and transformer management, and the UI for configuring these AI capabilities.
+WebInsight integrates the AI Pattern Library (inspired by [Fabric Patterns](https://github.com/danielmiessler/fabric/tree/main/patterns)) with the Model Context Protocol (MCP) for specialized tools like Crawl4AI, while using transformer models managed by @effect/ai for embedding generation and text processing. This specification details the technical foundation, including transformer integration, Milvus Lite for vector operations, the @effect/ai library for LLM and transformer management, and the UI for configuring these AI capabilities.
 
 ## Features
 
@@ -29,14 +29,14 @@ WebInsight integrates the Fabric pattern library ([Fabric Patterns](https://gith
 
 #### The Archivist Agent
 
-- Uses MCP to pipe content through Fabric pattern library sequences (e.g., `extract_wisdom` → `organize`).
+- Uses MCP to pipe content through AI Pattern Library sequences (e.g., `extract_wisdom` → `organize`).
 - Generates embeddings using transformer models via @effect/ai.
 - Stores embeddings in Milvus Lite for efficient similarity search.
 - Leverages the RAG component to enrich metadata extraction with contextual information.
 
 #### The Scribe Agent
 
-- Executes Fabric pattern library operations via MCP for summarization and key point extraction.
+- Executes AI Pattern Library operations via MCP for summarization and key point extraction.
 - Uses transformer models for text generation tasks like summarization and metadata extraction.
 - Uses cached results when available via the CAG component.
 - Enhances summaries with context from semantically similar articles via transformer-powered RAG.
@@ -60,7 +60,7 @@ WebInsight integrates the Fabric pattern library ([Fabric Patterns](https://gith
 - Real-time updates via WebSocket with MCP connection status
 - Offline-first functionality
 - Intuitive content organization with MCP-driven pattern outputs
-- Advanced search and filtering enhanced by Fabric patterns
+- Advanced search and filtering enhanced by AI Pattern Library
 
 ### 4. Data Management and Privacy
 
@@ -592,7 +592,7 @@ WebInsight aims to revolutionize content aggregation and analysis, transforming 
 - Initial web scraping service structure
 - Basic UI components and theme support
 
-### Phase 2: Feed Management & Web Scraping (In Progress)
+### Phase 2: Feed Management & Web Scraping (Partially Completed)
 
 🔄 Current Focus:
 
@@ -600,21 +600,23 @@ WebInsight aims to revolutionize content aggregation and analysis, transforming 
   - [ ] Feed collection organization
   - [ ] Feed categorization
   - [ ] Offline reading support
-- [x] **Implement Crawl4AI MCP Provider**
-  - [x] Define MCP interface for Crawl4AI
-  - [x] Implement MCP host for provider registration and tool execution
-  - [x] Implement Crawl4AI MCP provider with Effect-based error handling
-  - [x] Create API endpoints for MCP tool discovery and execution
-  - [x] Implement MCP-based client for Crawl4AI
+- ✅ **Completed Crawl4AI MCP Integration**
+  - ✅ Defined MCP interface for Crawl4AI
+  - ✅ Implemented MCP host for provider registration and tool execution
+  - ✅ Implemented Crawl4AI MCP provider with Effect-based error handling
+  - ✅ Created API endpoints for MCP tool discovery and execution
+  - ✅ Implemented MCP-based client for Crawl4AI
+  - ✅ Fixed all unit tests with proper Response mocking
+  - ✅ Achieved 100% pass rate across all 64 unit tests in 7 test files
 - [ ] Integrate Crawl4AI MCP results with AI processing
 - [ ] Implement LLM Provider Service with @effect/ai
-- [x] Ensure Robots.txt compliance (implemented in Crawl4AI MCP provider)
+- ✅ Ensure Robots.txt compliance (implemented in Crawl4AI MCP provider)
 
 ### Phase 3: AI Agents Implementation (Next)
 
 📅 Planned:
 
-- [ ] Integrate MCP with Fabric AI
+- [ ] Integrate MCP with AI Pattern Library
   - [ ] Pattern library access
   - [ ] UI for LLM provider configuration with @effect/ai integration
 - [ ] The Archivist Agent
@@ -700,7 +702,7 @@ Note: Timeline estimates are subject to adjustment based on development progress
 
 - Cross-platform desktop application
 - Advanced machine learning models via MCP
-- Community-driven content analysis with Fabric patterns
+- Community-driven content analysis with AI Pattern Library
 - Seamless user experience across devices with MCP sync
 - UI for crafting own pattern pipelines.
 

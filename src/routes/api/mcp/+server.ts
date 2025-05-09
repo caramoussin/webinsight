@@ -3,13 +3,16 @@
  *
  * This file provides API endpoints for the Model Context Protocol (MCP) host,
  * allowing clients to discover and call MCP tools from various providers.
+ *
+ * This implementation uses both the custom WebInsight MCP host service and
+ * the official MCP SDK server for standardized integration.
  */
 
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { Effect as E, pipe, Option } from 'effect';
 import { ServiceError } from '$lib/utils/effect';
 
-import { MCPHostServiceLive } from '$lib/server/mcp/host';
+import { MCPHostServiceLive, MCPServerLive } from '$lib/server/mcp/host';
 import { Crawl4AIProvider } from '$lib/server/mcp/crawl4ai';
 
 // Register the Crawl4AI provider with the MCP host
@@ -44,42 +47,101 @@ export const GET: RequestHandler = async () => {
  * POST /api/mcp
  *
  * Call an MCP tool by name and provider
+ *
+ * This endpoint supports both:
+ * 1. Legacy WebInsight MCP host service calls (when useSDK=false or not specified)
+ * 2. Official MCP SDK server calls (when useSDK=true)
  */
 export const POST: RequestHandler = async ({ request }) => {
-  const effect: E.Effect<Response, never> = pipe(
+  const effect: E.Effect<Response, ServiceError> = pipe(
     // 1. Parse request body
     E.tryPromise({
-      try: () => request.json() as Promise<{ tool?: string; provider?: string; params?: unknown }>,
-      catch: (unknown) => new ServiceError({ code: 'REQUEST_PARSE_ERROR', message: 'Failed to parse request body', cause: unknown })
+      try: () =>
+        request.json() as Promise<{
+          tool?: string;
+          provider?: string;
+          params?: unknown;
+          useSDK?: boolean;
+          name?: string; // For SDK format
+          arguments?: unknown; // For SDK format
+        }>,
+      catch: (unknown) =>
+        new ServiceError({
+          code: 'REQUEST_PARSE_ERROR',
+          message: 'Failed to parse request body',
+          cause: unknown
+        })
     }),
-    // 2. Validate required fields
+    // 2. Process based on whether to use SDK or legacy format
     E.flatMap((body) => {
-      if (!body || typeof body.tool !== 'string' || body.tool.trim() === '' || typeof body.provider !== 'string' || body.provider.trim() === '') {
-        return E.fail(new ServiceError({ code: 'MISSING_TOOL_PROVIDER_FIELDS', message: 'Missing or invalid required fields: tool and provider' }));
+      // Check if using SDK format
+      if (body.useSDK === true) {
+        // SDK format uses the official MCP server
+        try {
+          // Handle the request using the MCP SDK server
+          // @ts-expect-error - The McpServer type definition might be outdated
+          const result = MCPServerLive.handleRequest({
+            type: 'tool_call',
+            tool_call: {
+              name: body.name || body.tool, // Support both formats
+              arguments: body.arguments || body.params || {}
+            }
+          });
+
+          return E.succeed(json(result, { status: 200 }));
+        } catch (error) {
+          console.error('Error handling MCP SDK tool call:', error);
+          const message = error instanceof Error ? error.message : 'An unexpected error occurred';
+          return E.succeed(json({ error: message }, { status: 500 }));
+        }
+      } else {
+        // Legacy format - validate required fields
+        if (
+          !body ||
+          typeof body.tool !== 'string' ||
+          body.tool.trim() === '' ||
+          typeof body.provider !== 'string' ||
+          body.provider.trim() === ''
+        ) {
+          return E.fail(
+            new ServiceError({
+              code: 'MISSING_TOOL_PROVIDER_FIELDS',
+              message: 'Missing or invalid required fields: tool and provider'
+            })
+          );
+        }
+
+        // Use the legacy MCP Host service
+        return pipe(
+          MCPHostServiceLive.callTool(body.tool, body.provider, body.params || {}),
+          E.map((result) => json({ result }, { status: 200 })),
+          E.catchSome((error) => {
+            if (error instanceof ServiceError) {
+              console.error(`MCP Service Error (${error.code}):`, error.message, error.cause);
+              // Determine status: 400 for client-like errors, 500 otherwise
+              const status = [
+                'MISSING_TOOL_PROVIDER_FIELDS',
+                'REQUEST_PARSE_ERROR',
+                'NOT_FOUND',
+                'INVALID_PARAMETERS'
+              ].includes(error.code)
+                ? 400
+                : 500;
+              return Option.some(
+                E.succeed(json({ error: error.message, code: error.code }, { status }))
+              );
+            }
+            return Option.none();
+          }),
+          E.catchAll((error) => {
+            console.error('Unexpected error calling MCP tool:', error);
+            const message = error instanceof Error ? error.message : 'An unexpected error occurred';
+            return E.succeed(
+              json({ error: 'An unexpected error occurred', details: message }, { status: 500 })
+            );
+          })
+        );
       }
-      return E.succeed({ tool: body.tool, provider: body.provider, params: body.params || {} });
-    }),
-    // 3. Call the MCP Host service tool
-    E.flatMap(({ tool, provider, params }) => MCPHostServiceLive.callTool(tool, provider, params)),
-    // 4. Map success to JSON response
-    E.map((result) => json({ result }, { status: 200 })),
-    // 5. Catch ServiceErrors (including specific MCP errors like NOT_FOUND, PROVIDER_ERROR)
-    E.catchSome((error) => {
-      if (error instanceof ServiceError) {
-        console.error(`MCP Service Error (${error.code}):`, error.message, error.cause);
-        // Determine status: 400 for client-like errors, 500 otherwise
-        const status = ['MISSING_TOOL_PROVIDER_FIELDS', 'REQUEST_PARSE_ERROR', 'NOT_FOUND', 'INVALID_PARAMETERS'].includes(error.code)
-          ? 400
-          : 500;
-        return Option.some(E.succeed(json({ error: error.message, code: error.code }, { status })));
-      }
-      return Option.none();
-    }),
-    // 6. Catch any unexpected errors
-    E.catchAll((error) => {
-      console.error('Unexpected error calling MCP tool:', error);
-      const message = error instanceof Error ? error.message : 'An unexpected error occurred';
-      return E.succeed(json({ error: 'An unexpected error occurred', details: message }, { status: 500 }));
     })
   );
 

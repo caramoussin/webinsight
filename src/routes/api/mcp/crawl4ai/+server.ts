@@ -5,16 +5,16 @@
  * allowing direct access to web content extraction capabilities.
  *
  * This implementation supports both direct provider calls and SDK-based calls
- * for official MCP connections.
+ * for official MCP connections using the centralized MCP host service.
  */
 
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { Effect as E, pipe, Option } from 'effect';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { ServiceError } from '$lib/utils/effect';
 
 import { Crawl4AIProvider } from '$lib/server/mcp/crawl4ai';
 import { Crawl4AIMCPError } from '$lib/server/mcp/crawl4ai/errors';
+import { MCPHostServiceLive } from '$lib/server/mcp/host';
 
 /**
  * GET /api/mcp/crawl4ai
@@ -42,12 +42,23 @@ export const GET: RequestHandler = async () => {
  * POST /api/mcp/crawl4ai
  *
  * Call a Crawl4AI tool directly
+ *
+ * This endpoint supports both:
+ * 1. Direct provider calls (when useSDK=false or not specified)
+ * 2. Official MCP SDK server calls (when useSDK=true)
  */
 export const POST: RequestHandler = async ({ request }) => {
-  const effect: E.Effect<Response, never> = pipe(
+  const effect: E.Effect<Response, ServiceError> = pipe(
     // 1. Try to parse the request body
     E.tryPromise({
-      try: () => request.json() as Promise<{ tool?: string; params?: unknown; useSDK?: boolean }>,
+      try: () =>
+        request.json() as Promise<{
+          tool?: string;
+          params?: unknown;
+          useSDK?: boolean;
+          name?: string; // For SDK format
+          arguments?: unknown; // For SDK format
+        }>,
       catch: (unknown) =>
         new ServiceError({
           code: 'REQUEST_PARSE_ERROR',
@@ -55,8 +66,30 @@ export const POST: RequestHandler = async ({ request }) => {
           cause: unknown
         })
     }),
-    // 2. Validate that the 'tool' field is present
+    // 2. Validate and process the request
     E.flatMap((body) => {
+      // If using SDK format, use the centralized MCP host service
+      if (body.useSDK === true) {
+        const toolName = body.name || body.tool; // Support both formats
+        const toolArgs = body.arguments || body.params || {};
+        
+        if (!toolName) {
+          return E.fail(
+            new ServiceError({
+              code: 'MISSING_TOOL_FIELD',
+              message: 'Missing or invalid required field: name or tool'
+            })
+          );
+        }
+        
+        // Use the MCPHostServiceLive to process the tool call
+        return pipe(
+          MCPHostServiceLive.callToolAcrossProviders(toolName, toolArgs),
+          E.map((result) => json({ result }, { status: 200 }))
+        );
+      }
+
+      // For direct provider calls, validate the tool field
       if (!body || typeof body.tool !== 'string' || body.tool.trim() === '') {
         return E.fail(
           new ServiceError({
@@ -65,58 +98,14 @@ export const POST: RequestHandler = async ({ request }) => {
           })
         );
       }
-      return E.succeed({
-        tool: body.tool,
-        params: (body.params as Record<string, unknown>) || {},
-        useSDK: body.useSDK || false
-      });
-    }),
-    // 3. Call the Crawl4AI provider tool (either directly or via SDK)
-    E.flatMap(({ tool, params, useSDK }) => {
-      if (useSDK) {
-        // Use the official MCP SDK
-        return pipe(
-          // Create the SDK client
-          E.try({
-            try: () =>
-              new Client({
-                name: 'WebInsight Crawl4AI Server',
-                version: '1.0.0',
-                serverUrl: 'http://localhost:3000/api/mcp'
-              }),
-            catch: (error) =>
-              new ServiceError({
-                code: 'SDK_CLIENT_ERROR',
-                message: 'Failed to create MCP SDK client',
-                cause: error
-              })
-          }),
-          // Call the tool using the SDK
-          E.flatMap((client) =>
-            E.tryPromise({
-              try: async () => {
-                const result = await client.callTool({
-                  name: tool,
-                  arguments: params
-                });
-                return result;
-              },
-              catch: (error) =>
-                new ServiceError({
-                  code: 'SDK_CALL_ERROR',
-                  message: `Error calling tool '${tool}' with MCP SDK`,
-                  cause: error
-                })
-            })
-          )
-        );
-      }
+      
       // Use the direct provider call
-      return Crawl4AIProvider.callTool(tool, params);
+      return pipe(
+        Crawl4AIProvider.callTool(body.tool, (body.params as Record<string, unknown>) || {}),
+        E.map((result) => json({ result }, { status: 200 }))
+      );
     }),
-    // 4. Map success to a 200 JSON response
-    E.map((result) => json({ result }, { status: 200 })),
-    // 5. Catch specific Crawl4AI errors and map to 400/500 responses
+    // 3. Catch specific Crawl4AI errors and map to 400/500 responses
     E.catchSome((error) => {
       if (error instanceof Crawl4AIMCPError) {
         console.error(`Crawl4AI MCP Error (${error.code}):`, error.message, error.cause);
@@ -129,7 +118,7 @@ export const POST: RequestHandler = async ({ request }) => {
       }
       return Option.none(); // Let other errors fall through
     }),
-    // 6. Catch any remaining ServiceErrors (like parsing or missing field)
+    // 4. Catch any remaining ServiceErrors (like parsing or missing field)
     E.catchSome((error) => {
       if (error instanceof ServiceError) {
         console.error(`Service Error (${error.code}):`, error.message, error.cause);
@@ -139,7 +128,7 @@ export const POST: RequestHandler = async ({ request }) => {
       }
       return Option.none(); // Let other errors fall through
     }),
-    // 7. Catch any unexpected errors
+    // 5. Catch any unexpected errors
     E.catchAll((error) => {
       console.error('Unexpected error calling Crawl4AI tool:', error);
       const message = error instanceof Error ? error.message : String(error);

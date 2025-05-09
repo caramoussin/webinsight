@@ -12,13 +12,13 @@
  */
 
 import { Effect, Schema as S, pipe } from 'effect';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { ServiceError, effectFetch } from '$lib/utils/effect';
-import type {
-  ExtractContentInput,
-  ExtractContentOutput,
-  CheckRobotsTxtOutput
-} from '$lib/server/mcp/crawl4ai/schemas';
+import type { CheckRobotsTxtOutput, ExtractContentOutput } from '@/lib/server/mcp/crawl4ai/schemas';
+
+// Define content-type headers for API requests
+const JSON_HEADERS = {
+  'Content-Type': 'application/json'
+} as const;
 
 // Define client-facing schemas using Effect Schema
 
@@ -76,38 +76,15 @@ export type RobotsCheckResponse = S.Schema.Type<typeof RobotsCheckResponseSchema
  * using the unified MCP structure and Effect Schema for validation.
  */
 export class MCPCrawl4AIClient {
-  // Use the main MCP API route instead of the Crawl4AI-specific route
-  private static readonly MCP_API_URL = '/api/mcp';
-  private static readonly MCP_SERVER_URL = 'http://localhost:3000/api/mcp'; // For SDK client
+  // Use the Crawl4AI-specific MCP API route
+  private static readonly MCP_API_URL = '/api/mcp/crawl4ai';
 
   // No constructor needed as we're using static methods with Effect TS patterns
 
   /**
-   * Create an SDK-based MCP client for official MCP connections
-   * @returns Effect with the MCP client
-   */
-  static createSDKClient(): Effect.Effect<Client, ServiceError> {
-    return Effect.try({
-      try: () => {
-        return new Client({
-          name: 'WebInsight Crawl4AI Client',
-          version: '1.0.0',
-          serverUrl: this.MCP_SERVER_URL
-        });
-      },
-      catch: (error) =>
-        new ServiceError({
-          code: 'MCP_CLIENT_ERROR',
-          message: 'Failed to create MCP SDK client',
-          cause: error
-        })
-    });
-  }
-
-  /**
    * Extract content from a URL using Crawl4AI via MCP API route
    *
-   * This method calls the MCP API route, which interfaces with the MCP host
+   * This method calls the Crawl4AI-specific MCP API route, which interfaces with the MCP host
    * to access the Crawl4AI provider. This maintains the layered architecture
    * while leveraging the unified MCP structure.
    *
@@ -129,43 +106,74 @@ export class MCPCrawl4AIClient {
           })
       ),
 
-      // Map client options to MCP service options
-      Effect.map(
-        (validOptions) =>
-          ({
-            url: validOptions.url,
-            selectors: validOptions.mode === 'raw' ? { include_html: true } : undefined
-          }) as ExtractContentInput
-      ),
-
-      // Make request to MCP API
-      Effect.flatMap((serviceParams) =>
-        effectFetch<{ result: ExtractContentOutput }>(`${MCPCrawl4AIClient.MCP_API_URL}`, {
+      // Call the MCP API route
+      Effect.flatMap((validOptions) =>
+        effectFetch(MCPCrawl4AIClient.MCP_API_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: JSON_HEADERS,
           body: JSON.stringify({
             tool: 'extractContent',
-            provider: 'crawl4ai', // Specify the provider for the main MCP API route
-            params: serviceParams
+            params: {
+              url: validOptions.url,
+              options: {
+                mode: validOptions.mode,
+                includeMetadata: validOptions.includeMetadata
+              }
+            }
           })
         })
       ),
 
-      // Map service response to client response
-      Effect.map(
-        (response) =>
-          ({
-            content: response.result.content.markdown,
-            metadata: {}
-          }) as ExtractionResponse
-      )
+      // Parse the response
+      Effect.flatMap((response) =>
+        Effect.tryPromise({
+          try: () => (response as Response).json(),
+          catch: (error) =>
+            new ServiceError({
+              code: 'RESPONSE_PARSE_ERROR',
+              message: 'Failed to parse API response',
+              cause: error
+            })
+        })
+      ),
+
+      // Extract the result from the response
+      Effect.flatMap((data: { result?: ExtractContentOutput; error?: string }) => {
+        if (data.error) {
+          return Effect.fail(
+            new ServiceError({
+              code: 'API_ERROR',
+              message: data.error
+            })
+          );
+        }
+
+        if (!data.result) {
+          return Effect.fail(
+            new ServiceError({
+              code: 'MISSING_RESULT',
+              message: 'API response missing result field'
+            })
+          );
+        }
+
+        // Extract content and metadata from the result
+        const content = data.result.content.markdown || '';
+        const metadata = data.result.metadata || {};
+
+        // Return the extraction response
+        return Effect.succeed({
+          content,
+          metadata
+        });
+      })
     );
   }
 
   /**
    * Check if a URL is allowed by robots.txt using Crawl4AI via MCP API route
    *
-   * This method calls the MCP API route, which interfaces with the MCP host
+   * This method calls the Crawl4AI-specific MCP API route, which interfaces with the MCP host
    * to access the Crawl4AI provider. This maintains the layered architecture
    * while leveraging the unified MCP structure.
    *
@@ -178,44 +186,77 @@ export class MCPCrawl4AIClient {
     userAgent?: string
   ): Effect.Effect<RobotsCheckResponse, ServiceError> {
     return pipe(
-      // Create and validate parameters
-      S.decode(RobotsCheckOptionsSchema)({
-        url,
-        userAgent
-      }),
+      // Validate URL with Effect Schema
+      S.decode(S.String.pipe(S.pattern(/^https?:\/\/.+/)))(url),
       Effect.mapError(
         (error) =>
           new ServiceError({
-            code: 'INVALID_PARAMETERS',
-            message: 'Invalid robots.txt check parameters',
+            code: 'INVALID_URL',
+            message: 'Invalid URL format',
             cause: error
           })
       ),
 
-      // Make request to MCP API
-      Effect.flatMap((params) =>
-        effectFetch<{ result: CheckRobotsTxtOutput }>(`${MCPCrawl4AIClient.MCP_API_URL}`, {
+      // Call the MCP API route
+      Effect.flatMap((validUrl) =>
+        effectFetch(MCPCrawl4AIClient.MCP_API_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: JSON_HEADERS,
           body: JSON.stringify({
             tool: 'checkRobotsTxt',
-            provider: 'crawl4ai', // Specify the provider for the main MCP API route
-            params
+            params: {
+              url: validUrl,
+              userAgent: userAgent
+            }
           })
         })
       ),
 
-      // Map service response to client response and ensure type safety
-      Effect.map((response) => {
-        return {
-          allowed: response.result.allowed,
-          message: response.result.error
-        } as RobotsCheckResponse;
+      // Parse the response
+      Effect.flatMap((response) =>
+        Effect.tryPromise({
+          try: () =>
+            (response as Response).json() as Promise<{
+              result?: CheckRobotsTxtOutput;
+              error?: string;
+            }>,
+          catch: (error) =>
+            new ServiceError({
+              code: 'RESPONSE_PARSE_ERROR',
+              message: 'Failed to parse API response',
+              cause: error
+            })
+        })
+      ),
+
+      // Extract the result from the response
+      Effect.flatMap((data: { result?: CheckRobotsTxtOutput; error?: string }) => {
+        if (data.error) {
+          return Effect.fail(
+            new ServiceError({
+              code: 'API_ERROR',
+              message: data.error
+            })
+          );
+        }
+
+        if (!data.result) {
+          return Effect.fail(
+            new ServiceError({
+              code: 'MISSING_RESULT',
+              message: 'API response missing result field'
+            })
+          );
+        }
+
+        // Return the robots check response
+        return Effect.succeed({
+          allowed: data.result.allowed,
+          message: data.result.error
+        });
       })
     );
   }
-
-  // Instance methods for direct MCP client usage with the official SDK
 
   /**
    * Extract content from a URL using MCP tool (API route approach)
@@ -246,62 +287,6 @@ export class MCPCrawl4AIClient {
     );
 
   /**
-   * Extract content from a URL using the official MCP SDK
-   * @param url The URL to extract content from
-   * @param mode The mode of content extraction
-   * @param includeMetadata Whether to include metadata in the response
-   * @returns Effect with the extracted content or error
-   */
-  extractContentWithSDK = (
-    url: string,
-    mode: 'raw' | 'markdown' | 'text' = 'markdown',
-    includeMetadata = true
-  ): Effect.Effect<ExtractionResponse, ServiceError> =>
-    pipe(
-      // Create options object
-      S.decode(ExtractionOptionsSchema)({ url, mode, includeMetadata }),
-      Effect.mapError(
-        (error) =>
-          new ServiceError({
-            code: 'INVALID_PARAMETERS',
-            message: 'Invalid extraction options',
-            cause: error
-          })
-      ),
-
-      // Create SDK client
-      Effect.flatMap(() => MCPCrawl4AIClient.createSDKClient()),
-
-      // Call the tool using the SDK client
-      Effect.flatMap((client) =>
-        Effect.tryPromise({
-          try: async () => {
-            const result = await client.callTool({
-              name: 'extractContent',
-              arguments: {
-                url,
-                mode,
-                includeMetadata
-              }
-            });
-
-            // Convert SDK response to ExtractionResponse
-            return {
-              content: result.content,
-              metadata: result.metadata || {}
-            } as ExtractionResponse;
-          },
-          catch: (error) =>
-            new ServiceError({
-              code: 'SDK_CALL_ERROR',
-              message: 'Error calling extractContent with MCP SDK',
-              cause: error
-            })
-        })
-      )
-    );
-
-  /**
    * Check if URL is allowed by robots.txt (API route approach)
    * @param url The URL to check
    * @param userAgent Optional user agent string
@@ -312,48 +297,6 @@ export class MCPCrawl4AIClient {
     userAgent?: string
   ): Effect.Effect<RobotsCheckResponse, ServiceError> =>
     MCPCrawl4AIClient.checkRobotsTxt(url, userAgent);
-
-  /**
-   * Check if URL is allowed by robots.txt using the official MCP SDK
-   * @param url The URL to check
-   * @param userAgent Optional user agent string
-   * @returns Effect with the robots.txt check result or error
-   */
-  checkRobotsTxtWithSDK = (
-    url: string,
-    userAgent?: string
-  ): Effect.Effect<RobotsCheckResponse, ServiceError> =>
-    pipe(
-      // Create SDK client
-      MCPCrawl4AIClient.createSDKClient(),
-
-      // Call the tool using the SDK client
-      Effect.flatMap((client) =>
-        Effect.tryPromise({
-          try: async () => {
-            const result = await client.callTool({
-              name: 'checkRobotsTxt',
-              arguments: {
-                url,
-                userAgent
-              }
-            });
-
-            // Convert SDK response to RobotsCheckResponse
-            return {
-              allowed: result.allowed,
-              message: result.message
-            } as RobotsCheckResponse;
-          },
-          catch: (error) =>
-            new ServiceError({
-              code: 'SDK_CALL_ERROR',
-              message: 'Error calling checkRobotsTxt with MCP SDK',
-              cause: error
-            })
-        })
-      )
-    );
 }
 
 export const createMCPCrawl4AIClient = () => new MCPCrawl4AIClient();

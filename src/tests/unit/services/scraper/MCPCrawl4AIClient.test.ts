@@ -32,19 +32,16 @@ describe('MCPCrawl4AIClient', () => {
   describe('extractContent', () => {
     const mockExtractOptions = {
       url: 'https://example.com',
-      headless: true,
-      verbose: false,
-      use_cache: true,
-      check_robots_txt: true,
-      respect_rate_limits: true
+      mode: 'markdown' as const,
+      includeMetadata: true
     };
 
     const mockExtractResponse = {
       result: {
         content: {
           markdown: '# Example Content',
-          raw_markdown: '# Example Content',
-          html: '<h1>Example Content</h1>'
+          html: '<h1>Example Content</h1>',
+          raw_markdown: '# Example Content'
         },
         metadata: {
           url: 'https://example.com'
@@ -53,14 +50,24 @@ describe('MCPCrawl4AIClient', () => {
     };
 
     it('should successfully extract content from a URL', async () => {
-      // Mock the effectFetch response
-      vi.mocked(effectFetch).mockReturnValue(E.succeed(mockExtractResponse));
+      // Create a spy implementation for json() that returns the mock response
+      const jsonSpy = vi.fn().mockResolvedValue(mockExtractResponse);
+      
+      // Mock the effectFetch response with a proper Response-like object
+      vi.mocked(effectFetch).mockReturnValue(
+        E.succeed({
+          json: jsonSpy
+        } as unknown as Response)
+      );
 
       // Call the extractContent method
       const result = await E.runPromise(MCPCrawl4AIClient.extractContent(mockExtractOptions));
 
-      // Verify the result
-      expect(result).toEqual(mockExtractResponse.result);
+      // Verify the result - the implementation extracts content.markdown and returns it as content
+      expect(result).toEqual({
+        content: mockExtractResponse.result.content.markdown,
+        metadata: mockExtractResponse.result.metadata
+      });
 
       // Verify that effectFetch was called with the correct arguments
       expect(effectFetch).toHaveBeenCalledWith('/api/mcp/crawl4ai', {
@@ -68,7 +75,13 @@ describe('MCPCrawl4AIClient', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tool: 'extractContent',
-          params: mockExtractOptions
+          params: {
+            url: mockExtractOptions.url,
+            options: {
+              mode: mockExtractOptions.mode,
+              includeMetadata: mockExtractOptions.includeMetadata
+            }
+          }
         })
       });
     });
@@ -85,14 +98,8 @@ describe('MCPCrawl4AIClient', () => {
         await E.runPromise(
           MCPCrawl4AIClient.extractContent({
             url: 'https://example.com',
-            selectors: {
-              base_selector: 'h1'
-            },
-            headless: true,
-            verbose: false,
-            use_cache: false,
-            check_robots_txt: true,
-            respect_rate_limits: true
+            mode: 'markdown' as const,
+            includeMetadata: true
           })
         );
         // If we get here, the test should fail because we expected an error
@@ -115,14 +122,8 @@ describe('MCPCrawl4AIClient', () => {
         await E.runPromise(
           MCPCrawl4AIClient.extractContent({
             url: 'https://example.com',
-            selectors: {
-              base_selector: 'h1'
-            },
-            headless: true,
-            verbose: false,
-            use_cache: false,
-            check_robots_txt: true,
-            respect_rate_limits: true
+            mode: 'markdown' as const,
+            includeMetadata: true
           })
         );
         // If we get here, the test should fail because we expected an error
@@ -149,14 +150,8 @@ describe('MCPCrawl4AIClient', () => {
         await E.runPromise(
           MCPCrawl4AIClient.extractContent({
             url: 'https://example.com',
-            selectors: {
-              base_selector: 'h1'
-            },
-            headless: true,
-            verbose: false,
-            use_cache: false,
-            check_robots_txt: true,
-            respect_rate_limits: true
+            mode: 'markdown' as const,
+            includeMetadata: true,
           })
         );
         // If we get here, the test should fail because we expected an error
@@ -202,15 +197,17 @@ describe('MCPCrawl4AIClient', () => {
     const mockRobotsResponse = {
       result: {
         allowed: true,
-        url: 'https://example.com',
-        robots_url: 'https://example.com/robots.txt',
-        user_agent: 'Mozilla/5.0'
+        message: undefined
       }
     };
 
     it('should successfully check robots.txt for a URL', async () => {
-      // Mock the effectFetch response
-      vi.mocked(effectFetch).mockReturnValue(E.succeed(mockRobotsResponse));
+      // Mock the effectFetch response with a proper Response-like object
+      vi.mocked(effectFetch).mockReturnValue(
+        E.succeed({
+          json: () => Promise.resolve(mockRobotsResponse)
+        } as unknown as Response)
+      );
 
       // Call the checkRobotsTxt method
       const result = await E.runPromise(
@@ -228,20 +225,24 @@ describe('MCPCrawl4AIClient', () => {
           tool: 'checkRobotsTxt',
           params: {
             url: 'https://example.com',
-            user_agent: 'Mozilla/5.0'
+            userAgent: 'Mozilla/5.0'
           }
         })
       });
     });
 
     it('should handle missing user agent', async () => {
-      // Mock the effectFetch response
-      vi.mocked(effectFetch).mockReturnValue(E.succeed(mockRobotsResponse));
+      // Mock the effectFetch response with a proper Response-like object
+      vi.mocked(effectFetch).mockReturnValue(
+        E.succeed({
+          json: () => Promise.resolve(mockRobotsResponse)
+        } as unknown as Response)
+      );
 
       // Call the checkRobotsTxt method without a user agent
       await E.runPromise(MCPCrawl4AIClient.checkRobotsTxt('https://example.com'));
 
-      // Verify that effectFetch was called with the correct arguments (no user_agent)
+      // Verify that effectFetch was called with the correct arguments (no userAgent)
       expect(effectFetch).toHaveBeenCalledWith('/api/mcp/crawl4ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -305,221 +306,7 @@ describe('MCPCrawl4AIClient', () => {
     });
   });
 
-  describe('createSelectorConfig', () => {
-    it('should create a selector config with all parameters', () => {
-      const result = MCPCrawl4AIClient.createSelectorConfig(
-        'article',
-        ['.content', '.body'],
-        ['.ads', '.sidebar']
-      );
+  // Note: createSelectorConfig tests removed as this method is no longer part of the MCPCrawl4AIClient class
 
-      expect(result).toEqual({
-        base_selector: 'article',
-        include_selectors: ['.content', '.body'],
-        exclude_selectors: ['.ads', '.sidebar']
-      });
-    });
-
-    it('should create a selector config with only base selector', () => {
-      const result = MCPCrawl4AIClient.createSelectorConfig('article');
-
-      expect(result).toEqual({
-        base_selector: 'article'
-      });
-    });
-
-    it('should create a selector config with only include selectors', () => {
-      const result = MCPCrawl4AIClient.createSelectorConfig(undefined, ['.content', '.body']);
-
-      expect(result).toEqual({
-        include_selectors: ['.content', '.body']
-      });
-    });
-
-    it('should create a selector config with only exclude selectors', () => {
-      const result = MCPCrawl4AIClient.createSelectorConfig(undefined, undefined, [
-        '.ads',
-        '.sidebar'
-      ]);
-
-      expect(result).toEqual({
-        exclude_selectors: ['.ads', '.sidebar']
-      });
-    });
-  });
-
-  describe('createExtractionSchemaField', () => {
-    it('should create an extraction schema field with all parameters', () => {
-      const result = MCPCrawl4AIClient.createExtractionSchemaField(
-        'image',
-        'img.hero',
-        'attribute',
-        'src'
-      );
-
-      expect(result).toEqual({
-        name: 'image',
-        selector: 'img.hero',
-        type: 'attribute',
-        attribute: 'src'
-      });
-    });
-
-    it('should create an extraction schema field without attribute', () => {
-      const result = MCPCrawl4AIClient.createExtractionSchemaField('title', 'h1', 'text');
-
-      expect(result).toEqual({
-        name: 'title',
-        selector: 'h1',
-        type: 'text'
-      });
-    });
-  });
-
-  describe('createExtractionSchema', () => {
-    it('should create an extraction schema', () => {
-      const fields = [
-        MCPCrawl4AIClient.createExtractionSchemaField('title', 'h1', 'text'),
-        MCPCrawl4AIClient.createExtractionSchemaField('content', 'p', 'text')
-      ];
-
-      const result = MCPCrawl4AIClient.createExtractionSchema('article', 'article', fields);
-
-      expect(result).toEqual({
-        name: 'article',
-        base_selector: 'article',
-        fields
-      });
-    });
-
-    it('should create a complex extraction schema with multiple field types', () => {
-      // Create a more complex extraction schema with multiple field types and nested selectors
-      const fields = [
-        MCPCrawl4AIClient.createExtractionSchemaField('title', 'h1.main-title', 'text'),
-        MCPCrawl4AIClient.createExtractionSchemaField('subtitle', 'h2.subtitle', 'text'),
-        MCPCrawl4AIClient.createExtractionSchemaField('content', 'div.content p', 'html'),
-        MCPCrawl4AIClient.createExtractionSchemaField(
-          'image',
-          'img.hero-image',
-          'attribute',
-          'src'
-        ),
-        MCPCrawl4AIClient.createExtractionSchemaField('author', '.author-info .name', 'text'),
-        MCPCrawl4AIClient.createExtractionSchemaField(
-          'date',
-          'time.published-date',
-          'attribute',
-          'datetime'
-        ),
-        MCPCrawl4AIClient.createExtractionSchemaField('tags', '.tags .tag', 'text'),
-        MCPCrawl4AIClient.createExtractionSchemaField('category', '.category-label', 'text'),
-        MCPCrawl4AIClient.createExtractionSchemaField(
-          'comments',
-          '.comments-section .comment',
-          'html'
-        )
-      ];
-
-      const result = MCPCrawl4AIClient.createExtractionSchema(
-        'article',
-        'article.blog-post',
-        fields
-      );
-
-      // Verify the complex schema was created correctly
-      expect(result).toEqual({
-        name: 'article',
-        base_selector: 'article.blog-post',
-        fields
-      });
-
-      // Verify the number of fields
-      expect(result.fields.length).toBe(9);
-
-      // Verify specific fields
-      expect(result.fields[0]).toEqual({
-        name: 'title',
-        selector: 'h1.main-title',
-        type: 'text'
-      });
-
-      expect(result.fields[3]).toEqual({
-        name: 'image',
-        selector: 'img.hero-image',
-        type: 'attribute',
-        attribute: 'src'
-      });
-    });
-
-    it('should create an extraction schema for a complex e-commerce product page', () => {
-      // Create a schema for extracting product information from an e-commerce page
-      const fields = [
-        MCPCrawl4AIClient.createExtractionSchemaField('productName', '.product-title', 'text'),
-        MCPCrawl4AIClient.createExtractionSchemaField(
-          'price',
-          '.product-price .current-price',
-          'text'
-        ),
-        MCPCrawl4AIClient.createExtractionSchemaField(
-          'originalPrice',
-          '.product-price .original-price',
-          'text'
-        ),
-        MCPCrawl4AIClient.createExtractionSchemaField(
-          'discount',
-          '.product-price .discount-percentage',
-          'text'
-        ),
-        MCPCrawl4AIClient.createExtractionSchemaField(
-          'rating',
-          '.product-rating',
-          'attribute',
-          'data-rating'
-        ),
-        MCPCrawl4AIClient.createExtractionSchemaField('reviewCount', '.review-count', 'text'),
-        MCPCrawl4AIClient.createExtractionSchemaField(
-          'availability',
-          '.product-availability',
-          'text'
-        ),
-        MCPCrawl4AIClient.createExtractionSchemaField(
-          'description',
-          '.product-description',
-          'html'
-        ),
-        MCPCrawl4AIClient.createExtractionSchemaField('features', '.product-features li', 'text'),
-        MCPCrawl4AIClient.createExtractionSchemaField(
-          'images',
-          '.product-gallery img',
-          'attribute',
-          'src'
-        ),
-        MCPCrawl4AIClient.createExtractionSchemaField(
-          'variants',
-          '.product-variants .variant',
-          'text'
-        ),
-        MCPCrawl4AIClient.createExtractionSchemaField('brand', '.product-brand', 'text'),
-        MCPCrawl4AIClient.createExtractionSchemaField('sku', '.product-sku', 'text'),
-        MCPCrawl4AIClient.createExtractionSchemaField('shippingInfo', '.shipping-info', 'html'),
-        MCPCrawl4AIClient.createExtractionSchemaField('returnPolicy', '.return-policy', 'html')
-      ];
-
-      const result = MCPCrawl4AIClient.createExtractionSchema(
-        'product',
-        '.product-container',
-        fields
-      );
-
-      // Verify the e-commerce schema was created correctly
-      expect(result).toEqual({
-        name: 'product',
-        base_selector: '.product-container',
-        fields
-      });
-
-      // Verify the number of fields
-      expect(result.fields.length).toBe(15);
-    });
-  });
+  // Note: createExtractionSchemaField and createExtractionSchema tests removed as these methods are no longer part of the MCPCrawl4AIClient class
 });

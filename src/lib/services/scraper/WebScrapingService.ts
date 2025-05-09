@@ -120,17 +120,8 @@ export class WebScrapingService {
       includeMetadata: true
     } as ExtractionOptions;
 
-    // Create an instance of MCPCrawl4AIClient for instance methods
-    const client = new MCPCrawl4AIClient();
-
-    // Choose between SDK and API route approach based on config
-    const extractionEffect = config.useSDK
-      ? client.extractContentWithSDK(
-          extractionOptions.url,
-          extractionOptions.mode,
-          extractionOptions.includeMetadata
-        )
-      : MCPCrawl4AIClient.extractContent(extractionOptions);
+    // Use the static method to extract content via the API route
+    const extractionEffect = MCPCrawl4AIClient.extractContent(extractionOptions);
 
     return pipe(
       extractionEffect,
@@ -307,22 +298,12 @@ export class WebScrapingService {
    * Check robots.txt rules using the unified MCPCrawl4AIClient
    * @param url The URL to check
    * @param userAgent Optional user agent string
-   * @param useSDK Whether to use the official MCP SDK (default: false)
    * @returns Effect with boolean indicating if scraping is allowed
    */
-  static checkRobotsTxt(
-    url: string,
-    userAgent?: string,
-    useSDK = false
-  ): E.Effect<boolean, ServiceError> {
-    // Create an instance of MCPCrawl4AIClient for instance methods if using SDK
-    const client = useSDK ? new MCPCrawl4AIClient() : null;
-
+  static checkRobotsTxt(url: string, userAgent?: string): E.Effect<boolean, ServiceError> {
     return pipe(
-      // Choose between SDK and API route approach
-      useSDK
-        ? client!.checkRobotsTxtWithSDK(url, userAgent)
-        : MCPCrawl4AIClient.checkRobotsTxt(url, userAgent),
+      // Use the direct API route approach
+      MCPCrawl4AIClient.checkRobotsTxt(url, userAgent),
 
       // Extract the allowed property from the result
       E.map((result) => result.allowed),

@@ -4,10 +4,16 @@
  * This module provides a central registry for MCP providers and routes
  * tool calls to the appropriate provider. It serves as the main entry point
  * for accessing MCP capabilities throughout the application.
+ *
+ * This implementation uses the official MCP SDK for standardized integration.
  */
 
 import { Effect, Context, pipe } from 'effect';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { ServiceError } from '../../utils/effect';
+
+// Import provider registration functions
+import { registerCrawl4AIProvider } from './crawl4ai/sdk/provider';
 
 // Generic tool type that all providers must implement
 export type MCPTool = {
@@ -224,3 +230,30 @@ export const makeMCPHostService = (): MCPHostService => {
 
 // Create a live implementation of the service
 export const MCPHostServiceLive = makeMCPHostService();
+
+/**
+ * Initialize the MCP Server with the official SDK
+ *
+ * This creates an MCP server instance and registers all providers with it.
+ * The server can then be used to handle MCP requests from clients.
+ */
+export const createMCPServer = () => {
+  return Effect.gen(function* (_) {
+    // Create the MCP server
+    const server = new McpServer({
+      name: 'WebInsight MCP Server',
+      version: '1.0.0'
+    });
+
+    // Register providers with the server
+    yield* _(registerCrawl4AIProvider(server));
+
+    // Return the configured server
+    return server;
+  });
+};
+
+/**
+ * Singleton instance of the MCP server
+ */
+export const MCPServerLive = Effect.runSync(createMCPServer());

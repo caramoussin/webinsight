@@ -112,7 +112,42 @@ const addArticleToCollection = (collection, article) => ({
 - **Concurrency Management**: Harnessing Effect's Fiber system for efficient asynchronous operations
 - **Testability**: Leveraging Effect's pure nature for easier unit testing and mocking of dependencies
 
-## Core Architecture Layers
+## System Architecture
+
+### Alternative Framework Consideration: Tauri
+
+While the primary architecture for WebInsight is based on SvelteKit + Bun, providing a unified TypeScript full-stack environment, an alternative framework, Tauri, is under consideration for future phases (specifically Phase 5: Distribution & Polish).
+
+Tauri is a framework for building lightweight, cross-platform desktop applications using web technologies (like SvelteKit for the frontend) and a Rust backend. This approach offers several potential advantages:
+
+- **Reduced Application Size:** Tauri apps are typically much smaller as they leverage the operating system's native webview.
+- **Performance Enhancements:** Rust's performance can be beneficial for CPU-intensive backend tasks, including AI processing and data manipulation.
+- **Security Benefits:** Rust's memory safety features can enhance the overall security of the application.
+
+In a Tauri-based architecture for WebInsight:
+
+- The **frontend** would continue to be built with SvelteKit, rendered within Tauri's native webview.
+- The **backend** logic, currently in TypeScript (Effect TS), would be rewritten in Rust. This includes services like the `FeedService`, `HybridCAGService`, and interactions with the `Crawl4AI MCP Server` and `Fabric MCP Server`.
+- Communication between the SvelteKit frontend and the Rust backend would occur via **Inter-Process Communication (IPC)**, managed by Tauri, instead of SvelteKit's API routes or WebSocket handlers directly tied to the Node.js/Bun runtime.
+- Database interactions (SQLite with SQLCipher) would be handled by Rust ORMs or query builders (e.g., `sqlx`).
+- AI components like Milvus Lite would require Rust bindings or be accessed via FFI/microservices.
+
+The following diagram illustrates a conceptual Tauri-based architecture for WebInsight:
+
+```mermaid
+graph TD
+    A[User] --> B(SvelteKit Frontend in Tauri Webview)
+    B -->|IPC - Tauri Commands & Events| C{Rust Backend - Tauri Core Logic}
+    C --> D[SQLite Database - via sqlx + SQLCipher]
+    C --> E[Milvus Lite - Rust bindings or FFI/microservice]
+    C -->|HTTP Client - e.g., reqwest| F[Crawl4AI MCP Server - External]
+    C -->|HTTP Client - e.g., reqwest| G[Fabric MCP Server - External]
+    B -->|WebSocket - Handled by Rust Backend via IPC| C
+```
+
+This shift would represent a significant architectural change, moving from a JavaScript/TypeScript monolithic (or integrated full-stack) approach to a dual-stack model with distinct frontend and backend language ecosystems. The evaluation is primarily focused on leveraging Rust's strengths for performance-critical operations and Tauri's capabilities for efficient application packaging and distribution.
+
+### Core Architecture Layers
 
 ### 1. Frontend Layer (SvelteKit)
 

@@ -150,6 +150,9 @@
 - Should we implement a mechanism for sharing embeddings between profiles?
 - What is the optimal vector dimension for our use case (balancing accuracy and performance)?
 - Should we implement a mechanism for exporting and importing embeddings?
+- Should Tauri be prioritized for low-end hardware optimization, particularly for managing resources like Milvus Lite (NFR1.4)?
+- What is the most effective strategy for implementing AI integrations (transformers, Milvus Lite) in Rust while aligning with existing Fabric patterns (FR2.1.5)?
+- Is mobile application support via Tauri a viable path for future WebInsight expansion?
 
 ### 5.3 Known Challenges
 
@@ -168,3 +171,70 @@
 - Managing memory usage for transformer models and Milvus Lite on low-end hardware.
 - Ensuring consistent embedding quality across different content types.
 - Developing strategies for handling out-of-vocabulary terms in transformer models.
+
+## Evaluation of Tauri Framework
+
+### Overview
+
+Tauri is a lightweight, Rust-based framework for building cross-platform desktop applications using web technologies (HTML, CSS, JavaScript/TypeScript) for the frontend and Rust for the backend. It leverages the OS's native webview, contrasting with SvelteKit + Bun’s Node.js-based, unified TypeScript approach. This evaluation explores Tauri's potential benefits, trade-offs, and strategic fit for WebInsight.
+
+### Benefits
+
+Tauri offers several advantages aligned with WebInsight's goals:
+
+- **Smaller Application Size:** Significantly smaller (1–10 MB vs. 100–200 MB for Electron) by using native webviews, improving distribution and performance on lower-end hardware (NFR1).
+- **Improved Performance:** Rust backend and native webviews reduce memory usage and startup times. Rust's efficiency is beneficial for compute-intensive tasks like AI model execution (transformers, Milvus Lite) and vector operations (NFR1.1, NFR1.2, NFR1.4).
+- **Enhanced Security:** Rust's memory safety and Tauri's IPC boundaries offer stronger security, fitting WebInsight's privacy-first design (NFR3, FR4.3–FR4.4).
+- **Native OS Integration:** Access to native features like system tray and notifications (FR3.9), enabling seamless desktop integration.
+- **Offline Capabilities:** Ideal for offline-first applications due to lightweight architecture and file system access, supporting FR3.8.
+- **Potential Mobile Support:** Experimental mobile support could address future expansion (see Open Questions).
+
+### Trade-Offs
+
+Adopting Tauri also presents challenges:
+
+- **Backend Rewrite:** Core backend logic (services, AI integration, database access) currently in TypeScript (Effect TS, Drizzle ORM, @effect/ai) would need a significant rewrite in Rust.
+- **Loss of Unified Codebase:** Splits the codebase into JavaScript/TypeScript frontend and Rust backend, potentially increasing maintenance and complexity in areas like dependency injection and cross-language debugging.
+- **Frontend Compatibility:** SvelteKit's SSR capabilities would be limited; API routes would be replaced by Rust commands via IPC, requiring frontend adjustments (FR3.7).
+- **AI and Transformer Integration:** Replicating @effect/ai, Fabric patterns, and Milvus Lite integration in Rust is complex (FR2.1–FR2.6).
+- **Build and Deployment Complexity:** Rust compilation is slower and adds CI/CD complexity.
+- **Learning Curve & Ecosystem:** Rust has a steeper learning curve for TypeScript developers, and its tooling, while robust, is different.
+- **Risk to Timeline:** The refactoring effort could delay current roadmap targets (e.g., June 15, 2025 release for Phases 2-3).
+
+### Recommendation
+
+Continue with the SvelteKit + Bun architecture for Phases 2–4 to leverage rapid iteration, the existing unified TypeScript codebase, and Effect TS’s functional programming strengths.
+Evaluate Tauri seriously in **Phase 5 (Distribution & Polish)** via a Proof-of-Concept (PoC) to validate its benefits for WebInsight.
+
+### Migration Strategy (Proposed for Phase 5 Evaluation)
+
+If the PoC is successful, a phased migration could be considered:
+
+- **Phase 3 (AI Agents - Preparatory):** Prototype a small, performance-critical Rust-based service (e.g., a dedicated MilvusService or an embedding utility) to test Rust integration and performance (1–2 weeks, parallel effort).
+- **Phase 4 (Enhanced UX - PoC Development):** Develop a Tauri PoC with a limited feature set (e.g., manual fetch UI - FR1.8) and port a key service (e.g., HybridCAGService) to Rust to compare performance and development experience (3–4 weeks, parallel effort).
+- **Phase 5 (Distribution & Polish - Decision & Potential Migration):** Based on PoC outcomes, decide on Tauri adoption. If positive, a full backend migration to Rust could occur, retaining the SvelteKit frontend. This would also involve leveraging Tauri’s native features (system tray, updates) (6–8 weeks).
+- **Hybrid Approach (Alternative):** Explore using Rust for specific microservices (e.g., for Milvus Lite or heavy AI computations) integrated with the existing SvelteKit + Bun backend, or using Tauri as a lightweight shell for the SvelteKit application. This could offer a balance of benefits with less disruption (2–3 weeks evaluation).
+
+### Alignment with Requirements
+
+| Requirement                 | SvelteKit + Bun                                  | Tauri (Potential with Rust Backend)             |
+|-----------------------------|--------------------------------------------------|-------------------------------------------------|
+| NFR1: Performance           | Moderate (TypeScript runtime, Bun helps)         | High (Rust efficiency for backend tasks)        |
+| NFR1.4: Low-end Hardware    | Standard; Milvus Lite usage a concern (<2GB RAM) | Improved potential due to smaller app & Rust    |
+| NFR3: Privacy / Security    | Strong (Local-first, SQLCipher, Effect TS)       | Potentially Enhanced (Rust memory safety, IPC)  |
+| FR2.1-FR2.6: AI Integration | Mature & unified (Effect TS, @effect/ai)         | Complex (Requires Rust rewrite/bindings for AI) |
+| FR3.7: Real-time (IPC)      | WebSockets with SvelteKit backend                | IPC via Rust; WebSockets need Rust server       |
+| FR4.3-FR4.4: Encryption     | SQLCipher via Drizzle (TypeScript)               | SQLCipher via Rust ORM (e.g., sqlx)             |
+| Modularity (NFR5)           | Good (Effect TS Layers, SvelteKit modules)       | Strong (Rust crates, Tauri plugins); split stack|
+| Development Velocity        | High (Unified TypeScript, Bun, Effect TS)        | Potentially Slower (Rust learning, dual stack)  |
+
+## Roadmap
+
+### Phase 5: Distribution & Polish (Post-MVP Refinements)
+
+- **Evaluate Tauri Framework for Distribution & Performance:**
+  - Conduct a Proof-of-Concept (PoC) for packaging WebInsight with Tauri.
+  - Prototype key backend services in Rust to assess performance benefits and development effort.
+  - Investigate hybrid approaches (Rust microservices, Tauri shell).
+  - Dependencies: Rust development skills, updated CI/CD pipelines for Rust builds.
+  - Risks: Potential delays to other Phase 5 objectives if PoC/migration is extensive; learning curve for Rust.

@@ -526,11 +526,9 @@ graph TD
    - Result caching for MCP outputs
 
 5. Distribution
-   - Application bundling
-   - Installer creation
-   - Auto-update system
-   - Documentation
-   - Testing suite
+   - The goal is to provide WebInsight as a single executable bundle for each supported platform (Windows, macOS, Linux).
+   - **Current Approach (SvelteKit + Bun):** SvelteKit's adapter system, combined with Bun's bundling capabilities, aims to produce a self-contained application. Further investigation into tools like `pkg` or platform-specific bundlers might be needed to achieve a true single executable.
+   - **Future Consideration (Tauri):** For later project phases (e.g., Phase 5), Tauri is being evaluated as a packaging solution. Tauri excels at creating very small, native application bundles by leveraging the OS's webview and a Rust backend, which could significantly reduce the distributed application size and simplify installation.
 
 ## Pilot Implementation
 
@@ -711,3 +709,27 @@ Note: Timeline estimates are subject to adjustment based on development progress
 - Research-focused feed aggregation
 - Professional content monitoring
 - Personal knowledge management with MCP-enhanced AI
+
+## Tech Stack
+
+- SvelteKit (server-rendered)
+- Tailwind CSS for styling
+- shadcn-svelte components
+- WebSocket client for MCP status
+- Service workers
+- Local caching
+
+### Tech Stack Comparison: SvelteKit + Bun vs. Tauri (Potential Future)
+
+| Aspect                | SvelteKit + Bun (Current)                        | Tauri + SvelteKit + Rust (Potential Future)      |
+|-----------------------|--------------------------------------------------|----------------------------------------------------|
+| **Runtime**           | Bun (JavaScript/TypeScript runtime)              | OS Native Webview (frontend), Rust runtime (backend) |
+| **Backend Language**  | TypeScript (with Effect TS)                      | Rust                                               |
+| **Frontend Language** | TypeScript (SvelteKit)                           | TypeScript (SvelteKit)                             |
+| **Rendering**         | SSR (Server-Side Rendering) & CSR (Client-Side)  | Primarily CSR within Webview; Rust backend for API |
+| **Codebase**          | Unified Full-Stack (TypeScript)                  | Split: JS/TS Frontend, Rust Backend                |
+| **Core Strengths**    | Rapid iteration, unified language, large JS/TS ecosystem, Effect TS functional paradigm. | Smaller binaries, high performance (Rust), enhanced security (Rust), native OS features. |
+| **Distribution Size** | Moderate (Node.js runtime or equivalent bundled) | Very Small (native webview, compiled Rust)       |
+| **IPC**               | SvelteKit API Routes, WebSockets                 | Tauri IPC commands/events, Rust WebSocket handling |
+
+This comparison highlights the trade-offs between the current agile, unified stack and a potential future stack optimized for performance and distribution size with Tauri and Rust.

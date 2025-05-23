@@ -3,7 +3,8 @@
 /* Skeleton theme */
 @import '@skeletonlabs/skeleton';
 @import '@skeletonlabs/skeleton/optional/presets';
-@import '@skeletonlabs/skeleton/themes/wintry';
+
+@import './webinsight-theme.css';
 
 /* Dark mode configuration */
 @custom-variant dark (&:where([data-mode="dark"], [data-mode="dark"] *));

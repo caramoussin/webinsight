@@ -66,3 +66,4 @@ These rules guide the use of Skeleton UI v3 with Svelte, a design system built o
 - Refer to the [Skeleton UI Cookbook](https://next.skeleton.dev/docs/resources/cookbook) for practical examples.
 - For migration, consult community resources (e.g., [GitHub Discussions](https://github.com/skeletonlabs/skeleton/discussions)) until the official v3 migration guide is released.
 - For optimal support, use SvelteKit; vanilla Svelte is possible but not officially supported.
+- Read the LLM doc of Skeleton UI v3 everytime you need to clarofy something : https://www.skeleton.dev/llms-svelte.txt

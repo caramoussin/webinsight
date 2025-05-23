@@ -1,41 +1,41 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { Moon, Sun } from 'lucide-svelte';
 
-	let theme: 'light' | 'dark' = 'light';
+	let checked = $state(false);
+
+	// Initialize theme based on localStorage or system preference
+	$effect(() => {
+		// Check localStorage first
+		let mode = localStorage.getItem('mode');
+		
+		// If no stored preference, check system preference
+		if (!mode) {
+			const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+			mode = prefersDark ? 'dark' : 'light';
+			localStorage.setItem('mode', mode);
+		}
+		
+		// Apply the theme
+		checked = mode === 'dark';
+		document.documentElement.setAttribute('data-mode', mode);
+	});
 
 	function toggleTheme() {
-		theme = theme === 'light' ? 'dark' : 'light';
-		localStorage.setItem('theme', theme);
-		applyTheme();
+		const mode = checked ? 'dark' : 'light';
+		document.documentElement.setAttribute('data-mode', mode);
+		localStorage.setItem('mode', mode);
 	}
-
-	function applyTheme() {
-		if (theme === 'dark') {
-			document.documentElement.classList.add('dark');
-		} else {
-			document.documentElement.classList.remove('dark');
-		}
-	}
-
-	onMount(() => {
-		const savedTheme = localStorage.getItem('theme') as 'light' | 'dark';
-		if (savedTheme) {
-			theme = savedTheme;
-		} else {
-			// Check system preference
-			theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-		}
-		applyTheme();
-	});
 </script>
 
 <button
-	on:click={toggleTheme}
-	class="hover:bg-accent rounded-full p-2 transition-colors"
+	class="btn-icon variant-ghost-surface hover:variant-soft-primary"
+	onclick={() => {
+		checked = !checked;
+		toggleTheme();
+	}}
 	aria-label="Toggle theme"
 >
-	{#if theme === 'light'}
+	{#if !checked}
 		<Moon class="h-5 w-5" />
 	{:else}
 		<Sun class="h-5 w-5" />

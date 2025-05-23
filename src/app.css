@@ -1,7 +1,9 @@
 @import 'tailwindcss';
 
+/* Skeleton theme */
 @import '@skeletonlabs/skeleton';
 @import '@skeletonlabs/skeleton/optional/presets';
-@import '@skeletonlabs/skeleton/themes/cerberus';
+@import '@skeletonlabs/skeleton/themes/wintry';
 
-@source '../node_modules/@skeletonlabs/skeleton-svelte/dist';
+/* Dark mode configuration */
+@custom-variant dark (&:where([data-mode="dark"], [data-mode="dark"] *));

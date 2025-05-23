@@ -11,12 +11,21 @@
 	let { children } = $props();
 </script>
 
-<div class="flex h-screen overflow-hidden bg-background text-foreground">
-	<Sidebar />
-	<div class="flex flex-1 flex-col overflow-hidden">
-		<Header />
-		<main class="flex-1 overflow-auto p-6">
-			{@render children()}
-		</main>
+<div class="h-screen overflow-hidden">
+	<div class="flex h-full">
+		<!-- Sidebar -->
+		<div class="w-64 overflow-y-auto">
+			<Sidebar />
+		</div>
+
+		<!-- Main content -->
+		<div class=" flex flex-1 flex-col overflow-hidden">
+			<Header />
+			<main class=" dark:bg-surface-950 flex-1 overflow-auto p-4 dark:text-white">
+				<div class="container mx-auto">
+					{@render children()}
+				</div>
+			</main>
+		</div>
 	</div>
 </div>

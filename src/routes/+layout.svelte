@@ -11,7 +11,7 @@
 	let { children } = $props();
 </script>
 
-<div class="h-screen overflow-hidden">
+<div class="bg-surface-50 dark:bg-surface-950 h-screen overflow-hidden">
 	<div class="flex h-full">
 		<!-- Sidebar -->
 		<div class="w-64 overflow-y-auto">
@@ -21,7 +21,7 @@
 		<!-- Main content -->
 		<div class=" flex flex-1 flex-col overflow-hidden">
 			<Header />
-			<main class=" dark:bg-surface-950 flex-1 overflow-auto p-4 dark:text-white">
+			<main class=" flex-1 overflow-auto p-4">
 				<div class="container mx-auto">
 					{@render children()}
 				</div>

@@ -2,17 +2,15 @@
 	import { page } from '$app/state';
 </script>
 
-<div class="h-full bg-surface-800-300-token flex flex-col">
+<div class="bg-surface-800-300-token flex h-full flex-col">
 	<div class="p-4 text-2xl font-bold">WebInsight</div>
 
-	<nav class="list-nav flex-1 p-2">
-		<ul>
+	<nav class="list-nav flex-1 p-4">
+		<ul class="flex h-full flex-col justify-evenly">
 			<li>
 				<a
 					href="/"
-					class={page.url.pathname === '/'
-						? 'variant-filled-primary'
-						: 'hover:variant-soft-primary'}
+					class={page.url.pathname === '/' ? 'text-primary-500' : 'hover:text-primary-300'}
 				>
 					Home
 				</a>
@@ -21,8 +19,8 @@
 				<a
 					href="/feeds"
 					class={page.url.pathname.startsWith('/feeds')
-						? 'variant-filled-primary'
-						: 'hover:variant-soft-primary'}
+						? 'text-primary-500'
+						: 'hover:text-primary-300'}
 				>
 					Feeds
 				</a>
@@ -31,8 +29,8 @@
 				<a
 					href="/collections"
 					class={page.url.pathname.startsWith('/collections')
-						? 'variant-filled-primary'
-						: 'hover:variant-soft-primary'}
+						? 'text-primary-500'
+						: 'hover:text-primary-300'}
 				>
 					Collections
 				</a>
@@ -41,8 +39,8 @@
 				<a
 					href="/articles"
 					class={page.url.pathname.startsWith('/articles')
-						? 'variant-filled-primary'
-						: 'hover:variant-soft-primary'}
+						? 'text-primary-500'
+						: 'hover:text-primary-300'}
 				>
 					Articles
 				</a>
@@ -51,8 +49,8 @@
 				<a
 					href="/ai-insights"
 					class={page.url.pathname.startsWith('/ai-insights')
-						? 'variant-filled-primary'
-						: 'hover:variant-soft-primary'}
+						? 'text-primary-500'
+						: 'hover:text-primary-300'}
 				>
 					AI Insights
 				</a>
@@ -61,8 +59,8 @@
 				<a
 					href="/manual-fetch"
 					class={page.url.pathname.startsWith('/manual-fetch')
-						? 'variant-filled-primary'
-						: 'hover:variant-soft-primary'}
+						? 'text-primary-500'
+						: 'hover:text-primary-300'}
 				>
 					Manual Fetch
 				</a>
@@ -71,8 +69,8 @@
 				<a
 					href="/profiles"
 					class={page.url.pathname.startsWith('/profiles')
-						? 'variant-filled-primary'
-						: 'hover:variant-soft-primary'}
+						? 'text-primary-500'
+						: 'hover:text-primary-300'}
 				>
 					Profiles
 				</a>
@@ -81,8 +79,8 @@
 				<a
 					href="/settings"
 					class={page.url.pathname.startsWith('/settings')
-						? 'variant-filled-primary'
-						: 'hover:variant-soft-primary'}
+						? 'text-primary-500'
+						: 'hover:text-primary-300'}
 				>
 					Settings
 				</a>
@@ -90,13 +88,13 @@
 		</ul>
 	</nav>
 
-	<div class="card variant-soft m-2 p-4">
+	<div class="card text-soft m-2 p-4">
 		<div class="flex items-center justify-between text-sm">
 			<span>MCP Status: <span class="text-success-500">Connected</span></span>
 		</div>
 	</div>
 
-	<div class="card variant-soft m-2 p-4">
+	<div class="card text-soft m-2 p-4">
 		<div class="flex items-center justify-between text-sm">
 			<span>Status: <span class="text-success-500">Local Processing</span></span>
 			<span>Cache: 75% Hits</span>

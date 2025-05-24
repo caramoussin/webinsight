@@ -30,7 +30,6 @@
 		<a href="/feeds/add" class="btn preset-filled-primary-500"> Add Feed </a>
 		<a href="/manual-fetch" class="btn preset-filled-primary-500"> Manual Fetch </a>
 		<a href="/ai-insights" class="btn preset-filled-primary-500"> View AI Insights </a>
-		<a href="/error" class="btn preset-filled-error-500"> Error ! </a>
 	</div>
 
 	<!-- Recent Activity -->

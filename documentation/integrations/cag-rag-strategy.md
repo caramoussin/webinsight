@@ -55,6 +55,7 @@ graph TD
 The data layer is enhanced with both SQLite and Milvus Lite databases:
 
 - **SQLite Database**:
+
   - **`articles` Table**: Enhanced with metadata fields (tags, entities) and an `embeddingId` field referencing vectors in Milvus Lite
   - **`cached_results` Table**: New table storing AI outputs with fields:
     - `articleId`: Reference to the source article
@@ -116,11 +117,9 @@ interface HybridCAGService {
     queryType: 'summary' | 'recommendation' | 'metadata',
     context?: string[]
   ) => Effect.Effect<string, Error, Database | WebScraping | LLMProvider | Milvus>;
-  
-  generateEmbedding: (
-    text: string
-  ) => Effect.Effect<number[], Error, LLMProvider>;
-  
+
+  generateEmbedding: (text: string) => Effect.Effect<number[], Error, LLMProvider>;
+
   findSimilarArticles: (
     embeddingId: string,
     limit?: number
@@ -184,20 +183,24 @@ const makeHybridCAGService = Effect.gen(function* (_) {
         Effect.tryPromise(() => db.select().from(articles).where({ id: articleId }).get())
       );
       if (!article) return [];
-      
+
       // If article has an embedding, use vector similarity search
       if (article.embeddingId) {
         const similarArticleIds = yield* _(findSimilarArticles(article.embeddingId, 5));
-        
+
         const similarArticles = yield* _(
           Effect.tryPromise(() =>
-            db.select().from(articles).where(sql`id IN ${similarArticleIds}`).all()
+            db
+              .select()
+              .from(articles)
+              .where(sql`id IN ${similarArticleIds}`)
+              .all()
           )
         );
-        
+
         return similarArticles.map((a) => a.content);
       }
-      
+
       // Fallback to metadata-based retrieval
       const similarArticles = yield* _(
         Effect.tryPromise(() =>
@@ -219,14 +222,11 @@ const makeHybridCAGService = Effect.gen(function* (_) {
       if (!article.embeddingId) {
         const embedding = yield* _(generateEmbedding(article.content));
         const embeddingId = yield* _(milvus.storeEmbedding(embedding, articleId));
-        
+
         // Update article with embedding ID
         yield* _(
           Effect.tryPromise(() =>
-            db.update(articles)
-              .set({ embeddingId })
-              .where({ id: articleId })
-              .run()
+            db.update(articles).set({ embeddingId }).where({ id: articleId }).run()
           )
         );
       }
@@ -253,7 +253,7 @@ const makeHybridCAGService = Effect.gen(function* (_) {
         return 'summarize';
     }
   };
-  
+
   const buildPrompt = (queryType: string, content: string, context: string[]) => {
     switch (queryType) {
       case 'summary':
@@ -274,12 +274,12 @@ const makeHybridCAGService = Effect.gen(function* (_) {
         Effect.flatMap((key) => cache.get(key)),
         Effect.flatMap((result) => Effect.succeed(result))
       ),
-      
+
     generateEmbedding: (text) =>
       Effect.gen(function* (_) {
         return yield* _(llmProvider.generateEmbedding(text));
       }),
-      
+
     findSimilarArticles: (embeddingId, limit = 5) =>
       Effect.gen(function* (_) {
         return yield* _(milvus.findSimilar(embeddingId, limit));
@@ -318,16 +318,16 @@ const makeMilvusService = Effect.gen(function* (_) {
     address: 'localhost:19530',
     ssl: false
   });
-  
+
   const COLLECTION_NAME = 'article_embeddings';
   const VECTOR_DIMENSION = 384; // For all-MiniLM-L6-v2
-  
+
   // Initialize collection if it doesn't exist
   const collections = yield* _(Effect.tryPromise(() => client.listCollections()));
   if (!collections.includes(COLLECTION_NAME)) {
     yield* _(createCollection(COLLECTION_NAME, VECTOR_DIMENSION));
   }
-  
+
   function createCollection(name: string, dimension: number) {
     return Effect.tryPromise(() =>
       client.createCollection({
@@ -366,64 +366,70 @@ const makeMilvusService = Effect.gen(function* (_) {
       })
     );
   }
-  
+
   return {
     storeEmbedding: (embedding: number[], articleId: string) =>
       Effect.gen(function* (_) {
         const id = `emb_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-        
-        yield* _(Effect.tryPromise(() =>
-          client.insert({
-            collection_name: COLLECTION_NAME,
-            data: [
-              {
-                id,
-                vector: embedding,
-                article_id: articleId,
-                timestamp: Date.now()
-              }
-            ]
-          })
-        ));
-        
+
+        yield* _(
+          Effect.tryPromise(() =>
+            client.insert({
+              collection_name: COLLECTION_NAME,
+              data: [
+                {
+                  id,
+                  vector: embedding,
+                  article_id: articleId,
+                  timestamp: Date.now()
+                }
+              ]
+            })
+          )
+        );
+
         return id;
       }),
-      
+
     findSimilar: (embeddingId: string, limit = 5) =>
       Effect.gen(function* (_) {
         // First get the vector for the provided embedding ID
-        const result = yield* _(Effect.tryPromise(() =>
-          client.query({
-            collection_name: COLLECTION_NAME,
-            filter: `id == '${embeddingId}'`,
-            output_fields: ['vector']
-          })
-        ));
-        
+        const result = yield* _(
+          Effect.tryPromise(() =>
+            client.query({
+              collection_name: COLLECTION_NAME,
+              filter: `id == '${embeddingId}'`,
+              output_fields: ['vector']
+            })
+          )
+        );
+
         if (!result.data || result.data.length === 0) {
           return yield* _(Effect.fail(new Error('Embedding not found')));
         }
-        
+
         const vector = result.data[0].vector;
-        
+
         // Then search for similar vectors
-        const searchResult = yield* _(Effect.tryPromise(() =>
-          client.search({
-            collection_name: COLLECTION_NAME,
-            vectors: [vector],
-            filter: `id != '${embeddingId}'`, // Exclude the query vector
-            output_fields: ['article_id'],
-            limit,
-            search_params: {
-              metric_type: 'COSINE',
-              params: { ef: 100 }
-            }
-          })
-        ));
-        
-        return searchResult.results[0].map(hit => hit.article_id);
+        const searchResult = yield* _(
+          Effect.tryPromise(() =>
+            client.search({
+              collection_name: COLLECTION_NAME,
+              vectors: [vector],
+              filter: `id != '${embeddingId}'`, // Exclude the query vector
+              output_fields: ['article_id'],
+              limit,
+              search_params: {
+                metric_type: 'COSINE',
+                params: { ef: 100 }
+              }
+            })
+          )
+        );
+
+        return searchResult.results[0].map((hit) => hit.article_id);
       }),
-      
+
     createCollection
   };
 });
@@ -514,11 +520,11 @@ WebInsight uses Fabric's pattern library (<https://github.com/danielmiessler/fab
 
 ### Milvus Lite vs. SQLite for Vectors
 
-| Aspect            | SQLite                     | Milvus Lite                |
-|-------------------|----------------------------|----------------------------|
-| Vector Storage    | BLOBs, not optimized       | Built for vectors, indexed |
-| Search Speed      | Slow for similarity        | Up to 80% faster           |
-| Privacy           | Local, encrypted           | Local, no external deps    |
+| Aspect         | SQLite               | Milvus Lite                |
+| -------------- | -------------------- | -------------------------- |
+| Vector Storage | BLOBs, not optimized | Built for vectors, indexed |
+| Search Speed   | Slow for similarity  | Up to 80% faster           |
+| Privacy        | Local, encrypted     | Local, no external deps    |
 
 ### Mermaid Diagram: RAG Data Flow
 

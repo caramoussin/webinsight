@@ -52,7 +52,7 @@ describe('MCPCrawl4AIClient', () => {
     it('should successfully extract content from a URL', async () => {
       // Create a spy implementation for json() that returns the mock response
       const jsonSpy = vi.fn().mockResolvedValue(mockExtractResponse);
-      
+
       // Mock the effectFetch response with a proper Response-like object
       vi.mocked(effectFetch).mockReturnValue(
         E.succeed({
@@ -151,7 +151,7 @@ describe('MCPCrawl4AIClient', () => {
           MCPCrawl4AIClient.extractContent({
             url: 'https://example.com',
             mode: 'markdown' as const,
-            includeMetadata: true,
+            includeMetadata: true
           })
         );
         // If we get here, the test should fail because we expected an error

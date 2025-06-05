@@ -1,11 +1,13 @@
 ---
 trigger: model_decision
 description: When Brave Search is mentionned.
-globs: 
+globs:
 ---
+
 ## Optional Brave Search Integration
 
 ### Overview
+
 The app optionally integrates with Brave Search API to enhance AI agent capabilities while maintaining the local-first philosophy:
 
 - 🔍 Privacy-respecting web search integration
@@ -17,6 +19,7 @@ The app optionally integrates with Brave Search API to enhance AI agent capabili
 ### Integration Levels
 
 1. **Basic (Free Tier - 2,000 queries/month)**
+
    - Strategic query allocation across agents
    - Local caching for frequently accessed data
    - Automatic fallback to local-only operation
@@ -28,6 +31,7 @@ The app optionally integrates with Brave Search API to enhance AI agent capabili
    - Additional features like news and video search
 
 ### Smart Query Management
+
 - Query budgeting system
 - Cache-first approach
 - Intelligent request batching
@@ -42,18 +46,18 @@ graph TB
         Cache[Local Cache]
         Budget[Query Budget]
     end
-    
+
     subgraph Agents["AI Agents"]
         A[Archivist]
         S[Scribe]
         L[Librarian]
     end
-    
+
     subgraph FallbackSystem["Fallback System"]
         Local[Local Processing]
         Hybrid[Hybrid Mode]
     end
-    
+
     API --> Cache
     Cache --> A
     Cache --> S
@@ -66,6 +70,7 @@ graph TB
 ```
 
 #### Data Flow
+
 1. Query request from agent
 2. Check cache
 3. Check budget

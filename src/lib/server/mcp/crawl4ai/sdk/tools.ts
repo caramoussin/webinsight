@@ -20,10 +20,12 @@ export const defineExtractContentTool = (server: McpServer) => {
       'Extracts content from a given URL and returns it in the requested format',
       {
         url: z.string().url(),
-        options: z.object({
-          mode: z.enum(['raw', 'markdown', 'text']).default('markdown'),
-          includeMetadata: z.boolean().default(true)
-        }).optional()
+        options: z
+          .object({
+            mode: z.enum(['raw', 'markdown', 'text']).default('markdown'),
+            includeMetadata: z.boolean().default(true)
+          })
+          .optional()
       },
       async (args) => {
         const { url, options } = args;

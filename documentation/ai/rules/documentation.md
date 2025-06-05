@@ -1,8 +1,9 @@
 ---
 trigger: always_on
-description: 
-globs: 
+description:
+globs:
 ---
+
 ## Documentation Structure
 
 The documentation resides in the `documentation/` folder, containing required core files and optional context files, all in Markdown format. Files follow a hierarchical structure, with `requirements.md` defining requirements and `technical-specs.md`/`architecture.md` providing specifications:
@@ -12,11 +13,11 @@ flowchart TD
     PO[project-overview.md] --> RQ[requirements.md]
     PO --> AR[architecture.md]
     PO --> TS[technical-specs.md]
-    
+
     RQ --> WIP[work-in-progress.md]
     AR --> WIP
     TS --> WIP
-    
+
     WIP --> ST[status.md]
 ```
 
@@ -73,10 +74,10 @@ flowchart TD
 flowchart TD
     Start[Start] --> ReadFiles[Read Documentation and Rules]
     ReadFiles --> CheckFiles{Files Complete?}
-    
+
     CheckFiles -->|No| Plan[Create Plan]
     Plan --> Document[Document in Chat]
-    
+
     CheckFiles -->|Yes| Verify[Verify Context]
     Verify --> Strategy[Develop Strategy]
     Strategy --> Present[Present Approach]
@@ -115,17 +116,17 @@ Documentation updates occur when:
 ```mermaid
 flowchart TD
     Start[Update Process]
-    
+
     subgraph Process
         P1[Review ALL Files]
         P2[Analyze Existing Patterns]
         P3[Document Current State]
         P4[Clarify Next Steps]
         P5[Update .cursor/rules/]
-        
+
         P1 --> P2 --> P3 --> P4 --> P5
     end
-    
+
     Start --> Process
 ```
 
@@ -144,19 +145,19 @@ The `.cursor/rules/` folder contains project-specific rules in `.mdc` files, pro
 ```mermaid
 flowchart TD
     Start{Discover New Pattern}
-    
+
     subgraph Learn [Learning Process]
         D1[Identify Pattern]
         D2[Validate with User]
         D3[Document in .cursor/rules/]
     end
-    
+
     subgraph Apply [Usage]
         A1[Read .cursor/rules/]
         A2[Apply Learned Patterns]
         A3[Improve Future Work]
     end
-    
+
     Start --> Learn
     Learn --> Apply
 ```
@@ -178,10 +179,10 @@ flowchart TD
 - Each `.mdc` file includes metadata (e.g., description, globs, alwaysApply) and content, following the format:
 
   ```
-  --- 
+  ---
   description: Base project rules
-  globs: **/* 
-  alwaysApply: true 
+  globs: **/*
+  alwaysApply: true
   ---
   - Follow coding standards defined in @documentation/technical-specs.md
   - Use user story format for requirements in @documentation/requirements.md
@@ -206,10 +207,10 @@ flowchart TD
 - Example rule:
 
   ```
-  --- 
+  ---
   description: Documentation standards
   globs: documentation/**/*
-  alwaysApply: false 
+  alwaysApply: false
   ---
   - Mimic existing Markdown style in @documentation/ for new files
   - Use Mermaid diagrams in @documentation/architecture.md for system design

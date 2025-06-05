@@ -9,9 +9,11 @@ This workflow provides a structured approach to continue working on a task list 
 ## Initial Context Gathering
 
 1. Identify the task list file to continue working on:
+
    - Typically located in `documentation/task-lists/[feature-name]-task-list.md`
 
 2. Read the core documentation to understand the project context:
+
    - `documentation/project-overview.md` - For overall project scope and goals
    - `documentation/requirements.md` - For user and business requirements
    - `documentation/architecture.md` - For system design and component relationships
@@ -20,6 +22,7 @@ This workflow provides a structured approach to continue working on a task list 
    - `documentation/status.md` - For implementation status and known issues
 
 3. Review the task list file to understand:
+
    - The feature being implemented
    - Completed tasks
    - In-progress tasks
@@ -32,11 +35,13 @@ This workflow provides a structured approach to continue working on a task list 
 ## Codebase Analysis
 
 1. Analyze the relevant files mentioned in the task list:
+
    - Review file structure and relationships
    - Understand the implementation patterns
    - Identify dependencies and interfaces
 
 2. Explore related code not explicitly mentioned in the task list:
+
    - Search for similar patterns or components
    - Look for utility functions or services that might be useful
    - Check for tests that might need updating
@@ -49,11 +54,13 @@ This workflow provides a structured approach to continue working on a task list 
 ## Implementation Process
 
 1. Before starting implementation:
+
    - Update the task list to mark the selected task as "In Progress"
    - Add any new subtasks identified during analysis
    - Ensure the "Relevant Files" section is up to date
 
 2. During implementation:
+
    - Follow the project's coding standards and patterns
    - Create or modify files as needed
    - Add unit tests and integration tests as appropriate
@@ -67,12 +74,14 @@ This workflow provides a structured approach to continue working on a task list 
 ## Regular Task List Updates
 
 1. Update the task list after completing significant components:
+
    - Mark completed tasks with [x]
    - Add new tasks discovered during implementation
    - Move tasks between sections as appropriate
    - Update file paths and descriptions in the "Relevant Files" section
 
 2. Document implementation details:
+
    - Add architecture decisions
    - Describe data flow
    - List technical components
@@ -106,6 +115,7 @@ This workflow provides a structured approach to continue working on a task list 
    ```
 
 2. After implementing significant features or completing a set of tasks:
+
    - Update `architecture.md` with any new components or relationships
    - Update `technical-specs.md` with new dependencies or technical decisions
    - Update `work-in-progress.md` with current focus and recent changes
@@ -119,11 +129,13 @@ This workflow provides a structured approach to continue working on a task list 
 ## Continuous Improvement
 
 1. Regularly review the task list for:
+
    - Tasks that may be obsolete or redundant
    - Tasks that may need to be broken down further
    - Tasks that may need to be reprioritized
 
 2. Update the task list structure if needed:
+
    - Add new sections for specific components or phases
    - Improve task descriptions for clarity
    - Add more detailed implementation notes

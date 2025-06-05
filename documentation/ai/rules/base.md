@@ -1,8 +1,9 @@
 ---
 trigger: always_on
-description: 
-globs: 
+description:
+globs:
 ---
+
 # WebInsight Core Principles & Structure
 
 This rule outlines the fundamental principles and structure of the WebInsight project.

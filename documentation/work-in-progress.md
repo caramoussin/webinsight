@@ -65,6 +65,7 @@
 ## 3. Recent Achievements
 
 - **Crawl4AI MCP Integration Completed**:
+
   - Successfully completed the full refactoring of Crawl4AI service to use the Model Context Protocol (MCP) pattern.
   - Implemented a robust MCP host as a central registry for providers.
   - Created a standardized provider interface for tool discovery and execution.
@@ -177,7 +178,6 @@
 
 ### Overview
 
-
 ### Benefits
 
 Tauri offers several advantages aligned with WebInsight's goals:
@@ -217,16 +217,16 @@ If the PoC is successful, a phased migration could be considered:
 
 ### Alignment with Requirements
 
-| Requirement                 | SvelteKit + Bun                                  | Tauri (Potential with Rust Backend)             |
-|-----------------------------|--------------------------------------------------|-------------------------------------------------|
-| NFR1: Performance           | Moderate (TypeScript runtime, Bun helps)         | High (Rust efficiency for backend tasks)        |
-| NFR1.4: Low-end Hardware    | Standard; Milvus Lite usage a concern (<2GB RAM) | Improved potential due to smaller app & Rust    |
-| NFR3: Privacy / Security    | Strong (Local-first, SQLCipher, Effect TS)       | Potentially Enhanced (Rust memory safety, IPC)  |
-| FR2.1-FR2.6: AI Integration | Mature & unified (Effect TS, @effect/ai)         | Complex (Requires Rust rewrite/bindings for AI) |
-| FR3.7: Real-time (IPC)      | WebSockets with SvelteKit backend                | IPC via Rust; WebSockets need Rust server       |
-| FR4.3-FR4.4: Encryption     | SQLCipher via Drizzle (TypeScript)               | SQLCipher via Rust ORM (e.g., sqlx)             |
-| Modularity (NFR5)           | Good (Effect TS Layers, SvelteKit modules)       | Strong (Rust crates, Tauri plugins); split stack|
-| Development Velocity        | High (Unified TypeScript, Bun, Effect TS)        | Potentially Slower (Rust learning, dual stack)  |
+| Requirement                 | SvelteKit + Bun                                  | Tauri (Potential with Rust Backend)              |
+| --------------------------- | ------------------------------------------------ | ------------------------------------------------ |
+| NFR1: Performance           | Moderate (TypeScript runtime, Bun helps)         | High (Rust efficiency for backend tasks)         |
+| NFR1.4: Low-end Hardware    | Standard; Milvus Lite usage a concern (<2GB RAM) | Improved potential due to smaller app & Rust     |
+| NFR3: Privacy / Security    | Strong (Local-first, SQLCipher, Effect TS)       | Potentially Enhanced (Rust memory safety, IPC)   |
+| FR2.1-FR2.6: AI Integration | Mature & unified (Effect TS, @effect/ai)         | Complex (Requires Rust rewrite/bindings for AI)  |
+| FR3.7: Real-time (IPC)      | WebSockets with SvelteKit backend                | IPC via Rust; WebSockets need Rust server        |
+| FR4.3-FR4.4: Encryption     | SQLCipher via Drizzle (TypeScript)               | SQLCipher via Rust ORM (e.g., sqlx)              |
+| Modularity (NFR5)           | Good (Effect TS Layers, SvelteKit modules)       | Strong (Rust crates, Tauri plugins); split stack |
+| Development Velocity        | High (Unified TypeScript, Bun, Effect TS)        | Potentially Slower (Rust learning, dual stack)   |
 
 ## Roadmap
 

@@ -2,7 +2,8 @@
 trigger: model_decision
 description: Coding patterns for Effect TS
 globs: src/**/*.ts, src/**/*.svelte
---- 
+---
+
 # Effect Patterns for WebInsight Frontend
 
 This document outlines key patterns for using Effect TS in the SvelteKit frontend of the WebInsight project, focusing on services, stores, and event handling. It reflects common practices found in `src/lib/`.
@@ -33,7 +34,7 @@ export class FeedServiceError extends Data.TaggedError('FeedServiceError')<{
 export class FeedStoreError extends Data.TaggedError('FeedStoreError')<{
   readonly message: string;
   readonly context?: string; // e.g., 'fetchAll', 'create', 'ai_process'
-  readonly cause?: unknown;  // Could be a FeedServiceError or MCPError
+  readonly cause?: unknown; // Could be a FeedServiceError or MCPError
 }> {}
 ```
 
@@ -50,7 +51,7 @@ pipe(
   E.catchTag('FeedServiceError', (error) => {
     console.error(`Service operation failed: ${error.message}`, error.cause);
     // Recover or transform into a different error/success
-    return E.succeed('Recovered value'); 
+    return E.succeed('Recovered value');
   }),
   E.catchAll((unhandledError) => {
     // Catch any other errors not specifically tagged above
@@ -109,35 +110,26 @@ import { HttpClientServiceTag } from '$lib/services/http/HttpClientService';
 import { Effect as E, Layer, Context, Data, pipe } from 'effect';
 import type { MCPResponse, MCPConnectionConfig } from '$lib/types/mcp';
 
-export class MCPServiceError extends Data.TaggedError('MCPServiceError')<{ 
-  message: string; 
-  cause?: unknown 
+export class MCPServiceError extends Data.TaggedError('MCPServiceError')<{
+  message: string;
+  cause?: unknown;
 }> {}
 
 export interface MCPService {
   readonly executePattern: (
-    pattern: string, 
-    input: string, 
+    pattern: string,
+    input: string,
     config: MCPConnectionConfig
   ) => E.Effect<MCPResponse, MCPServiceError>;
   readonly checkServerAvailability: (
     config: MCPConnectionConfig
   ) => E.Effect<boolean, MCPServiceError>;
-  readonly listPatterns: (
-    config: MCPConnectionConfig
-  ) => E.Effect<string[], MCPServiceError>;
+  readonly listPatterns: (config: MCPConnectionConfig) => E.Effect<string[], MCPServiceError>;
 }
 
-export class MCPServiceTag extends Context.Tag('MCPService')<
-  MCPServiceTag,
-  MCPService
->() {}
+export class MCPServiceTag extends Context.Tag('MCPService')<MCPServiceTag, MCPService>() {}
 
-export const MCPServiceLive: Layer.Layer<
-  MCPServiceTag,
-  never,
-  HttpClientServiceTag
-> = Layer.effect(
+export const MCPServiceLive: Layer.Layer<MCPServiceTag, never, HttpClientServiceTag> = Layer.effect(
   MCPServiceTag,
   E.gen(function* ($) {
     const httpClient = yield* $(HttpClientServiceTag);
@@ -145,27 +137,29 @@ export const MCPServiceLive: Layer.Layer<
     const executePattern = (pattern: string, input: string, config: MCPConnectionConfig) =>
       pipe(
         E.tryPromise({
-          try: () => fetch(`${config.url}/pattern/${pattern}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ input, model: config.model })
-          }).then(res => res.json()),
-          catch: (error) => new MCPServiceError({ 
-            message: `MCP pattern execution failed for ${pattern}`, 
-            cause: error 
-          })
+          try: () =>
+            fetch(`${config.url}/pattern/${pattern}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ input, model: config.model })
+            }).then((res) => res.json()),
+          catch: (error) =>
+            new MCPServiceError({
+              message: `MCP pattern execution failed for ${pattern}`,
+              cause: error
+            })
         })
       );
 
     return MCPServiceTag.of({
       executePattern,
-      checkServerAvailability: (config) => executePattern('health', '', config).pipe(
-        E.map(() => true),
-        E.orElse(() => E.succeed(false))
-      ),
-      listPatterns: (config) => executePattern('list', '', config).pipe(
-        E.map((response: any) => response.patterns || [])
-      )
+      checkServerAvailability: (config) =>
+        executePattern('health', '', config).pipe(
+          E.map(() => true),
+          E.orElse(() => E.succeed(false))
+        ),
+      listPatterns: (config) =>
+        executePattern('list', '', config).pipe(E.map((response: any) => response.patterns || []))
     });
   })
 );
@@ -181,9 +175,9 @@ import { HttpClientServiceTag } from '$lib/services/http/HttpClientService';
 import { Effect as E, Layer, Context, Data, pipe } from 'effect';
 import type { Feed, CreateFeed, UpdateFeed } from '$lib/types/feed';
 
-export class FeedServiceError extends Data.TaggedError('FeedServiceError')<{ 
-  message: string; 
-  cause?: unknown 
+export class FeedServiceError extends Data.TaggedError('FeedServiceError')<{
+  message: string;
+  cause?: unknown;
 }> {}
 
 export interface FeedService {
@@ -193,43 +187,40 @@ export interface FeedService {
   readonly deleteFeed: (id: string, profileId: string) => E.Effect<void, FeedServiceError>;
 }
 
-export class FeedServiceTag extends Context.Tag('FeedService')<
-  FeedServiceTag,
-  FeedService
->() {}
+export class FeedServiceTag extends Context.Tag('FeedService')<FeedServiceTag, FeedService>() {}
 
-export const FeedServiceLive: Layer.Layer<
-  FeedServiceTag,
-  never,
-  HttpClientServiceTag
-> = Layer.effect(
-  FeedServiceTag,
-  E.gen(function* ($) {
-    const httpClient = yield* $(HttpClientServiceTag);
+export const FeedServiceLive: Layer.Layer<FeedServiceTag, never, HttpClientServiceTag> =
+  Layer.effect(
+    FeedServiceTag,
+    E.gen(function* ($) {
+      const httpClient = yield* $(HttpClientServiceTag);
 
-    const makeApiCall = <T>(method: string, url: string, body?: unknown) =>
-      pipe(
-        E.tryPromise({
-          try: () => fetch(url, {
-            method,
-            headers: { 'Content-Type': 'application/json' },
-            body: body ? JSON.stringify(body) : undefined
-          }).then(res => res.json()),
-          catch: (error) => new FeedServiceError({ 
-            message: `API call failed: ${method} ${url}`, 
-            cause: error 
+      const makeApiCall = <T>(method: string, url: string, body?: unknown) =>
+        pipe(
+          E.tryPromise({
+            try: () =>
+              fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: body ? JSON.stringify(body) : undefined
+              }).then((res) => res.json()),
+            catch: (error) =>
+              new FeedServiceError({
+                message: `API call failed: ${method} ${url}`,
+                cause: error
+              })
           })
-        })
-      );
+        );
 
-    return FeedServiceTag.of({
-      getAllFeeds: (profileId) => makeApiCall<Feed[]>('GET', `/api/feeds?profileId=${profileId}`),
-      createFeed: (feedData) => makeApiCall<Feed>('POST', '/api/feeds', feedData),
-      updateFeed: (id, feedData) => makeApiCall<Feed>('PUT', `/api/feeds/${id}`, feedData),
-      deleteFeed: (id, profileId) => makeApiCall<void>('DELETE', `/api/feeds/${id}?profileId=${profileId}`)
-    });
-  })
-);
+      return FeedServiceTag.of({
+        getAllFeeds: (profileId) => makeApiCall<Feed[]>('GET', `/api/feeds?profileId=${profileId}`),
+        createFeed: (feedData) => makeApiCall<Feed>('POST', '/api/feeds', feedData),
+        updateFeed: (id, feedData) => makeApiCall<Feed>('PUT', `/api/feeds/${id}`, feedData),
+        deleteFeed: (id, profileId) =>
+          makeApiCall<void>('DELETE', `/api/feeds/${id}?profileId=${profileId}`)
+      });
+    })
+  );
 ```
 
 ## Effect-driven Svelte Stores
@@ -245,16 +236,20 @@ Stores manage application state using Svelte 5 Runes and orchestrate service cal
     import { FeedServiceTag, type FeedService } from '$lib/services/feeds/FeedService';
     import { MCPServiceTag, type MCPService } from '$lib/services/mcp/MCPService';
     import { AIAgentServiceTag, type AIAgentService } from '$lib/services/ai/AIAgentService';
-    import { StoreEventBusTag, type StoreEvents, type StoreEventBusService } from '$lib/stores/storeEvents';
+    import {
+      StoreEventBusTag,
+      type StoreEvents,
+      type StoreEventBusService
+    } from '$lib/stores/storeEvents';
     import type { UIFeed } from '$lib/types/ui';
     import type { Feed, CreateFeed } from '$lib/types/feed';
     import { Effect as E, Data, pipe, Option } from 'effect';
 
     // Store-specific error type
-    export class FeedStoreError extends Data.TaggedError('FeedStoreError')<{ 
-      message: string; 
-      context?: string; 
-      cause?: unknown 
+    export class FeedStoreError extends Data.TaggedError('FeedStoreError')<{
+      message: string;
+      context?: string;
+      cause?: unknown;
     }> {}
 
     // The interface of the store that components will interact with
@@ -267,7 +262,9 @@ Stores manage application state using Svelte 5 Runes and orchestrate service cal
 
       // Methods that orchestrate service calls and update state
       fetchAllFeeds: (profileId: string) => E.Effect<void, FeedStoreError>;
-      createFeed: (input: CreateFeed) => E.Effect<UIFeed, FeedStoreError, StoreEventBusService<StoreEvents>>;
+      createFeed: (
+        input: CreateFeed
+      ) => E.Effect<UIFeed, FeedStoreError, StoreEventBusService<StoreEvents>>;
       processFeedWithAI: (feedId: string, patterns: string[]) => E.Effect<void, FeedStoreError>;
       getFeedById: (id: string) => E.Effect<Option.Option<UIFeed>, FeedStoreError>;
     };
@@ -277,86 +274,149 @@ Stores manage application state using Svelte 5 Runes and orchestrate service cal
       FeedsStore,
       never,
       FeedServiceTag | MCPServiceTag | AIAgentServiceTag | StoreEventBusService<StoreEvents>
-    > => E.gen(function* ($) {
-      const feedService = yield* $(FeedServiceTag);
-      const mcpService = yield* $(MCPServiceTag);
-      const aiAgentService = yield* $(AIAgentServiceTag);
+    > =>
+      E.gen(function* ($) {
+        const feedService = yield* $(FeedServiceTag);
+        const mcpService = yield* $(MCPServiceTag);
+        const aiAgentService = yield* $(AIAgentServiceTag);
 
-      // Svelte 5 Runes for reactive state
-      let _feeds = $state<UIFeed[]>([]);
-      let _loading = $state(false);
-      let _aiProcessing = $state(false);
-      let _error = $state<Option.Option<FeedStoreError>>(Option.none());
+        // Svelte 5 Runes for reactive state
+        let _feeds = $state<UIFeed[]>([]);
+        let _loading = $state(false);
+        let _aiProcessing = $state(false);
+        let _error = $state<Option.Option<FeedStoreError>>(Option.none());
 
-      // Helper to map Feed to UIFeed
-      const mapFeedToUIFeed = (feed: Feed): UIFeed => ({ 
-        ...feed, 
-        uiState: { selected: false, processed: false } 
+        // Helper to map Feed to UIFeed
+        const mapFeedToUIFeed = (feed: Feed): UIFeed => ({
+          ...feed,
+          uiState: { selected: false, processed: false }
+        });
+
+        // Store methods
+        const fetchAllFeeds = (profileId: string): E.Effect<void, FeedStoreError> =>
+          pipe(
+            E.sync(() => {
+              _loading = true;
+              _error = Option.none();
+            }),
+            E.flatMap(() => feedService.getAllFeeds(profileId)),
+            E.tap((feeds) => {
+              _feeds = feeds.map(mapFeedToUIFeed);
+            }),
+            E.catchAll((cause) =>
+              E.fail(
+                new FeedStoreError({
+                  message: 'Failed to fetch feeds',
+                  context: 'fetchAll',
+                  cause
+                })
+              )
+            ),
+            E.tapError((err) => {
+              _error = Option.some(err);
+            }),
+            E.ensuring(
+              E.sync(() => {
+                _loading = false;
+              })
+            )
+          );
+
+        const createFeed = (
+          input: CreateFeed
+        ): E.Effect<UIFeed, FeedStoreError, StoreEventBusService<StoreEvents>> =>
+          pipe(
+            E.sync(() => {
+              _loading = true;
+              _error = Option.none();
+            }),
+            E.flatMap(() => feedService.createFeed(input)),
+            E.flatMap((newFeed) =>
+              E.gen(function* (scope) {
+                const eventBus = yield* scope(StoreEventBusTag);
+                const uiFeed = mapFeedToUIFeed(newFeed);
+                _feeds = [..._feeds, uiFeed];
+                yield* scope(eventBus.emit('feed:created', { feed: uiFeed }));
+                return uiFeed;
+              })
+            ),
+            E.catchAll((cause) =>
+              E.fail(
+                new FeedStoreError({
+                  message: 'Failed to create feed',
+                  context: 'create',
+                  cause
+                })
+              )
+            ),
+            E.tapError((err) => {
+              _error = Option.some(err);
+            }),
+            E.ensuring(
+              E.sync(() => {
+                _loading = false;
+              })
+            )
+          );
+
+        const processFeedWithAI = (
+          feedId: string,
+          patterns: string[]
+        ): E.Effect<void, FeedStoreError> =>
+          pipe(
+            E.sync(() => {
+              _aiProcessing = true;
+              _error = Option.none();
+            }),
+            E.flatMap(() => aiAgentService.processFeed(feedId, patterns)),
+            E.tap(() => {
+              // Update feed processing status
+              const feedIndex = _feeds.findIndex((f) => f.id === feedId);
+              if (feedIndex !== -1) {
+                _feeds[feedIndex] = {
+                  ..._feeds[feedIndex],
+                  uiState: { ..._feeds[feedIndex].uiState, processed: true }
+                };
+              }
+            }),
+            E.catchAll((cause) =>
+              E.fail(
+                new FeedStoreError({
+                  message: 'Failed to process feed with AI',
+                  context: 'ai_process',
+                  cause
+                })
+              )
+            ),
+            E.tapError((err) => {
+              _error = Option.some(err);
+            }),
+            E.ensuring(
+              E.sync(() => {
+                _aiProcessing = false;
+              })
+            )
+          );
+
+        return {
+          get feeds() {
+            return _feeds;
+          },
+          get loading() {
+            return _loading;
+          },
+          get aiProcessing() {
+            return _aiProcessing;
+          },
+          get error() {
+            return _error;
+          },
+          fetchAllFeeds,
+          createFeed,
+          processFeedWithAI,
+          getFeedById: (id) => E.succeed(Option.fromNullable(_feeds.find((f) => f.id === id)))
+        };
       });
-
-      // Store methods
-      const fetchAllFeeds = (profileId: string): E.Effect<void, FeedStoreError> => pipe(
-        E.sync(() => { _loading = true; _error = Option.none(); }),
-        E.flatMap(() => feedService.getAllFeeds(profileId)),
-        E.tap((feeds) => { _feeds = feeds.map(mapFeedToUIFeed); }),
-        E.catchAll((cause) => E.fail(new FeedStoreError({ 
-          message: 'Failed to fetch feeds', 
-          context: 'fetchAll',
-          cause 
-        }))),
-        E.tapError((err) => { _error = Option.some(err); }),
-        E.ensuring(E.sync(() => { _loading = false; }))
-      );
-
-      const createFeed = (input: CreateFeed): E.Effect<UIFeed, FeedStoreError, StoreEventBusService<StoreEvents>> => pipe(
-        E.sync(() => { _loading = true; _error = Option.none(); }),
-        E.flatMap(() => feedService.createFeed(input)),
-        E.flatMap((newFeed) => E.gen(function* (scope) {
-          const eventBus = yield* scope(StoreEventBusTag);
-          const uiFeed = mapFeedToUIFeed(newFeed);
-          _feeds = [..._feeds, uiFeed];
-          yield* scope(eventBus.emit('feed:created', { feed: uiFeed }));
-          return uiFeed;
-        })),
-        E.catchAll((cause) => E.fail(new FeedStoreError({ 
-          message: 'Failed to create feed', 
-          context: 'create',
-          cause 
-        }))),
-        E.tapError((err) => { _error = Option.some(err); }),
-        E.ensuring(E.sync(() => { _loading = false; }))
-      );
-
-      const processFeedWithAI = (feedId: string, patterns: string[]): E.Effect<void, FeedStoreError> => pipe(
-        E.sync(() => { _aiProcessing = true; _error = Option.none(); }),
-        E.flatMap(() => aiAgentService.processFeed(feedId, patterns)),
-        E.tap(() => { 
-          // Update feed processing status
-          const feedIndex = _feeds.findIndex(f => f.id === feedId);
-          if (feedIndex !== -1) {
-            _feeds[feedIndex] = { ..._feeds[feedIndex], uiState: { ...(_feeds[feedIndex].uiState), processed: true } };
-          }
-        }),
-        E.catchAll((cause) => E.fail(new FeedStoreError({ 
-          message: 'Failed to process feed with AI', 
-          context: 'ai_process',
-          cause 
-        }))),
-        E.tapError((err) => { _error = Option.some(err); }),
-        E.ensuring(E.sync(() => { _aiProcessing = false; }))
-      );
-
-      return {
-        get feeds() { return _feeds; },
-        get loading() { return _loading; },
-        get aiProcessing() { return _aiProcessing; },
-        get error() { return _error; },
-        fetchAllFeeds,
-        createFeed,
-        processFeedWithAI,
-        getFeedById: (id) => E.succeed(Option.fromNullable(_feeds.find(f => f.id === id)))
-      };
-    });
     ```
 
 2.  **Singleton Instantiation and Export**: The store factory `Effect` is run once at the module level, providing all necessary service layers, to create a singleton store instance.
@@ -379,10 +439,7 @@ Stores manage application state using Svelte 5 Runes and orchestrate service cal
     );
 
     // Run the factory Effect with the combined layer to get the store instance
-    const feedsStore = E.runSync(pipe(
-      createFeedsStoreEffect(),
-      E.provide(feedsStoreLayer)
-    ));
+    const feedsStore = E.runSync(pipe(createFeedsStoreEffect(), E.provide(feedsStoreLayer)));
 
     export default feedsStore;
     ```
@@ -397,30 +454,26 @@ Stores manage application state using Svelte 5 Runes and orchestrate service cal
       import type { CreateFeed } from '$lib/types/feed';
 
       function handleFetchFeeds(profileId: string) {
-        pipe(
-          feedsStore.fetchAllFeeds(profileId),
-          E.runPromise
-        ).catch(err => {
-          console.error('Component: Fetch feeds failed', err); 
+        pipe(feedsStore.fetchAllFeeds(profileId), E.runPromise).catch((err) => {
+          console.error('Component: Fetch feeds failed', err);
         });
       }
 
       function handleCreateFeed(input: CreateFeed) {
-        pipe(
-          feedsStore.createFeed(input),
-          E.runPromise
-        ).then(newFeed => {
-          console.log('Component: Feed created', newFeed);
-        }).catch(err => {
-          console.error('Component: Create feed failed', err);
-        });
+        pipe(feedsStore.createFeed(input), E.runPromise)
+          .then((newFeed) => {
+            console.log('Component: Feed created', newFeed);
+          })
+          .catch((err) => {
+            console.error('Component: Create feed failed', err);
+          });
       }
 
       function handleProcessFeedWithAI(feedId: string) {
         pipe(
           feedsStore.processFeedWithAI(feedId, ['summarize', 'extract_wisdom']),
           E.runPromise
-        ).catch(err => {
+        ).catch((err) => {
           console.error('Component: AI processing failed', err);
         });
       }
@@ -448,9 +501,7 @@ Stores manage application state using Svelte 5 Runes and orchestrate service cal
         {#each feedsStore.feeds as feed (feed.id)}
           <li>
             {feed.title}
-            <button onclick={() => handleProcessFeedWithAI(feed.id)}>
-              Process with AI
-            </button>
+            <button onclick={() => handleProcessFeedWithAI(feed.id)}> Process with AI </button>
           </li>
         {/each}
       </ul>
@@ -475,7 +526,9 @@ export interface AIAgentService {
     extractInsights: (content: string) => E.Effect<ContentInsights, AIAgentError>;
   };
   readonly librarian: {
-    recommendContent: (preferences: UserPreferences) => E.Effect<ContentRecommendations, AIAgentError>;
+    recommendContent: (
+      preferences: UserPreferences
+    ) => E.Effect<ContentRecommendations, AIAgentError>;
     organizeContent: (content: Content[]) => E.Effect<ContentOrganization, AIAgentError>;
   };
 }
@@ -495,7 +548,11 @@ export type StoreEvents = {
 };
 
 // 2. Create specific tag and live layer using generic factories
-import { createEventBusTag, createEventBusLiveLayer, type EventBusService } from '$lib/utils/eventBus.effect';
+import {
+  createEventBusTag,
+  createEventBusLiveLayer,
+  type EventBusService
+} from '$lib/utils/eventBus.effect';
 export const StoreEventBusTag = createEventBusTag<StoreEvents>('StoreEventBus');
 export const StoreEventBusLive = createEventBusLiveLayer(StoreEventBusTag);
 export type StoreEventBusService = EventBusService<StoreEvents>;
@@ -508,7 +565,10 @@ For integrating with MCP providers like Crawl4AI or Fabric patterns:
 ```typescript
 // src/lib/services/mcp/crawl4ai.service.ts
 export interface Crawl4AIService {
-  readonly extractContent: (url: string, mode: 'markdown' | 'text') => E.Effect<ExtractedContent, MCPServiceError>;
+  readonly extractContent: (
+    url: string,
+    mode: 'markdown' | 'text'
+  ) => E.Effect<ExtractedContent, MCPServiceError>;
   readonly checkRobotsTxt: (url: string) => E.Effect<boolean, MCPServiceError>;
 }
 
@@ -516,10 +576,12 @@ export interface Crawl4AIService {
 const archivistWithCrawl4AI = E.gen(function* ($) {
   const crawl4ai = yield* $(Crawl4AIServiceTag);
   const mcpClient = yield* $(MCPServiceTag);
-  
+
   const extractedContent = yield* $(crawl4ai.extractContent(url, 'markdown'));
-  const insights = yield* $(mcpClient.executePattern('extract_wisdom', extractedContent.content, mcpConfig));
-  
+  const insights = yield* $(
+    mcpClient.executePattern('extract_wisdom', extractedContent.content, mcpConfig)
+  );
+
   return { content: extractedContent, insights };
 });
 ```

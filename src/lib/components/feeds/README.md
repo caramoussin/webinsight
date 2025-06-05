@@ -7,12 +7,14 @@ This directory contains the complete implementation of the feeds management syst
 The feeds system follows a clean architecture pattern with proper separation of concerns:
 
 ### Backend Layer
+
 - **Database Schema**: SQLite table with Drizzle ORM (`src/lib/server/db/schema.ts`)
 - **Service Layer**: Effect.js-based `FeedService` with proper dependency injection
 - **Error Handling**: Typed errors with `FeedServiceError` union types
 - **API Layer**: SvelteKit endpoints with Effect.js integration
 
 ### Frontend Layer
+
 - **Store**: Reactive state management using Svelte 5 runes and Effect.js
 - **Components**: Modular, reusable components with TypeScript
 - **UI**: Modern, responsive design with Tailwind CSS
@@ -20,14 +22,18 @@ The feeds system follows a clean architecture pattern with proper separation of 
 ## Components
 
 ### `FeedListItem.svelte`
+
 Displays individual feed items with:
+
 - Inline editing capabilities
 - Delete confirmation
 - Responsive design
 - Proper accessibility
 
 ### `AddFeedModal.svelte`
+
 Modal form for creating new feeds with:
+
 - Form validation
 - Loading states
 - Error handling
@@ -36,12 +42,14 @@ Modal form for creating new feeds with:
 ## Store (`feeds.store.svelte.ts`)
 
 The feeds store provides:
+
 - Reactive state using Svelte 5 `$state` runes
 - Effect.js-based async operations
 - Proper error handling and loading states
 - CRUD operations for feeds
 
 ### Key Methods
+
 - `fetchAllFeeds(profileId)`: Load all feeds for a profile
 - `addNewFeed(data)`: Create a new feed
 - `saveFeedChanges(id, data)`: Update an existing feed
@@ -51,10 +59,12 @@ The feeds store provides:
 ## API Endpoints
 
 ### `/api/feeds/+server.ts`
+
 - `GET`: List all feeds for a profile
 - `POST`: Create a new feed
 
 ### `/api/feeds/[id]/+server.ts`
+
 - `GET`: Get a specific feed
 - `PUT`: Update a feed
 - `DELETE`: Delete a feed
@@ -103,4 +113,4 @@ const newFeed = await Effect.runPromise(
 - **Svelte 5**: Reactive UI with runes
 - **Tailwind CSS**: Styling and responsive design
 - **Drizzle ORM**: Database operations
-- **SvelteKit**: Full-stack framework 
+- **SvelteKit**: Full-stack framework

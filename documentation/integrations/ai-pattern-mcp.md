@@ -45,23 +45,21 @@ import { AI } from '@effect/ai';
 import { PatternLibrary } from '$lib/services/ai/patterns';
 
 // Function to run a sequence of patterns
-const runPatternSequence = (
-  input: string,
-  patterns: string[]
-) => Effect.gen(function*(_) {
-  // Get the AI registry
-  const registry = yield* AI.Registry;
-  const llmModel = yield* registry.get("text-generation");
-  
-  // Process through each pattern in sequence
-  let result = input;
-  for (const patternName of patterns) {
-    const pattern = yield* PatternLibrary.getPattern(patternName);
-    result = yield* llmModel.complete(pattern.system, result);
-  }
-  
-  return result;
-});
+const runPatternSequence = (input: string, patterns: string[]) =>
+  Effect.gen(function* (_) {
+    // Get the AI registry
+    const registry = yield* AI.Registry;
+    const llmModel = yield* registry.get('text-generation');
+
+    // Process through each pattern in sequence
+    let result = input;
+    for (const patternName of patterns) {
+      const pattern = yield* PatternLibrary.getPattern(patternName);
+      result = yield* llmModel.complete(pattern.system, result);
+    }
+
+    return result;
+  });
 ```
 
 ### LLM Connections with @effect/ai
@@ -79,8 +77,8 @@ import { LLMModel } from '@effect/ai/LLMModel';
 
 // Define LLM model configurations
 const textGenerationModel = LLMModel.make({
-  modelId: "llama2",
-  provider: "ollama" as const,
+  modelId: 'llama2',
+  provider: 'ollama' as const,
   parameters: {
     temperature: 0.7,
     maxTokens: 1024
@@ -88,9 +86,9 @@ const textGenerationModel = LLMModel.make({
 });
 
 // Register models with the AI registry
-const registerModels = Effect.gen(function*(_) {
+const registerModels = Effect.gen(function* (_) {
   const registry = yield* AI.Registry;
-  yield* registry.register("text-generation", textGenerationModel);
+  yield* registry.register('text-generation', textGenerationModel);
 });
 
 // Run the effect to register models
@@ -363,57 +361,55 @@ import type { ServiceError } from '$lib/services/error';
 
 export class MCPManager {
   // Register models with the AI registry
-  static registerModels = Effect.gen(function*(_) {
+  static registerModels = Effect.gen(function* (_) {
     const registry = yield* AI.Registry;
-    
+
     // Register local LLM via Ollama
     const localLLM = LLMModel.make({
-      modelId: "llama2",
-      provider: "ollama" as const,
+      modelId: 'llama2',
+      provider: 'ollama' as const,
       parameters: {
         temperature: 0.7,
         maxTokens: 1024
       }
     });
-    yield* registry.register("local-llm", localLLM);
-    
+    yield* registry.register('local-llm', localLLM);
+
     // Register external LLM (if configured)
-    const apiKey = yield* Effect.tryPromise(() => 
-      import.meta.env.VITE_OPENAI_API_KEY || ''
-    );
-    
+    const apiKey = yield* Effect.tryPromise(() => import.meta.env.VITE_OPENAI_API_KEY || '');
+
     if (apiKey) {
       const externalLLM = LLMModel.make({
-        modelId: "gpt-4o",
-        provider: "openai" as const,
+        modelId: 'gpt-4o',
+        provider: 'openai' as const,
         parameters: {
           temperature: 0.7,
           maxTokens: 2048
         }
       });
-      yield* registry.register("external-llm", externalLLM);
+      yield* registry.register('external-llm', externalLLM);
     }
-    
+
     return registry;
   });
-  
+
   // Execute a pattern using the specified model
   static executePattern = (
-    patternName: string, 
+    patternName: string,
     input: string,
-    modelKey: string = "local-llm"
+    modelKey: string = 'local-llm'
   ): Effect.Effect<string, ServiceError> => {
-    return Effect.gen(function*(_) {
+    return Effect.gen(function* (_) {
       // Get the AI registry
       const registry = yield* AI.Registry;
       const model = yield* registry.get(modelKey);
-      
+
       // Get the pattern from the library
       const pattern = yield* PatternLibrary.getPattern(patternName);
-      
+
       // Execute the pattern with the model
       const result = yield* model.complete(pattern.system, input);
-      
+
       return result;
     });
   };
@@ -438,48 +434,48 @@ export interface Pattern {
 export class PatternLibrary {
   // Get a pattern by name
   static getPattern = (patternName: string): Effect.Effect<Pattern, ServiceError> => {
-    return Effect.gen(function*(_) {
+    return Effect.gen(function* (_) {
       // Fetch pattern from MCP server or local storage
       const response = yield* Effect.tryPromise(
         () => fetch(`/api/mcp/patterns/${patternName}`),
         (error) => ({ type: 'ServiceError', message: `Failed to fetch pattern: ${error}` })
       );
-      
+
       if (!response.ok) {
-        return yield* Effect.fail({ 
-          type: 'ServiceError', 
-          message: `Pattern not found: ${patternName}` 
+        return yield* Effect.fail({
+          type: 'ServiceError',
+          message: `Pattern not found: ${patternName}`
         });
       }
-      
+
       const pattern = yield* Effect.tryPromise(
         () => response.json(),
         (error) => ({ type: 'ServiceError', message: `Failed to parse pattern: ${error}` })
       );
-      
+
       return pattern as Pattern;
     });
   };
-  
+
   // List all available patterns
-  static listPatterns = Effect.gen(function*(_) {
+  static listPatterns = Effect.gen(function* (_) {
     const response = yield* Effect.tryPromise(
       () => fetch('/api/mcp/patterns'),
       (error) => ({ type: 'ServiceError', message: `Failed to list patterns: ${error}` })
     );
-    
+
     if (!response.ok) {
-      return yield* Effect.fail({ 
-        type: 'ServiceError', 
-        message: 'Failed to list patterns' 
+      return yield* Effect.fail({
+        type: 'ServiceError',
+        message: 'Failed to list patterns'
       });
     }
-    
+
     const patterns = yield* Effect.tryPromise(
       () => response.json(),
       (error) => ({ type: 'ServiceError', message: `Failed to parse patterns: ${error}` })
     );
-    
+
     return patterns as Pattern[];
   });
 }
@@ -494,39 +490,35 @@ export class PatternLibrary {
   import { Effect } from 'effect';
   import { MCPManager } from '$lib/server/ai/mcp-manager';
   import type { LLMConfig } from '$lib/types/ai';
-  
+
   let models = [
     { id: 'llama2', provider: 'ollama', name: 'Llama 2' },
     { id: 'gpt-4o', provider: 'openai', name: 'GPT-4o' },
     { id: 'claude-3-opus', provider: 'anthropic', name: 'Claude 3 Opus' }
   ];
-  
+
   let selectedModel = models[0];
-  let config: LLMConfig = { 
+  let config: LLMConfig = {
     temperature: 0.7,
     maxTokens: 1024,
     topP: 1
   };
   let status = 'Not configured';
-  
+
   onMount(async () => {
     // Check if models are already registered
-    const result = await Effect.runPromise(
-      Effect.either(MCPManager.registerModels)
-    );
-    
+    const result = await Effect.runPromise(Effect.either(MCPManager.registerModels));
+
     if (result._tag === 'Right') {
       status = 'Models configured';
     }
   });
-  
+
   async function configureModel() {
     status = 'Configuring...';
-    
-    const result = await Effect.runPromise(
-      Effect.either(MCPManager.registerModels)
-    );
-    
+
+    const result = await Effect.runPromise(Effect.either(MCPManager.registerModels));
+
     if (result._tag === 'Right') {
       status = `${selectedModel.name} configured successfully`;
     } else {
@@ -537,7 +529,7 @@ export class PatternLibrary {
 
 <div class="model-manager">
   <h3>AI Model Configuration</h3>
-  
+
   <div class="form-group">
     <label for="model">Select Model</label>
     <select id="model" bind:value={selectedModel}>
@@ -546,20 +538,34 @@ export class PatternLibrary {
       {/each}
     </select>
   </div>
-  
+
   <div class="form-group">
     <label for="temperature">Temperature</label>
-    <input type="range" id="temperature" min="0" max="1" step="0.1" bind:value={config.temperature}>
+    <input
+      type="range"
+      id="temperature"
+      min="0"
+      max="1"
+      step="0.1"
+      bind:value={config.temperature}
+    />
     <span>{config.temperature}</span>
   </div>
-  
+
   <div class="form-group">
     <label for="max-tokens">Max Tokens</label>
-    <input type="number" id="max-tokens" min="256" max="4096" step="256" bind:value={config.maxTokens}>
+    <input
+      type="number"
+      id="max-tokens"
+      min="256"
+      max="4096"
+      step="256"
+      bind:value={config.maxTokens}
+    />
   </div>
-  
+
   <button on:click={configureModel}>Configure Model</button>
-  
+
   <div class="status">
     Status: {status}
   </div>
@@ -571,11 +577,11 @@ export class PatternLibrary {
     border: 1px solid #ccc;
     border-radius: 0.5rem;
   }
-  
+
   .form-group {
     margin-bottom: 1rem;
   }
-  
+
   .status {
     margin-top: 1rem;
     font-style: italic;
@@ -592,36 +598,34 @@ export class PatternLibrary {
   import { Effect } from 'effect';
   import { PatternLibrary } from '$lib/services/ai/patterns';
   import { MCPManager } from '$lib/server/ai/mcp-manager';
-  
+
   let patterns = [];
   let selectedPatterns = [];
   let input = '';
   let output = '';
   let loading = false;
-  
+
   onMount(async () => {
-    const result = await Effect.runPromise(
-      Effect.either(PatternLibrary.listPatterns)
-    );
-    
+    const result = await Effect.runPromise(Effect.either(PatternLibrary.listPatterns));
+
     if (result._tag === 'Right') {
       patterns = result.right;
     }
   });
-  
+
   async function executePatterns() {
     if (!input || selectedPatterns.length === 0) return;
-    
+
     loading = true;
     output = '';
-    
+
     let currentInput = input;
-    
+
     for (const pattern of selectedPatterns) {
       const result = await Effect.runPromise(
         Effect.either(MCPManager.executePattern(pattern.id, currentInput))
       );
-      
+
       if (result._tag === 'Right') {
         currentInput = result.right;
         output = currentInput;
@@ -630,36 +634,40 @@ export class PatternLibrary {
         break;
       }
     }
-    
+
     loading = false;
   }
 </script>
 
 <div class="pattern-executor">
   <h3>Pattern Execution</h3>
-  
+
   <div class="patterns-selection">
     <label>Select Patterns to Execute (in sequence)</label>
     <div class="patterns-list">
       {#each patterns as pattern}
         <label>
-          <input type="checkbox" bind:group={selectedPatterns} value={pattern}>
+          <input type="checkbox" bind:group={selectedPatterns} value={pattern} />
           {pattern.name} - {pattern.description}
         </label>
       {/each}
     </div>
   </div>
-  
+
   <div class="input-output">
     <div class="input">
       <label for="input">Input</label>
-      <textarea id="input" bind:value={input} rows="10" placeholder="Enter text to process"></textarea>
+      <textarea id="input" bind:value={input} rows="10" placeholder="Enter text to process"
+      ></textarea>
     </div>
-    
-    <button on:click={executePatterns} disabled={loading || !input || selectedPatterns.length === 0}>
+
+    <button
+      on:click={executePatterns}
+      disabled={loading || !input || selectedPatterns.length === 0}
+    >
       {loading ? 'Processing...' : 'Execute Patterns'}
     </button>
-    
+
     <div class="output">
       <label for="output">Output</label>
       <div class="output-content" id="output">
@@ -681,7 +689,7 @@ export class PatternLibrary {
     flex-direction: column;
     gap: 1rem;
   }
-  
+
   .patterns-list {
     display: flex;
     flex-direction: column;
@@ -692,18 +700,18 @@ export class PatternLibrary {
     padding: 0.5rem;
     border-radius: 0.25rem;
   }
-  
+
   .input-output {
     display: grid;
     grid-template-columns: 1fr;
     gap: 1rem;
   }
-  
+
   textarea {
     width: 100%;
     font-family: monospace;
   }
-  
+
   .output-content {
     min-height: 200px;
     border: 1px solid #ddd;
@@ -712,12 +720,12 @@ export class PatternLibrary {
     font-family: monospace;
     white-space: pre-wrap;
   }
-  
+
   .loading {
     font-style: italic;
     color: #666;
   }
-  
+
   .empty {
     color: #999;
     font-style: italic;

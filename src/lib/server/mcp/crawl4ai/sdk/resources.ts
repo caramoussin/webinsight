@@ -24,7 +24,7 @@ export const defineCheckRobotsTxtResource = (server: McpServer) => {
         // Extract the URL from the URI
         const urlMatch = uri.href.match(/robots:\/\/(.+)/);
         const url = urlMatch ? urlMatch[1] : '';
-        
+
         // Use the core service to check robots.txt
         const result = await E.runPromise(
           E.gen(function* () {

@@ -721,15 +721,15 @@ Note: Timeline estimates are subject to adjustment based on development progress
 
 ### Tech Stack Comparison: SvelteKit + Bun vs. Tauri (Potential Future)
 
-| Aspect                | SvelteKit + Bun (Current)                        | Tauri + SvelteKit + Rust (Potential Future)      |
-|-----------------------|--------------------------------------------------|----------------------------------------------------|
-| **Runtime**           | Bun (JavaScript/TypeScript runtime)              | OS Native Webview (frontend), Rust runtime (backend) |
-| **Backend Language**  | TypeScript (with Effect TS)                      | Rust                                               |
-| **Frontend Language** | TypeScript (SvelteKit)                           | TypeScript (SvelteKit)                             |
-| **Rendering**         | SSR (Server-Side Rendering) & CSR (Client-Side)  | Primarily CSR within Webview; Rust backend for API |
-| **Codebase**          | Unified Full-Stack (TypeScript)                  | Split: JS/TS Frontend, Rust Backend                |
+| Aspect                | SvelteKit + Bun (Current)                                                                | Tauri + SvelteKit + Rust (Potential Future)                                              |
+| --------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| **Runtime**           | Bun (JavaScript/TypeScript runtime)                                                      | OS Native Webview (frontend), Rust runtime (backend)                                     |
+| **Backend Language**  | TypeScript (with Effect TS)                                                              | Rust                                                                                     |
+| **Frontend Language** | TypeScript (SvelteKit)                                                                   | TypeScript (SvelteKit)                                                                   |
+| **Rendering**         | SSR (Server-Side Rendering) & CSR (Client-Side)                                          | Primarily CSR within Webview; Rust backend for API                                       |
+| **Codebase**          | Unified Full-Stack (TypeScript)                                                          | Split: JS/TS Frontend, Rust Backend                                                      |
 | **Core Strengths**    | Rapid iteration, unified language, large JS/TS ecosystem, Effect TS functional paradigm. | Smaller binaries, high performance (Rust), enhanced security (Rust), native OS features. |
-| **Distribution Size** | Moderate (Node.js runtime or equivalent bundled) | Very Small (native webview, compiled Rust)       |
-| **IPC**               | SvelteKit API Routes, WebSockets                 | Tauri IPC commands/events, Rust WebSocket handling |
+| **Distribution Size** | Moderate (Node.js runtime or equivalent bundled)                                         | Very Small (native webview, compiled Rust)                                               |
+| **IPC**               | SvelteKit API Routes, WebSockets                                                         | Tauri IPC commands/events, Rust WebSocket handling                                       |
 
 This comparison highlights the trade-offs between the current agile, unified stack and a potential future stack optimized for performance and distribution size with Tauri and Rust.

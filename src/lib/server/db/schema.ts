@@ -14,11 +14,18 @@ import { sql } from 'drizzle-orm';
 // });
 
 export const feeds = sqliteTable('feeds', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   name: text('name'),
   url: text('url').notNull().unique(),
   profileId: text('profile_id').notNull(), // .references(() => profiles.id, { onDelete: 'cascade' }) // Add if profiles table exists
   collectionId: text('collection_id'), // .references(() => collections.id, { onDelete: 'set null' }) // Add if collections table exists
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(CURRENT_TIMESTAMP)`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(CURRENT_TIMESTAMP)`).$onUpdate(() => new Date()),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(CURRENT_TIMESTAMP)`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(CURRENT_TIMESTAMP)`)
+    .$onUpdate(() => new Date())
 });

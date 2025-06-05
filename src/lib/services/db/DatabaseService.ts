@@ -13,7 +13,10 @@ export type DrizzleClient = BetterSQLite3Database<Record<string, unknown>>;
  * This will be a dependency for the DatabaseServiceLive layer.
  * The actual instance will be provided elsewhere (e.g., during app setup or per-profile context).
  */
-export class DrizzleClientTag extends Context.Tag('DrizzleClientTag')<DrizzleClientTag, DrizzleClient>() { }
+export class DrizzleClientTag extends Context.Tag('DrizzleClientTag')<
+  DrizzleClientTag,
+  DrizzleClient
+>() {}
 
 /**
  * Defines the contract for database operations.
@@ -36,19 +39,26 @@ export interface DatabaseService {
    * Note: Drizzle's batch API with BetterSQLite3 might not run in a single transaction by default.
    * True transactional behavior might require using the transaction method below.
    */
-  readonly batch: <T extends BatchItem<'sqlite'>[] | readonly BatchItem<'sqlite'>[]>(queries: T) => Effect.Effect<unknown[], DatabaseError, DrizzleClientTag>;
+  readonly batch: <T extends BatchItem<'sqlite'>[] | readonly BatchItem<'sqlite'>[]>(
+    queries: T
+  ) => Effect.Effect<unknown[], DatabaseError, DrizzleClientTag>;
 
   /**
    * Executes an Effect within a database transaction.
    * The provided Effect will have access to the Drizzle client via the DrizzleClientTag in its context.
    */
-  readonly transaction: <A, E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E | DatabaseError, R | DrizzleClientTag>;
+  readonly transaction: <A, E, R>(
+    effect: Effect.Effect<A, E, R>
+  ) => Effect.Effect<A, E | DatabaseError, R | DrizzleClientTag>;
 }
 
 /**
  * Context Tag for the DatabaseService.
  */
-export class DatabaseServiceTag extends Context.Tag('DatabaseService')<DatabaseServiceTag, DatabaseService>() { }
+export class DatabaseServiceTag extends Context.Tag('DatabaseService')<
+  DatabaseServiceTag,
+  DatabaseService
+>() {}
 
 /**
  * Live implementation of the DatabaseService.
@@ -62,17 +72,31 @@ export const DatabaseServiceLive = Layer.effect(
     const run = <T = unknown>(query: SQL): Effect.Effect<T, DatabaseError, never> =>
       Effect.tryPromise({
         try: () => Promise.resolve(drizzle.get(query)) as Promise<T>,
-        catch: (error) => new DatabaseError({ message: 'Failed to run query', cause: error, operation: 'run', query: String(query) }),
+        catch: (error) =>
+          new DatabaseError({
+            message: 'Failed to run query',
+            cause: error,
+            operation: 'run',
+            query: String(query)
+          })
       });
 
     const all = <T = unknown>(query: SQL): Effect.Effect<T[], DatabaseError, never> =>
       Effect.tryPromise({
         try: () => Promise.resolve(drizzle.all(query)) as Promise<T[]>,
-        catch: (error) => new DatabaseError({ message: 'Failed to run all query', cause: error, operation: 'all', query: String(query) }),
+        catch: (error) =>
+          new DatabaseError({
+            message: 'Failed to run all query',
+            cause: error,
+            operation: 'all',
+            query: String(query)
+          })
       });
 
     // For batch operations, we need to use a transaction since DrizzleClient doesn't have a direct batch method
-    const batch = <T extends BatchItem<'sqlite'>[] | readonly BatchItem<'sqlite'>[]>(queries: T): Effect.Effect<unknown[], DatabaseError, never> =>
+    const batch = <T extends BatchItem<'sqlite'>[] | readonly BatchItem<'sqlite'>[]>(
+      queries: T
+    ): Effect.Effect<unknown[], DatabaseError, never> =>
       Effect.tryPromise({
         try: async () => {
           // Execute each query in sequence and collect results
@@ -91,10 +115,17 @@ export const DatabaseServiceLive = Layer.effect(
             throw e;
           }
         },
-        catch: (error) => new DatabaseError({ message: 'Failed to execute batch', cause: error, operation: 'batch' }),
+        catch: (error) =>
+          new DatabaseError({
+            message: 'Failed to execute batch',
+            cause: error,
+            operation: 'batch'
+          })
       });
 
-    const transaction = <A, E, R>(effectToRun: Effect.Effect<A, E, R>): Effect.Effect<A, E | DatabaseError, R> =>
+    const transaction = <A, E, R>(
+      effectToRun: Effect.Effect<A, E, R>
+    ): Effect.Effect<A, E | DatabaseError, R> =>
       Effect.acquireUseRelease(
         Effect.sync(() => drizzle.run(sql`BEGIN`)).pipe(Effect.orDie),
         () => effectToRun,
@@ -113,7 +144,13 @@ export const DatabaseServiceLive = Layer.effect(
           // This case should ideally not be hit if effectToRun correctly types its errors.
           // If it's a known error from 'E', it will be preserved.
           // If it's an unknown defect, it might be caught here.
-          return Effect.fail(new DatabaseError({ message: 'Transaction failed with an unexpected error', cause: error, operation: 'transaction' }));
+          return Effect.fail(
+            new DatabaseError({
+              message: 'Transaction failed with an unexpected error',
+              cause: error,
+              operation: 'transaction'
+            })
+          );
         })
       );
 

@@ -24,75 +24,75 @@ import * as Schema from '@effect/schema/Schema';
 
 // Define Service Interfaces (Context Tags)
 class MCPService extends Context.Tag('MCPService')<
-	MCPService,
-	{
-		readonly executePattern: (
-			pattern: string,
-			input: unknown,
-			target: string
-		) => Effect.Effect<unknown, MCPError>;
-	}
+  MCPService,
+  {
+    readonly executePattern: (
+      pattern: string,
+      input: unknown,
+      target: string
+    ) => Effect.Effect<unknown, MCPError>;
+  }
 >() {}
 class ContentDB extends Context.Tag('ContentDB')<
-	ContentDB,
-	{
-		readonly saveArticle: (article: Article) => Effect.Effect<void, DBError>;
-	}
+  ContentDB,
+  {
+    readonly saveArticle: (article: Article) => Effect.Effect<void, DBError>;
+  }
 >() {}
 
 // Define Data Schema with @effect/schema
 const ArticleSchema = Schema.Struct({
-	id: Schema.String,
-	title: Schema.String,
-	rawContent: Schema.String,
-	summary: Schema.Option(Schema.String)
+  id: Schema.String,
+  title: Schema.String,
+  rawContent: Schema.String,
+  summary: Schema.Option(Schema.String)
 });
 type Article = Schema.Schema.To<typeof ArticleSchema>;
 
 // Business Logic composed with Effect
 const transformAndSaveContent = (
-	rawContent: string
+  rawContent: string
 ): Effect.Effect<Article, MCPError | DBError, MCPService | ContentDB> =>
-	Effect.gen(function* (_) {
-		const mcp = yield* _(MCPService);
-		const db = yield* _(ContentDB);
-		const title = extractTitle(rawContent); // Assume pure helper function
-		const summaryResult = yield* _(mcp.executePattern('summarize', rawContent, 'mcp://default'));
-		const summary = yield* _(Schema.decode(Schema.String)(summaryResult)); // Validate MCP output
+  Effect.gen(function* (_) {
+    const mcp = yield* _(MCPService);
+    const db = yield* _(ContentDB);
+    const title = extractTitle(rawContent); // Assume pure helper function
+    const summaryResult = yield* _(mcp.executePattern('summarize', rawContent, 'mcp://default'));
+    const summary = yield* _(Schema.decode(Schema.String)(summaryResult)); // Validate MCP output
 
-		const article: Article = {
-			id: generateId(), // Assume pure helper function
-			title,
-			rawContent,
-			summary: Option.some(summary)
-		};
+    const article: Article = {
+      id: generateId(), // Assume pure helper function
+      title,
+      rawContent,
+      summary: Option.some(summary)
+    };
 
-		yield* _(db.saveArticle(article));
-		return article;
-	});
+    yield* _(db.saveArticle(article));
+    return article;
+  });
 
 // Example Layer providing live implementation
 const MCPServiceLive = Layer.succeed(MCPService, {
-	executePattern: (pattern, input, target) => Effect.succeed(`Summary of ${input}`)
+  executePattern: (pattern, input, target) => Effect.succeed(`Summary of ${input}`)
 });
 
 // Running the effect with dependencies provided
 const runnable = transformAndSaveContent('Some raw text...').pipe(
-	Effect.provideLayer(MCPServiceLive)
-	// pipe(Effect.provideLayer(ContentDBLive)) // Provide DB Layer elsewhere
+  Effect.provideLayer(MCPServiceLive)
+  // pipe(Effect.provideLayer(ContentDBLive)) // Provide DB Layer elsewhere
 );
 
 // Example of function composition (conceptual)
 const processArticle = pipe(
-	fetchContent, // Effect<RawContent, HttpError, HttpClient>
-	parseContent, // Effect<ParsedData, ParseError, ParserService>
-	transformAndSaveContent, // Effect<Article, MCPError | DBError, MCPService | ContentDB>
-	storeContent // Effect<void, DbError, DbService>
+  fetchContent, // Effect<RawContent, HttpError, HttpClient>
+  parseContent, // Effect<ParsedData, ParseError, ParserService>
+  transformAndSaveContent, // Effect<Article, MCPError | DBError, MCPService | ContentDB>
+  storeContent // Effect<void, DbError, DbService>
 );
 
 const addArticleToCollection = (collection, article) => ({
-	...collection,
-	articles: [...collection.articles, article.id]
+  ...collection,
+  articles: [...collection.articles, article.id]
 });
 ```
 
@@ -257,18 +257,18 @@ WebInsight implements a hybrid Cache-Augmented Generation (CAG) and Retrieval-Au
 ```typescript
 // Example: HybridCAGService using Effect.Cache
 interface HybridCAGService {
-	getOrGenerate: (
-		articleId: string,
-		queryType: 'summary' | 'recommendation' | 'metadata',
-		context?: string[]
-	) => Effect.Effect<string, Error, Database | FabricAI>;
+  getOrGenerate: (
+    articleId: string,
+    queryType: 'summary' | 'recommendation' | 'metadata',
+    context?: string[]
+  ) => Effect.Effect<string, Error, Database | FabricAI>;
 }
 
 // Cache implementation with Effect.Cache
 const cache = Cache.make({
-	lookup: (key) => retrieveOrGenerateContent(key),
-	capacity: 1000,
-	timeToLive: '1 day'
+  lookup: (key) => retrieveOrGenerateContent(key),
+  capacity: 1000,
+  timeToLive: '1 day'
 });
 ```
 
@@ -309,32 +309,32 @@ src/
    ```typescript
    // Implemented MCP host and provider architecture
    interface MCPHostService {
-   	// Register a provider with the host
-   	registerProvider(provider: MCPProvider): Effect.Effect<void, MCPHostError>;
-   	// List all tools from all providers
-   	listAllTools(): Effect.Effect<Array<MCPTool>, MCPHostError>;
-   	// Call a tool by name and provider
-   	callTool<P, R>(
-   		toolName: string,
-   		providerName: string,
-   		params: P
-   	): Effect.Effect<R, MCPHostError | ServiceError>;
+     // Register a provider with the host
+     registerProvider(provider: MCPProvider): Effect.Effect<void, MCPHostError>;
+     // List all tools from all providers
+     listAllTools(): Effect.Effect<Array<MCPTool>, MCPHostError>;
+     // Call a tool by name and provider
+     callTool<P, R>(
+       toolName: string,
+       providerName: string,
+       params: P
+     ): Effect.Effect<R, MCPHostError | ServiceError>;
    }
 
    // Crawl4AI MCP provider implementation
    interface Crawl4AIService {
-   	// Extract content from a web page
-   	extractContent(
-   		params: ExtractContentInput
-   	): Effect.Effect<ExtractContentOutput, Crawl4AIMCPError>;
-   	// Check if scraping is allowed by robots.txt
-   	checkRobotsTxt(
-   		params: CheckRobotsTxtInput
-   	): Effect.Effect<CheckRobotsTxtOutput, Crawl4AIMCPError>;
-   	// List available MCP tools
-   	listTools(): Effect.Effect<Array<Tool>, Crawl4AIMCPError>;
-   	// Call a tool by name
-   	callTool<P, R>(name: string, params: P): Effect.Effect<R, Crawl4AIMCPError>;
+     // Extract content from a web page
+     extractContent(
+       params: ExtractContentInput
+     ): Effect.Effect<ExtractContentOutput, Crawl4AIMCPError>;
+     // Check if scraping is allowed by robots.txt
+     checkRobotsTxt(
+       params: CheckRobotsTxtInput
+     ): Effect.Effect<CheckRobotsTxtOutput, Crawl4AIMCPError>;
+     // List available MCP tools
+     listTools(): Effect.Effect<Array<Tool>, Crawl4AIMCPError>;
+     // Call a tool by name
+     callTool<P, R>(name: string, params: P): Effect.Effect<R, Crawl4AIMCPError>;
    }
    ```
 
@@ -359,17 +359,17 @@ src/
 
    ```typescript
    interface ApiClientService {
-   	configureMCPConnection(config: MCPConfig): Promise<MCPConnection>;
-   	fetchFromEndpoint(source: ApiSource, endpoint: string, params: object): Promise<ApiResponse>;
-   	handleRateLimits(source: ApiSource): Promise<RateLimitInfo>;
-   	parseResponse(response: ApiResponse): Promise<ParsedContent>;
+     configureMCPConnection(config: MCPConfig): Promise<MCPConnection>;
+     fetchFromEndpoint(source: ApiSource, endpoint: string, params: object): Promise<ApiResponse>;
+     handleRateLimits(source: ApiSource): Promise<RateLimitInfo>;
+     parseResponse(response: ApiResponse): Promise<ParsedContent>;
    }
 
    interface MCPConfig {
-   	vendor: string; // e.g., ollama, openai
-   	model: string;
-   	url: string; // e.g., mcp://localhost:11434/llama2
-   	credentials?: Credentials;
+     vendor: string; // e.g., ollama, openai
+     model: string;
+     url: string; // e.g., mcp://localhost:11434/llama2
+     credentials?: Credentials;
    }
    ```
 
@@ -400,8 +400,8 @@ src/
    ```typescript
    // Conceptual interface
    interface ArchivistAgent {
-   	collectFromUrl(url: string): Promise<Content>;
-   	enrichMetadata(contentId: string): Promise<Metadata>;
+     collectFromUrl(url: string): Promise<Content>;
+     enrichMetadata(contentId: string): Promise<Metadata>;
    }
    ```
 
@@ -414,10 +414,10 @@ src/
 
    ```typescript
    interface ScribeAgent {
-   	summarizeContent(content: Content): Promise<Summary>;
-   	extractKeyPoints(content: Content): Promise<KeyPoint[]>;
-   	analyzeSentiment(content: Content): Promise<SentimentAnalysis>;
-   	assessQuality(content: Content): Promise<QualityScore>;
+     summarizeContent(content: Content): Promise<Summary>;
+     extractKeyPoints(content: Content): Promise<KeyPoint[]>;
+     analyzeSentiment(content: Content): Promise<SentimentAnalysis>;
+     assessQuality(content: Content): Promise<QualityScore>;
    }
    ```
 
@@ -431,9 +431,9 @@ src/
 
    ```typescript
    interface LibrarianAgent {
-   	generateRecommendations(userPrefs: UserPreferences): Promise<Recommendation[]>;
-   	createCrossReferences(content: Content[]): Promise<Reference[]>;
-   	suggestOrganization(collections: Collection[]): Promise<OrganizationSuggestion>;
+     generateRecommendations(userPrefs: UserPreferences): Promise<Recommendation[]>;
+     createCrossReferences(content: Content[]): Promise<Reference[]>;
+     suggestOrganization(collections: Collection[]): Promise<OrganizationSuggestion>;
    }
    ```
 
@@ -466,92 +466,92 @@ The following schema applies individually to _each_ profile's database file.
 ```typescript
 // Feed Table
 interface Feed {
-	id: string;
-	url: string;
-	title: string;
-	description: string;
-	lastUpdated: Date;
-	updateFrequency: number;
-	status: FeedStatus;
-	type: FeedType;
-	sourceConfig: SourceConfig;
+  id: string;
+  url: string;
+  title: string;
+  description: string;
+  lastUpdated: Date;
+  updateFrequency: number;
+  status: FeedStatus;
+  type: FeedType;
+  sourceConfig: SourceConfig;
 }
 
 // Article Table
 interface Article {
-	id: string;
-	feedId: string;
-	title: string;
-	content: string;
-	publishDate: Date;
-	metadata: ArticleMetadata;
-	aiAnalysis: AIAnalysis;
-	originalSource: string;
-	embeddingId: string; // Reference to embedding vector in Milvus Lite
+  id: string;
+  feedId: string;
+  title: string;
+  content: string;
+  publishDate: Date;
+  metadata: ArticleMetadata;
+  aiAnalysis: AIAnalysis;
+  originalSource: string;
+  embeddingId: string; // Reference to embedding vector in Milvus Lite
 }
 
 // Collection Table
 interface Collection {
-	id: string;
-	name: string;
-	description: string;
-	articles: string[];
-	tags: string[];
-	createdAt: Date;
-	updatedAt: Date;
+  id: string;
+  name: string;
+  description: string;
+  articles: string[];
+  tags: string[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // Cached Results Table (for CAG/RAG strategy)
 interface CachedResult {
-	id: string;
-	articleId: string;
-	queryType: 'summary' | 'recommendation' | 'metadata';
-	result: string;
-	timestamp: number;
-	ttl: number;
+  id: string;
+  articleId: string;
+  queryType: 'summary' | 'recommendation' | 'metadata';
+  result: string;
+  timestamp: number;
+  ttl: number;
 }
 
 // User Preferences Table
 interface UserPreferences {
-	id: string;
-	theme: Theme;
-	readingSettings: ReadingSettings;
-	feedSettings: FeedSettings;
-	aiSettings: AISettings;
-	uiSettings: UISettings;
-	scrapingSettings: ScrapingSettings;
-	llmSettings: LLMSettings; // Added for LLM provider configuration
+  id: string;
+  theme: Theme;
+  readingSettings: ReadingSettings;
+  feedSettings: FeedSettings;
+  aiSettings: AISettings;
+  uiSettings: UISettings;
+  scrapingSettings: ScrapingSettings;
+  llmSettings: LLMSettings; // Added for LLM provider configuration
 }
 
 // API Source Table
 interface ApiSource {
-	id: string;
-	name: string;
-	baseUrl: string;
-	authType: AuthType;
-	encryptedCredentials: string;
-	endpoints: ApiEndpoint[];
-	rateLimits: RateLimit[];
-	lastUsed: Date;
+  id: string;
+  name: string;
+  baseUrl: string;
+  authType: AuthType;
+  encryptedCredentials: string;
+  endpoints: ApiEndpoint[];
+  rateLimits: RateLimit[];
+  lastUsed: Date;
 }
 
 // Nitter Instance Table
 interface NitterInstance {
-	id: string;
-	url: string;
-	status: InstanceStatus;
-	lastChecked: Date;
-	successRate: number;
-	quirks: InstanceQuirk[];
+  id: string;
+  url: string;
+  status: InstanceStatus;
+  lastChecked: Date;
+  successRate: number;
+  quirks: InstanceQuirk[];
 }
 
 // MCP Connection Table
 interface MCPConnection {
-	id: string;
-	url: string; // e.g., mcp://localhost:11434/llama2
-	vendor: string; // e.g., ollama, openai
-	model: string;
-	status: ConnectionStatus;
+  id: string;
+  url: string; // e.g., mcp://localhost:11434/llama2
+  vendor: string; // e.g., ollama, openai
+  model: string;
+  status: ConnectionStatus;
 }
 ```
 
@@ -582,11 +582,11 @@ Interactions via this layer leverage Effect for managing asynchronous communicat
 
 ```typescript
 interface WebSocketEvents {
-	'feed:update': (feedId: string) => void;
-	'content:new': (articleId: string) => void;
-	'collection:update': (collectionId: string) => void;
-	'ai:insight': (insightId: string) => void;
-	'mcp:update': (connectionId: string) => void;
+  'feed:update': (feedId: string) => void;
+  'content:new': (articleId: string) => void;
+  'collection:update': (collectionId: string) => void;
+  'ai:insight': (insightId: string) => void;
+  'mcp:update': (connectionId: string) => void;
 }
 ```
 
@@ -594,11 +594,11 @@ interface WebSocketEvents {
 
 ```typescript
 interface JobScheduler {
-	scheduleFeedUpdates(): void;
-	scheduleContentProcessing(): void;
-	scheduleApiRequests(): void;
-	scheduleMaintenanceTasks(): void;
-	scheduleMCPTasks(): void; // Added for MCP server management
+  scheduleFeedUpdates(): void;
+  scheduleContentProcessing(): void;
+  scheduleApiRequests(): void;
+  scheduleMaintenanceTasks(): void;
+  scheduleMCPTasks(): void; // Added for MCP server management
 }
 ```
 
@@ -629,9 +629,9 @@ interface JobScheduler {
    ```typescript
    // Memoized function example with MCP
    const memoizedAnalyze = memoize(
-   	(content: Content): Analysis =>
-   		mcp.executePattern('analyze', content, 'mcp://localhost:11434/llama2'),
-   	(content) => content.id
+     (content: Content): Analysis =>
+       mcp.executePattern('analyze', content, 'mcp://localhost:11434/llama2'),
+     (content) => content.id
    );
    ```
 
@@ -640,10 +640,10 @@ interface JobScheduler {
    ```typescript
    // Lazy sequence processing with MCP
    const processArticles = pipe(
-   	lazyMap(fetchMetadata),
-   	lazyFilter(isRelevant),
-   	lazyMap(transformContentWithMCP(['extract_wisdom', 'summarize'])),
-   	take(10)
+     lazyMap(fetchMetadata),
+     lazyFilter(isRelevant),
+     lazyMap(transformContentWithMCP(['extract_wisdom', 'summarize'])),
+     take(10)
    );
    ```
 
@@ -653,14 +653,14 @@ interface JobScheduler {
 
    ```typescript
    interface CacheManager {
-   	memory: MemoryCache;
-   	disk: DiskCache;
-   	feed: FeedCache;
-   	apiResponse: ApiResponseCache;
-   	scrapedContent: ScrapedContentCache;
-   	llmCache: LLMCache; // Added for LLM provider outputs
-   	set: <T>(key: string, value: T) => CacheManager;
-   	get: <T>(key: string) => Option<T>;
+     memory: MemoryCache;
+     disk: DiskCache;
+     feed: FeedCache;
+     apiResponse: ApiResponseCache;
+     scrapedContent: ScrapedContentCache;
+     llmCache: LLMCache; // Added for LLM provider outputs
+     set: <T>(key: string, value: T) => CacheManager;
+     get: <T>(key: string) => Option<T>;
    }
    ```
 
@@ -685,10 +685,10 @@ interface JobScheduler {
 
 ```typescript
 interface ErrorHandler {
-	handleNetworkError(error: NetworkError): Promise<void>;
-	handleDatabaseError(error: DatabaseError): Promise<void>;
-	handleAIError(error: AIError): Promise<void>;
-	handleMCPError(error: MCPError): Promise<void>; // Added for MCP-specific errors
+  handleNetworkError(error: NetworkError): Promise<void>;
+  handleDatabaseError(error: DatabaseError): Promise<void>;
+  handleAIError(error: AIError): Promise<void>;
+  handleMCPError(error: MCPError): Promise<void>; // Added for MCP-specific errors
 }
 ```
 
@@ -696,10 +696,10 @@ interface ErrorHandler {
 
 ```typescript
 interface Logger {
-	info(message: string, context?: object): void;
-	error(error: Error, context?: object): void;
-	warn(message: string, context?: object): void;
-	debug(message: string, context?: object): void;
+  info(message: string, context?: object): void;
+  error(error: Error, context?: object): void;
+  warn(message: string, context?: object): void;
+  debug(message: string, context?: object): void;
 }
 ```
 
@@ -775,11 +775,11 @@ bun run test
 
 ```typescript
 interface HealthCheck {
-	checkDatabase(): Promise<HealthStatus>;
-	checkAIServices(): Promise<HealthStatus>;
-	checkNetworkServices(): Promise<HealthStatus>;
-	checkFileSystem(): Promise<HealthStatus>;
-	checkMCPServers(): Promise<HealthStatus>; // Added for MCP monitoring
+  checkDatabase(): Promise<HealthStatus>;
+  checkAIServices(): Promise<HealthStatus>;
+  checkNetworkServices(): Promise<HealthStatus>;
+  checkFileSystem(): Promise<HealthStatus>;
+  checkMCPServers(): Promise<HealthStatus>; // Added for MCP monitoring
 }
 ```
 
@@ -787,11 +787,11 @@ interface HealthCheck {
 
 ```typescript
 interface Metrics {
-	collectPerformanceMetrics(): Promise<PerformanceData>;
-	monitorResourceUsage(): Promise<ResourceUsage>;
-	trackUserInteractions(): Promise<UserMetrics>;
-	measureResponseTimes(): Promise<ResponseTimeMetrics>;
-	trackMCPPerformance(): Promise<MCPMetrics>; // Added for MCP-specific metrics
+  collectPerformanceMetrics(): Promise<PerformanceData>;
+  monitorResourceUsage(): Promise<ResourceUsage>;
+  trackUserInteractions(): Promise<UserMetrics>;
+  measureResponseTimes(): Promise<ResponseTimeMetrics>;
+  trackMCPPerformance(): Promise<MCPMetrics>; // Added for MCP-specific metrics
 }
 ```
 

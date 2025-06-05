@@ -11,28 +11,32 @@ The feeds management system is now fully functional with a complete backend serv
 ### Backend Services (Effect TS)
 
 #### Database Service (`src/lib/services/db/DatabaseService.ts` & `db.errors.ts`)
+
 - [x] Define `DatabaseError` extending `Data.TaggedError<'DatabaseError'>` for generic database operation failures
 - [x] Define `DatabaseService` interface with methods for database interactions
 - [x] Create `DatabaseServiceTag` using `Context.Tag<DatabaseServiceTag, DatabaseService>()`
 - [x] Implement `DatabaseServiceLive` layer
 
 #### Feed Service (`src/lib/services/feeds/FeedService.ts` & `feed.errors.ts`)
+
 - [x] Define `Feed` data type using `effect` Schema (in `src/lib/schemas/feed.schema.ts`)
 - [x] Define `FeedServiceError` extending `Data.TaggedError` for service-specific errors
 - [x] Define `FeedService` interface with methods returning `Effect`
 - [x] Create `FeedServiceTag` using `Context.Tag<FeedServiceTag, FeedService>()`
 - [x] Implement `FeedServiceLive`: `Layer.effect<FeedServiceTag, never, DatabaseServiceTag>`
-    - [x] `createFeed(input: CreateFeed): Effect<Feed, FeedServiceError>`
-    - [x] `getFeedById(id: string, profileId: string): Effect<Option.Option<Feed>, FeedServiceError>`
-    - [x] `getAllFeedsByProfileId(profileId: string): Effect<Feed[], FeedServiceError>`
-    - [x] `updateFeed(id: string, profileId: string, input: UpdateFeed): Effect<Feed, FeedServiceError>`
-    - [x] `deleteFeed(id: string, profileId: string): Effect<void, FeedServiceError>`
+  - [x] `createFeed(input: CreateFeed): Effect<Feed, FeedServiceError>`
+  - [x] `getFeedById(id: string, profileId: string): Effect<Option.Option<Feed>, FeedServiceError>`
+  - [x] `getAllFeedsByProfileId(profileId: string): Effect<Feed[], FeedServiceError>`
+  - [x] `updateFeed(id: string, profileId: string, input: UpdateFeed): Effect<Feed, FeedServiceError>`
+  - [x] `deleteFeed(id: string, profileId: string): Effect<void, FeedServiceError>`
 
 ### Database Layer (Drizzle ORM & SQLite)
+
 - [x] Define `feeds` table schema in `src/lib/server/db/schema.ts`
 - [x] Schema includes all required fields (id, name, url, profileId, collectionId, createdAt, updatedAt)
 
 ### API Endpoints (SvelteKit - `src/routes/api/feeds/`)
+
 - [x] `POST /api/feeds/+server.ts`: Create a new feed
 - [x] `GET /api/feeds/+server.ts`: List all feeds for the current profile
 - [x] `GET /api/feeds/[id]/+server.ts`: Get a specific feed by ID
@@ -40,44 +44,48 @@ The feeds management system is now fully functional with a complete backend serv
 - [x] `DELETE /api/feeds/[id]/+server.ts`: Delete a specific feed
 
 ### Frontend (SvelteKit)
+
 - [x] **Stores (`src/lib/stores/feeds.store.svelte.ts`)**:
-    - [x] Define `FeedStoreError` extending `Data.TaggedError<'FeedStoreError'>`
-    - [x] Define `FeedsStore` type including reactive state (using Svelte 5 runes like `$state`):
-        - [x] `feeds: Feed[] = $state([])`
-        - [x] `loading: boolean = $state(false)`
-        - [x] `error: string | null = $state(null)`
-    - [x] Implement `createFeedsStore()` factory function:
-        - [x] Initialize reactive state variables
-        - [x] Define methods that interact with API endpoints and return `Effect`:
-            - [x] `fetchAllFeeds(): Effect<void, FeedStoreError>`
-            - [x] `addNewFeed(data: CreateFeed): Effect<Feed, FeedStoreError>`
-            - [x] `saveFeedChanges(id: string, data: UpdateFeed): Effect<Feed, FeedStoreError>`
-            - [x] `removeFeedById(id: string): Effect<void, FeedStoreError>`
-            - [x] `getFeedById(id: string): Effect<Feed | null, FeedStoreError>`
-    - [x] Initialize and export the singleton `feedsStore` instance
+  - [x] Define `FeedStoreError` extending `Data.TaggedError<'FeedStoreError'>`
+  - [x] Define `FeedsStore` type including reactive state (using Svelte 5 runes like `$state`):
+    - [x] `feeds: Feed[] = $state([])`
+    - [x] `loading: boolean = $state(false)`
+    - [x] `error: string | null = $state(null)`
+  - [x] Implement `createFeedsStore()` factory function:
+    - [x] Initialize reactive state variables
+    - [x] Define methods that interact with API endpoints and return `Effect`:
+      - [x] `fetchAllFeeds(): Effect<void, FeedStoreError>`
+      - [x] `addNewFeed(data: CreateFeed): Effect<Feed, FeedStoreError>`
+      - [x] `saveFeedChanges(id: string, data: UpdateFeed): Effect<Feed, FeedStoreError>`
+      - [x] `removeFeedById(id: string): Effect<void, FeedStoreError>`
+      - [x] `getFeedById(id: string): Effect<Feed | null, FeedStoreError>`
+  - [x] Initialize and export the singleton `feedsStore` instance
 - [x] **Page (`src/routes/feeds/+page.svelte`)**:
-    - [x] Load and display the list of feeds from `feedsStore`
-    - [x] Include an "Add New Feed" button
-    - [x] Implement a modal for adding a new feed
-    - [x] Handle feed editing and deletion
-    - [x] Loading states and error handling
+  - [x] Load and display the list of feeds from `feedsStore`
+  - [x] Include an "Add New Feed" button
+  - [x] Implement a modal for adding a new feed
+  - [x] Handle feed editing and deletion
+  - [x] Loading states and error handling
 - [x] **Components (`src/lib/components/feeds/`)**:
-    - [x] `FeedListItem.svelte`: Displays a single feed's details and action buttons
-    - [x] `AddFeedModal.svelte`: Modal form for feed creation with validation
+  - [x] `FeedListItem.svelte`: Displays a single feed's details and action buttons
+  - [x] `AddFeedModal.svelte`: Modal form for feed creation with validation
 
 ## Todo Tasks
 
 ### Database Layer (Drizzle ORM & SQLite)
+
 - [ ] Ensure the custom migration script handles the creation of the `feeds` table on profile load
 - [ ] Add proper foreign key constraints when profiles/collections tables are implemented
 
 ### API Endpoint Improvements
+
 - [ ] Add proper authentication and profile resolution in API endpoints
 - [ ] Implement proper Drizzle client provider function
 - [ ] Add input validation and better error handling
 - [ ] Add API rate limiting and security headers
 
 ### Frontend Enhancements
+
 - [ ] Add proper authentication context to get real profileId
 - [ ] Implement client-side caching for better performance
 - [ ] Add feed validation (check if URL is a valid RSS/Atom feed)
@@ -112,28 +120,35 @@ The feeds management system is now fully functional with a complete backend serv
 
 ### Relevant Files
 
-*Data Layer*
+_Data Layer_
+
 - `src/lib/server/db/schema/feeds.ts` - Drizzle schema for the `feeds` table.
 - `src/lib/server/db/schema/index.ts` - Main Drizzle schema including feeds.
 
-*Services*
+_Services_
+
 - `src/lib/services/FeedService.ts` - Effect TS service for feed business logic.
 
-*API Routes*
+_API Routes_
+
 - `src/routes/api/feeds/+server.ts` - API for creating and listing feeds.
 - `src/routes/api/feeds/[id]/+server.ts` - API for specific feed operations (GET, PUT, DELETE).
 
-*Frontend Stores*
+_Frontend Stores_
+
 - `src/lib/stores/feeds.store.svelte.ts` - Svelte store (using Effect pattern) for managing feed state.
 
-*Frontend Routes*
+_Frontend Routes_
+
 - `src/routes/feeds/+page.svelte` - Main page for displaying feeds.
 
-*Frontend Components*
+_Frontend Components_
+
 - `src/lib/components/feeds/FeedListItem.svelte` - Component for an individual feed item.
 - `src/lib/components/feeds/AddFeedForm.svelte` - Component for the add feed form/modal.
 
-*Documentation*
+_Documentation_
+
 - `documentation/work-in-progress.md`
 - `documentation/status.md`
 - `documentation/requirements.md`

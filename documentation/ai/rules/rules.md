@@ -9,40 +9,42 @@ How to add new rules to the project
 
 1. Always place rule files in PROJECT_ROOT/.windsurf/rules/:
 
-    ```
-    .windsurf/rules/
-    ├── your-rule-name.mdc
-    ├── another-rule.mdc
-    └── ...
-    ```
+   ```
+   .windsurf/rules/
+   ├── your-rule-name.mdc
+   ├── another-rule.mdc
+   └── ...
+   ```
 
 2. Follow the naming convention:
-    - Use kebab-case for filenames
-    - Always use .mdc extension
-    - Make names descriptive of the rule's purpose
+
+   - Use kebab-case for filenames
+   - Always use .mdc extension
+   - Make names descriptive of the rule's purpose
 
 3. Directory structure:
 
-    ```
-    PROJECT_ROOT/
-    ├── .windsurf/
-    │   └── rules/
-    │       ├── your-rule-name.mdc
-    │       └── ...
-    └── ...
-    ```
+   ```
+   PROJECT_ROOT/
+   ├── .windsurf/
+   │   └── rules/
+   │       ├── your-rule-name.mdc
+   │       └── ...
+   └── ...
+   ```
 
 4. Never place rule files:
-    - In the project root
-    - In subdirectories outside .windsurf/rules
-    - In any other location
+
+   - In the project root
+   - In subdirectories outside .windsurf/rules
+   - In any other location
 
 5. Cursor rules have the following structure:
 
 ````
 ---
 description: Short description of the rule's purpose
-globs: optional/path/pattern/**/* 
+globs: optional/path/pattern/**/*
 alwaysApply: false
 ---
 # Rule Title
@@ -64,4 +66,4 @@ function goodExample() {
 function badExample() {
   // Implementation not following guidelines
 }
-```````
+````

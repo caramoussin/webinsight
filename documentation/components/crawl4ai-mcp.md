@@ -14,21 +14,21 @@ graph TD
         WSC[WebScrapingService]
         MCC[MCPCrawl4AIClient]
     end
-    
+
     subgraph API["API Layer"]
         MCPA["/api/mcp/crawl4ai"]
     end
-    
+
     subgraph Server["Server Layer"]
         MH[MCP Host]
         CP[Crawl4AI Provider]
         CS[Crawl4AI Service]
     end
-    
+
     subgraph External["External Service"]
         PS[Python Crawl4AI Service]
     end
-    
+
     WSC --> MCC
     MCC --> MCPA
     MCPA --> MH
@@ -261,10 +261,7 @@ export class WebScrapingService {
   }
 
   // Check robots.txt compliance
-  checkRobotsAllowed(
-    url: string,
-    userAgent?: string
-  ): Effect.Effect<boolean, ScrapingError> {
+  checkRobotsAllowed(url: string, userAgent?: string): Effect.Effect<boolean, ScrapingError> {
     // Implementation using MCPCrawl4AIClient
   }
 }

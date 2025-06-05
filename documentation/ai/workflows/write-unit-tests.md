@@ -22,12 +22,7 @@ import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vite
 import { Effect as E, Either, pipe, Layer } from 'effect';
 
 // Import the service and related types
-import { 
-  ServiceTag, 
-  ServiceLive, 
-  ServiceError, 
-  type Service 
-} from '$lib/services/path/to/service';
+import { ServiceTag, ServiceLive, ServiceError, type Service } from '$lib/services/path/to/service';
 
 // Import dependencies that need to be mocked
 import { DependencyTag } from '$lib/services/path/to/dependency';
@@ -71,22 +66,20 @@ const testLayer = ServiceLive.pipe(Layer.provide(DependencyMockLive));
 ```typescript
 describe('ServiceName', () => {
   let service: Service;
-  
+
   // Setup before each test
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     // Get the service instance
-    service = await E.runPromise(
-      E.provide(E.Service(ServiceTag), testLayer)
-    );
+    service = await E.runPromise(E.provide(E.Service(ServiceTag), testLayer));
   });
-  
+
   // Cleanup after each test
   afterEach(() => {
     vi.clearAllMocks();
   });
-  
+
   describe('methodName', () => {
     // Test cases for the method
   });
@@ -98,13 +91,17 @@ describe('ServiceName', () => {
 ```typescript
 it('should successfully perform the expected action', async () => {
   // Arrange: Set up test data and mock returns
-  const testInput = { /* test input data */ };
-  const expectedOutput = { /* expected output data */ };
+  const testInput = {
+    /* test input data */
+  };
+  const expectedOutput = {
+    /* expected output data */
+  };
   mockDependencyService.method1.mockReturnValue(E.succeed(someValue));
-  
+
   // Act: Call the service method
   const result = await E.runPromise(service.methodName(testInput));
-  
+
   // Assert: Verify the result and interactions
   expect(result).toEqual(expectedOutput);
   expect(mockDependencyService.method1).toHaveBeenCalledWith(expectedArgs);
@@ -118,13 +115,13 @@ it('should handle errors appropriately', async () => {
   // Arrange: Set up mocks to return errors
   const testError = new Error('Test error');
   mockDependencyService.method1.mockReturnValue(E.fail(testError));
-  
+
   // Act: Call the service method with Either to properly handle errors
   const result = await E.runPromise(E.either(service.methodName(testInput)));
-  
+
   // Assert: Verify the error result
   expect(Either.isLeft(result)).toBe(true);
-  
+
   if (Either.isLeft(result)) {
     const error = result.left;
     expect(error).toBeInstanceOf(ExpectedErrorType);
@@ -141,18 +138,22 @@ For more complex tests using the Effect pipe pattern:
 ```typescript
 it('should process data correctly', async () => {
   // Setup test data
-  const testInput = { /* test input data */ };
-  
+  const testInput = {
+    /* test input data */
+  };
+
   // Run the test using pipe
   const result = await pipe(
     service.methodName(testInput),
-    E.tap((result) => E.sync(() => {
-      // Make assertions on the result
-      expect(result).toEqual(expectedOutput);
-    })),
+    E.tap((result) =>
+      E.sync(() => {
+        // Make assertions on the result
+        expect(result).toEqual(expectedOutput);
+      })
+    ),
     E.runPromise
   );
-  
+
   // Additional assertions if needed
   expect(mockDependencyService.method1).toHaveBeenCalledWith(expectedArgs);
 });
@@ -167,10 +168,10 @@ When testing for specific error types, remember that errors are often wrapped in
 ```typescript
 if (Either.isLeft(result)) {
   const error = result.left;
-  
+
   // Check if the error is an instance of the expected error type
   expect(error instanceof ExpectedErrorType).toBe(true);
-  
+
   // Or use a more robust check
   expect(error.message).toContain('Expected error message');
 }

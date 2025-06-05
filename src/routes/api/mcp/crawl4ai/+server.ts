@@ -72,7 +72,7 @@ export const POST: RequestHandler = async ({ request }) => {
       if (body.useSDK === true) {
         const toolName = body.name || body.tool; // Support both formats
         const toolArgs = body.arguments || body.params || {};
-        
+
         if (!toolName) {
           return E.fail(
             new ServiceError({
@@ -81,7 +81,7 @@ export const POST: RequestHandler = async ({ request }) => {
             })
           );
         }
-        
+
         // Use the MCPHostServiceLive to process the tool call
         return pipe(
           MCPHostServiceLive.callToolAcrossProviders(toolName, toolArgs),
@@ -98,7 +98,7 @@ export const POST: RequestHandler = async ({ request }) => {
           })
         );
       }
-      
+
       // Use the direct provider call
       return pipe(
         Crawl4AIProvider.callTool(body.tool, (body.params as Record<string, unknown>) || {}),

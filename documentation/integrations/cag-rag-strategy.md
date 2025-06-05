@@ -90,7 +90,7 @@ import * as Context from 'effect/Context';
 import * as Layer from 'effect/Layer';
 import * as Cache from 'effect/Cache';
 import { pipe } from 'effect/Function';
-import * as Schema from '@effect/schema/Schema';
+import { Schema as S } from 'effect';
 import { drizzle } from 'drizzle-orm/sqlite';
 import { articles, cachedResults } from './schema';
 import { WebScrapingService } from './WebScrapingService';

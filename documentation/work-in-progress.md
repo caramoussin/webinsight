@@ -9,6 +9,7 @@
 - **Milvus Lite Integration**: Implementing Milvus Lite for vector storage and similarity search.
 - **AI Agent Development**: Implementing the specialized AI agents (Archivist, Scribe, Librarian) using the MCP client and @effect/ai.
 - **Enhanced Hybrid CAG/RAG Strategy**: Implementing a Cache-Augmented Generation and Retrieval-Augmented Generation strategy using transformer-generated embeddings, Milvus Lite, and Effect.Cache to optimize AI performance and accuracy.
+- **Effect.js HttpClient Migration**: Successfully migrated from fetch API to Effect's HttpClient.
 
 ## 2. Recent Changes
 
@@ -176,7 +177,6 @@
 
 ### Overview
 
-Tauri is a lightweight, Rust-based framework for building cross-platform desktop applications using web technologies (HTML, CSS, JavaScript/TypeScript) for the frontend and Rust for the backend. It leverages the OS's native webview, contrasting with SvelteKit + Bun’s Node.js-based, unified TypeScript approach. This evaluation explores Tauri's potential benefits, trade-offs, and strategic fit for WebInsight.
 
 ### Benefits
 
@@ -203,7 +203,7 @@ Adopting Tauri also presents challenges:
 
 ### Recommendation
 
-Continue with the SvelteKit + Bun architecture for Phases 2–4 to leverage rapid iteration, the existing unified TypeScript codebase, and Effect TS’s functional programming strengths.
+Continue with the SvelteKit + Bun architecture for Phases 2–4 to leverage rapid iteration, the existing unified TypeScript codebase, and Effect TS's functional programming strengths.
 Evaluate Tauri seriously in **Phase 5 (Distribution & Polish)** via a Proof-of-Concept (PoC) to validate its benefits for WebInsight.
 
 ### Migration Strategy (Proposed for Phase 5 Evaluation)
@@ -212,7 +212,7 @@ If the PoC is successful, a phased migration could be considered:
 
 - **Phase 3 (AI Agents - Preparatory):** Prototype a small, performance-critical Rust-based service (e.g., a dedicated MilvusService or an embedding utility) to test Rust integration and performance (1–2 weeks, parallel effort).
 - **Phase 4 (Enhanced UX - PoC Development):** Develop a Tauri PoC with a limited feature set (e.g., manual fetch UI - FR1.8) and port a key service (e.g., HybridCAGService) to Rust to compare performance and development experience (3–4 weeks, parallel effort).
-- **Phase 5 (Distribution & Polish - Decision & Potential Migration):** Based on PoC outcomes, decide on Tauri adoption. If positive, a full backend migration to Rust could occur, retaining the SvelteKit frontend. This would also involve leveraging Tauri’s native features (system tray, updates) (6–8 weeks).
+- **Phase 5 (Distribution & Polish - Decision & Potential Migration):** Based on PoC outcomes, decide on Tauri adoption. If positive, a full backend migration to Rust could occur, retaining the SvelteKit frontend. This would also involve leveraging Tauri's native features (system tray, updates) (6–8 weeks).
 - **Hybrid Approach (Alternative):** Explore using Rust for specific microservices (e.g., for Milvus Lite or heavy AI computations) integrated with the existing SvelteKit + Bun backend, or using Tauri as a lightweight shell for the SvelteKit application. This could offer a balance of benefits with less disruption (2–3 weeks evaluation).
 
 ### Alignment with Requirements

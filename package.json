@@ -52,6 +52,9 @@
 		"vitest": "^3.0.0"
 	},
 	"dependencies": {
+		"@effect/platform": "^0.84.6",
+		"@effect/platform-bun": "^0.69.4",
+		"@effect/platform-node": "^0.85.4",
 		"better-sqlite3": "^11.8.0",
 		"drizzle-orm": "^0.40.0"
 	}

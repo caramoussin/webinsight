@@ -1,4 +1,5 @@
 import { Effect as E, Schedule, Duration, Schema, Data } from 'effect';
+import { HttpClient, HttpClientRequest, FetchHttpClient } from '@effect/platform';
 
 // Base error type for all services
 export class ServiceError extends Data.TaggedError('ServiceError')<{
@@ -24,34 +25,85 @@ export const validateWithSchema = <I, A>(
 			new ServiceError({ code: 'VALIDATION_ERROR', message: 'Validation failed', cause: error })
 	});
 
-// Helper for HTTP requests
-export const fetchJSON = async <T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> => {
-	const response = await fetch(input, init);
-	if (!response.ok) {
-		const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
-		throw new ServiceError({
-			code: `HTTP_${response.status}`,
-			message: errorData.detail || `HTTP error ${response.status}`,
-			cause: errorData
-		});
-	}
-	return response.json();
-};
-
-// Effect-based HTTP request helper with retry and timeout
+// Effect-based HTTP request helper with HttpClient
 export const effectFetch = <T>(
-	input: RequestInfo | URL,
-	init?: RequestInit,
+	url: string,
+	options?: {
+		method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+		body?: unknown;
+		headers?: Record<string, string>;
+	},
 	retryCount = 3,
 	timeoutMs = 10000
 ): E.Effect<T, ServiceError> => {
-	// Create the fetch effect
-	const fetchEffect = tryCatchPromise(
-		() => fetchJSON<T>(input, init),
-		(error) =>
+	const { method = 'GET', body, headers = {} } = options || {};
+
+	// Create the fetch effect using HttpClient
+	const fetchEffect = E.gen(function* () {
+		const client = yield* HttpClient.HttpClient;
+
+		// Create base request
+		let request: HttpClientRequest.HttpClientRequest;
+		switch (method) {
+			case 'GET':
+				request = HttpClientRequest.get(url);
+				break;
+			case 'POST':
+				request = HttpClientRequest.post(url);
+				break;
+			case 'PUT':
+				request = HttpClientRequest.put(url);
+				break;
+			case 'DELETE':
+				request = HttpClientRequest.del(url);
+				break;
+			default:
+				request = HttpClientRequest.get(url);
+		}
+
+		// Add headers
+		if (Object.keys(headers).length > 0) {
+			request = HttpClientRequest.setHeaders(request, headers);
+		}
+
+		// Add body for non-GET requests
+		if (body && method !== 'GET') {
+			request = yield* HttpClientRequest.bodyJson(request, body);
+		}
+
+		const response = yield* client.execute(request);
+
+		// Check if response is successful
+		if (!response.status.toString().startsWith('2')) {
+			const errorText = yield* response.text;
+			let errorData: { detail?: string; [key: string]: unknown };
+			try {
+				errorData = JSON.parse(errorText);
+			} catch {
+				errorData = { detail: errorText || 'Unknown error' };
+			}
+
+			return yield* E.fail(
+				new ServiceError({
+					code: `HTTP_${response.status}`,
+					message: errorData.detail || `HTTP error ${response.status}`,
+					cause: errorData
+				})
+			);
+		}
+
+		const result = yield* response.json;
+		return result as T;
+	}).pipe(
+		E.mapError((error) =>
 			error instanceof ServiceError
 				? error
-				: new ServiceError({ code: 'FETCH_ERROR', message: 'Failed to fetch data', cause: error })
+				: new ServiceError({
+						code: 'FETCH_ERROR',
+						message: 'Failed to fetch data',
+						cause: error
+					})
+		)
 	);
 
 	// Add timeout
@@ -69,8 +121,21 @@ export const effectFetch = <T>(
 		Schedule.exponential(Duration.seconds(1)).pipe(Schedule.compose(Schedule.recurs(retryCount)))
 	);
 
-	// Add tracing
-	return E.withSpan('effectFetch', { attributes: { url: input.toString() } })(withRetry);
+	// Add tracing and provide HttpClient layer
+	return E.withSpan('effectFetch', { attributes: { url, method } })(withRetry).pipe(
+		E.provide(FetchHttpClient.layer)
+	);
+};
+
+// Legacy wrapper for backward compatibility (converts to Promise)
+export const fetchJSON = async <T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> => {
+	const url = input.toString();
+	const method = (init?.method as 'GET' | 'POST' | 'PUT' | 'DELETE') || 'GET';
+	const body = init?.body ? JSON.parse(init.body as string) : undefined;
+	const headers = (init?.headers as Record<string, string>) || {};
+
+	const effect = effectFetch<T>(url, { method, body, headers });
+	return E.runPromise(effect);
 };
 
 // Helper for running Effects

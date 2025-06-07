@@ -27,3 +27,6 @@ vite.config.ts.timestamp-*
 
 .windsurf
 .cursor
+
+# Python
+.venv

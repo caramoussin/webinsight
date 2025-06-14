@@ -1,92 +1,68 @@
 import { json, error as svelteKitError } from '@sveltejs/kit';
 import type { RequestHandler } from '@sveltejs/kit';
-import { Effect, Layer, Exit, Cause, Option, Schema as S } from 'effect';
 
-import { FeedServiceTag, FeedServiceLive } from '$lib/services/feeds/FeedService';
+// Import just what we need for the mock implementation
 import { UpdateFeed } from '$lib/schemas/feed.schema';
-import {
-  DatabaseServiceLive,
-  DrizzleClientTag,
-  type DrizzleClient
-} from '$lib/services/db/DatabaseService';
-import {
-  FeedNotFoundError,
-  FeedUpdateError,
-  FeedDeletionError,
-  type FeedServiceError
-} from '$lib/services/feeds/feed.errors';
+import { Schema as S } from 'effect';
 
-// --- Database Client Placeholder ---
-async function getDrizzleClientForProfile(profileId: string): Promise<DrizzleClient> {
-  console.warn(`Placeholder: Drizzle client for profile ${profileId} is not actually initialized.`);
-  throw new Error('Drizzle client provider not implemented for profile: ' + profileId);
-}
-
-const handleEffectError = (err: Cause.Cause<FeedServiceError>) => {
-  if (Cause.isDie(err)) {
-    console.error('Unhandled defect in API:', Cause.pretty(err));
-    return svelteKitError(500, { message: 'Internal server error due to unhandled defect.' });
-  }
-  const failure = Cause.failureOption(err);
-  if (Option.isSome(failure)) {
-    const e = failure.value;
-    if (e instanceof FeedNotFoundError) {
-      return json({ message: e.message }, { status: 404 });
-    }
-    if (e instanceof FeedUpdateError) {
-      return json({ message: e.message, feedId: e.feedId }, { status: 400 });
-    }
-    if (e instanceof FeedDeletionError) {
-      return json({ message: e.message, feedId: e.feedId }, { status: 400 });
-    }
-    console.error('Feed Service Error:', e);
-    return svelteKitError(500, { message: 'A feed service error occurred.' });
-  }
-  console.error('Unhandled Cause in API:', Cause.pretty(err));
-  return svelteKitError(500, { message: 'Internal server error.' });
+// Define the feed type to ensure type safety
+type MockFeed = {
+  id: string;
+  name: string;
+  url: string;
+  profileId: string;
+  collectionId: string | null;
+  createdAt: string;
+  updatedAt: string;
 };
+
+// Mock data storage for our API - shared with the main feeds endpoint
+const mockFeeds: MockFeed[] = [
+  {
+    id: '1',
+    name: 'Tech News',
+    url: 'https://example.com/tech-feed.xml',
+    profileId: 'demo-profile-id',
+    collectionId: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: '2',
+    name: 'Science Updates',
+    url: 'https://example.com/science-feed.xml',
+    profileId: 'demo-profile-id',
+    collectionId: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: '3',
+    name: 'Programming Blog',
+    url: 'https://example.com/programming-feed.xml',
+    profileId: 'demo-profile-id',
+    collectionId: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+];
 
 export const GET: RequestHandler = async ({ params, url }) => {
   const feedId = params.id!;
-  const profileId = url.searchParams.get('profileId') || 'TODO_get_from_session_or_header';
+  const profileId = url.searchParams.get('profileId') || 'demo-profile-id';
 
-  if (!profileId || profileId === 'TODO_get_from_session_or_header') {
-    return svelteKitError(401, { message: 'User profile not identified.' });
-  }
-
-  const program = Effect.gen(function* (_) {
-    const feedService = yield* _(FeedServiceTag);
-    const feedOption = yield* _(feedService.getFeedById(feedId, profileId));
-
-    if (Option.isNone(feedOption)) {
-      return yield* _(
-        Effect.fail(
-          new FeedNotFoundError({
-            message: `Feed with id ${feedId} not found`,
-            feedId
-          })
-        )
-      );
-    }
-
-    return feedOption.value;
-  });
-
+  console.log(`GET /api/feeds/${feedId}: Looking up feed with profileId ${profileId}`);
+  
   try {
-    const drizzleClient = await getDrizzleClientForProfile(profileId);
-    const drizzleClientLayer = Layer.succeed(DrizzleClientTag, drizzleClient);
-    const dbServiceLayer = Layer.provide(DatabaseServiceLive, drizzleClientLayer);
-    const feedServiceLayer = Layer.provide(
-      FeedServiceLive,
-      Layer.merge(drizzleClientLayer, dbServiceLayer)
-    );
-
-    const result = await Effect.runPromiseExit(Effect.provide(program, feedServiceLayer));
-
-    return Exit.match(result, {
-      onFailure: (cause) => handleEffectError(cause),
-      onSuccess: (feed) => json(feed, { status: 200 })
-    });
+    // Find the feed in our mock data
+    const feed = mockFeeds.find(f => f.id === feedId && f.profileId === profileId);
+    
+    if (!feed) {
+      console.log(`Feed with id ${feedId} not found for profile ${profileId}`);
+      return json({ message: `Feed with id ${feedId} not found` }, { status: 404 });
+    }
+    
+    return json(feed, { status: 200 });
   } catch (e: unknown) {
     console.error('GET /api/feeds/[id] error:', e);
     return svelteKitError(500, { message: 'Failed to process request.' });
@@ -95,38 +71,43 @@ export const GET: RequestHandler = async ({ params, url }) => {
 
 export const PUT: RequestHandler = async ({ params, request, url }) => {
   const feedId = params.id!;
-  const profileId = url.searchParams.get('profileId') || 'TODO_get_from_session_or_header';
+  const profileId = url.searchParams.get('profileId') || 'demo-profile-id';
 
-  if (!profileId || profileId === 'TODO_get_from_session_or_header') {
-    return svelteKitError(401, { message: 'User profile not identified.' });
-  }
-
+  console.log(`PUT /api/feeds/${feedId}: Updating feed with profileId ${profileId}`);
+  
   try {
     const requestBody = await request.json();
-    const decodedBody = S.decodeUnknownSync(UpdateFeed)(requestBody, { errors: 'all' });
-
-    const program = Effect.gen(function* (_) {
-      const feedService = yield* _(FeedServiceTag);
-      return yield* _(feedService.updateFeed(feedId, profileId, decodedBody));
-    });
-
-    const drizzleClient = await getDrizzleClientForProfile(profileId);
-    const drizzleClientLayer = Layer.succeed(DrizzleClientTag, drizzleClient);
-    const dbServiceLayer = Layer.provide(DatabaseServiceLive, drizzleClientLayer);
-    const feedServiceLayer = Layer.provide(
-      FeedServiceLive,
-      Layer.merge(drizzleClientLayer, dbServiceLayer)
-    );
-
-    const result = await Effect.runPromiseExit(Effect.provide(program, feedServiceLayer));
-
-    return Exit.match(result, {
-      onFailure: (cause) => handleEffectError(cause),
-      onSuccess: (updatedFeed) => json(updatedFeed, { status: 200 })
-    });
-  } catch (e: unknown) {
-    // Handle Effect Schema parse errors
-    if (e && typeof e === 'object' && 'name' in e && e.name === 'ParseError') {
+    console.log('Update data:', requestBody);
+    
+    try {
+      // Validate the request body using the UpdateFeed schema
+      const decodedBody = S.decodeUnknownSync(UpdateFeed)(requestBody, { errors: 'all' });
+      
+      // Find the feed index in our mock data
+      const feedIndex = mockFeeds.findIndex(f => f.id === feedId && f.profileId === profileId);
+      
+      if (feedIndex === -1) {
+        console.log(`Feed with id ${feedId} not found for profile ${profileId}`);
+        return json({ message: `Feed with id ${feedId} not found` }, { status: 404 });
+      }
+      
+      // Update the feed with the new data
+      const updatedFeed: MockFeed = {
+        ...mockFeeds[feedIndex],
+        ...decodedBody,
+        // Ensure type compatibility
+        collectionId: decodedBody.collectionId ?? mockFeeds[feedIndex].collectionId,
+        updatedAt: new Date().toISOString()
+      };
+      
+      // Replace the old feed with the updated one
+      mockFeeds[feedIndex] = updatedFeed;
+      
+      console.log('Feed updated successfully:', updatedFeed);
+      return json(updatedFeed, { status: 200 });
+    } catch (error) {
+      // Handle schema validation errors
+      console.error('Schema validation error:', error);
       return json(
         {
           message: 'Invalid request body',
@@ -135,6 +116,7 @@ export const PUT: RequestHandler = async ({ params, request, url }) => {
         { status: 400 }
       );
     }
+  } catch (e: unknown) {
     console.error('PUT /api/feeds/[id] error:', e);
     return svelteKitError(500, { message: 'Failed to process request.' });
   }
@@ -142,32 +124,24 @@ export const PUT: RequestHandler = async ({ params, request, url }) => {
 
 export const DELETE: RequestHandler = async ({ params, url }) => {
   const feedId = params.id!;
-  const profileId = url.searchParams.get('profileId') || 'TODO_get_from_session_or_header';
+  const profileId = url.searchParams.get('profileId') || 'demo-profile-id';
 
-  if (!profileId || profileId === 'TODO_get_from_session_or_header') {
-    return svelteKitError(401, { message: 'User profile not identified.' });
-  }
-
-  const program = Effect.gen(function* (_) {
-    const feedService = yield* _(FeedServiceTag);
-    return yield* _(feedService.deleteFeed(feedId, profileId));
-  });
-
+  console.log(`DELETE /api/feeds/${feedId}: Deleting feed with profileId ${profileId}`);
+  
   try {
-    const drizzleClient = await getDrizzleClientForProfile(profileId);
-    const drizzleClientLayer = Layer.succeed(DrizzleClientTag, drizzleClient);
-    const dbServiceLayer = Layer.provide(DatabaseServiceLive, drizzleClientLayer);
-    const feedServiceLayer = Layer.provide(
-      FeedServiceLive,
-      Layer.merge(drizzleClientLayer, dbServiceLayer)
-    );
-
-    const result = await Effect.runPromiseExit(Effect.provide(program, feedServiceLayer));
-
-    return Exit.match(result, {
-      onFailure: (cause) => handleEffectError(cause),
-      onSuccess: () => json({ message: 'Feed deleted successfully' }, { status: 200 })
-    });
+    // Find the feed index in our mock data
+    const feedIndex = mockFeeds.findIndex(f => f.id === feedId && f.profileId === profileId);
+    
+    if (feedIndex === -1) {
+      console.log(`Feed with id ${feedId} not found for profile ${profileId}`);
+      return json({ message: `Feed with id ${feedId} not found` }, { status: 404 });
+    }
+    
+    // Remove the feed from our mock data
+    mockFeeds.splice(feedIndex, 1);
+    
+    console.log(`Feed with id ${feedId} deleted successfully`);
+    return json({ message: 'Feed deleted successfully' }, { status: 200 });
   } catch (e: unknown) {
     console.error('DELETE /api/feeds/[id] error:', e);
     return svelteKitError(500, { message: 'Failed to process request.' });

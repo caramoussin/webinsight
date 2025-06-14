@@ -45,14 +45,17 @@
     isEditing = false;
   };
 
-  const formatDate = (timestamp: Date) => {
+  const formatDate = (timestamp: string | Date) => {
+    // Ensure we have a Date object
+    const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
+    
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
-    }).format(timestamp);
+    }).format(date);
   };
 </script>
 

@@ -2,15 +2,7 @@ import { Effect as E, pipe } from 'effect';
 import { FetchHttpClient, HttpClient, HttpClientRequest } from '@effect/platform';
 import type { Feed, CreateFeed, UpdateFeed } from '../schemas/feed.schema';
 
-// Store state type
-export interface FeedsStoreState {
-  readonly feeds: readonly Feed[];
-  readonly loading: boolean;
-  readonly error: string | null;
-}
-
-// Store type definition
-export type FeedsStore = {
+export interface FeedsStore {
   readonly feeds: Feed[];
   readonly loading: boolean;
   readonly error: string | null;
@@ -26,7 +18,13 @@ export type FeedsStore = {
   clearError: () => void;
 };
 
-// HTTP request helpers
+/**
+ * Creates an HTTP request based on the method and URL.
+ * @param method The HTTP method (GET, POST, PUT, DELETE).
+ * @param url The URL for the request.
+ * @param body Optional request body for POST and PUT requests.
+ * @returns An Effect that creates the request.
+ */
 const createRequest = (method: string, url: string, body?: unknown) => {
   const baseRequest = (() => {
     switch (method.toUpperCase()) {
@@ -50,15 +48,24 @@ const createRequest = (method: string, url: string, body?: unknown) => {
   return E.succeed(baseRequest);
 };
 
+/**
+ * Makes an HTTP request and returns the response.
+ * @param method The HTTP method (GET, POST, PUT, DELETE).
+ * @param url The URL for the request.
+ * @param body Optional request body for POST and PUT requests.
+ * @returns An Effect that makes the request and returns the response.
+ */
 const makeRequest = <T>(
   method: string,
   url: string,
   body?: unknown
 ): E.Effect<T, Error, HttpClient.HttpClient> =>
   E.gen(function* () {
+    console.log(`Making ${method} request to ${url}`, body ? { body } : '');
     const client = yield* HttpClient.HttpClient;
     const request = yield* createRequest(method, url, body);
     const response = yield* client.execute(request);
+    console.log(`Response status: ${response.status}`);
 
     if (!response.status.toString().startsWith('2')) {
       const errorText = yield* response.text;
@@ -83,7 +90,8 @@ const makeRequest = <T>(
 const createFeedsStore = (): E.Effect<FeedsStore, never, HttpClient.HttpClient> => {
   return E.sync(() => {
     // State using Svelte 5 runes
-    const feeds: Feed[] = $state([]);
+    // Using let instead of const for feeds to ensure proper reactivity
+    let feeds: Feed[] = $state([]);
     let loading: boolean = $state(false);
     let error: string | null = $state(null);
 
@@ -94,13 +102,22 @@ const createFeedsStore = (): E.Effect<FeedsStore, never, HttpClient.HttpClient> 
         E.sync(() => {
           loading = true;
           error = null;
+          console.log('Starting loadFeeds with profileId:', profileId);
         }),
-        E.flatMap(() => makeRequest<Feed[]>('GET', `/api/feeds?profileId=${profileId}`)),
+        E.flatMap(() => {
+          const url = `/api/feeds?profileId=${profileId}`;
+          console.log('Making request to:', url);
+          return makeRequest<Feed[]>('GET', url);
+        }),
         E.tap((fetchedFeeds) =>
           E.sync(() => {
-            feeds.splice(0, feeds.length, ...fetchedFeeds);
+            console.log('Received feeds from API:', fetchedFeeds);
+            // Create a new array with the fetched feeds to ensure reactivity
+            // This is more reliable than mutating the existing array
+            feeds = [...fetchedFeeds];
             loading = false;
             error = null;
+            console.log('Updated feeds array:', feeds);
           })
         ),
         E.tapError((err) =>
@@ -120,7 +137,8 @@ const createFeedsStore = (): E.Effect<FeedsStore, never, HttpClient.HttpClient> 
         E.flatMap(() => makeRequest<Feed>('POST', '/api/feeds', feedData)),
         E.tap((newFeed) =>
           E.sync(() => {
-            feeds.push(newFeed);
+            // Create a new array with the existing feeds plus the new feed
+            feeds = [...feeds, newFeed];
             loading = false;
             error = null;
           })
@@ -150,7 +168,12 @@ const createFeedsStore = (): E.Effect<FeedsStore, never, HttpClient.HttpClient> 
           E.sync(() => {
             const index = feeds.findIndex((feed) => feed.id === id);
             if (index !== -1) {
-              feeds[index] = updatedFeed;
+              // Create a new array with the updated feed
+              feeds = [
+                ...feeds.slice(0, index),
+                updatedFeed,
+                ...feeds.slice(index + 1)
+              ];
             }
             loading = false;
             error = null;
@@ -178,7 +201,11 @@ const createFeedsStore = (): E.Effect<FeedsStore, never, HttpClient.HttpClient> 
           E.sync(() => {
             const index = feeds.findIndex((feed) => feed.id === id);
             if (index !== -1) {
-              feeds.splice(index, 1);
+              // Create a new array without the deleted feed
+              feeds = [
+                ...feeds.slice(0, index),
+                ...feeds.slice(index + 1)
+              ];
             }
             loading = false;
             error = null;
@@ -221,15 +248,6 @@ const createFeedsStore = (): E.Effect<FeedsStore, never, HttpClient.HttpClient> 
   });
 };
 
-// Create a singleton instance of the store by running the Effect with the required services
-let feedsStoreInstance: FeedsStore | null = null;
-
-export const feedsStore = (() => {
-  if (!feedsStoreInstance) {
-    // Initialize the store synchronously by running the Effect
-    feedsStoreInstance = E.runSync(pipe(createFeedsStore(), E.provide(FetchHttpClient.layer)));
-  }
-  return feedsStoreInstance;
-})();
+const feedsStore = createFeedsStore().pipe(E.provide(FetchHttpClient.layer), E.runSync);
 
 export default feedsStore;

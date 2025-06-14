@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { Effect as E, pipe } from 'effect';
   import { FetchHttpClient } from '@effect/platform';
-  import { feedsStore } from '$lib/stores/feeds.store.svelte';
+  import feedsStore from '$lib/stores/feeds.store.svelte';
   import type { CreateFeed } from '$lib/schemas/feed.schema';
   import FeedListItem from '$lib/components/feeds/FeedListItem.svelte';
   import AddFeedModal from '$lib/components/feeds/AddFeedModal.svelte';
@@ -15,9 +15,39 @@
 
   // Load feeds on component mount
   onMount(() => {
-    pipe(feedsStore.loadFeeds(profileId), E.provide(FetchHttpClient.layer), E.runPromise).catch(
-      console.error
-    );
+    console.log('Loading feeds with profileId:', profileId);
+    console.log('Initial store state:', { 
+      loading: feedsStore.loading, 
+      feedsCount: feedsStore.feeds.length, 
+      error: feedsStore.error 
+    });
+    
+    pipe(
+      feedsStore.loadFeeds(profileId),
+      E.tap(() => E.sync(() => {
+        console.log('Feeds loaded successfully');
+        console.log('Store state after loading:', { 
+          loading: feedsStore.loading, 
+          feeds: feedsStore.feeds,
+          feedsCount: feedsStore.feeds.length, 
+          error: feedsStore.error 
+        });
+      })),
+      E.tapError((err) => E.sync(() => console.error('Error loading feeds:', err))),
+      E.provide(FetchHttpClient.layer),
+      E.runPromise
+    ).catch(error => {
+      console.error('Uncaught error in loadFeeds:', error);
+    });
+  });
+  
+  // Debug reactive state
+  $effect(() => {
+    console.log('Reactive update - Store state:', { 
+      loading: feedsStore.loading, 
+      feedsCount: feedsStore.feeds.length, 
+      error: feedsStore.error 
+    });
   });
 
   const handleAddFeed = async (feedData: CreateFeed) => {
@@ -92,7 +122,7 @@
       <div class="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
       <span class="ml-3 text-gray-600 dark:text-gray-400">Loading feeds...</span>
     </div>
-  {:else if feedsStore.feeds.length === 0}
+  {:else if !feedsStore.feeds || feedsStore.feeds.length === 0}
     <div class="py-12 text-center">
       <div class="mb-4 text-gray-400">
         <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
